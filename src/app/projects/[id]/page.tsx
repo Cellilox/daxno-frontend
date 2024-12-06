@@ -1,27 +1,25 @@
-import Dialog from "@/components/Dialog"
-import { auth } from "@clerk/nextjs/server"
+import { io } from "socket.io-client"
+import Modal from "@/components/Modal"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import MyDropzone from "@/components/Dropzone"
-import Link from "next/link"
-import SpreadSheet from "@/components/SpreadSheet"
+import ScanView from "@/components/ScanView"
+import Records from "@/components/Records"
+
 type ProjectViewProps = {
     params: {
         id: string
     }
 }
 
-type Field = {
-    id: string
-    name: string
-    description: string
-}
-
 
 export default async function ProjectView({ params }: ProjectViewProps) {
     const authObj = await auth()
-    const {id} = await params
+    const user = await currentUser()
+    console.log('USER', user?.id)
+    const { id } = await params
     const url = `http://localhost:8000/projects/${id}`
-    
+
     let sessionId
     const headers = new Headers()
     headers.append('Authorization', `Bearer ${await authObj.getToken()}`)
@@ -53,7 +51,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     })
 
     const fields = await response.json()
-    console.log(fields)
+    console.log('FIELS', fields)
 
 
     async function addField(formData: FormData) {
@@ -87,15 +85,19 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     }
 
 
+
+    const recordsUrl = `http://localhost:8000/records/${id}`
+    const getRecords = await fetch(recordsUrl, {
+        method: 'GET',
+        headers: headers
+    })
+
+    const records = await getRecords.json()
+    console.log('RECORDS', records)
+
+
     return (
         <>
-            <Dialog title="Upload Your Image" onClose={onClose} onOk={onOk}>
-                <form className="h-full">
-                    <div className="h-full">
-                    <MyDropzone sessionId = {sessionId} projectId = {id} token={await authObj.getToken()}/>
-                    </div>
-                </form>
-            </Dialog>
             <div className="p-4">
                 <div className="flex justify-between">
                     <form action={addField}>
@@ -105,13 +107,26 @@ export default async function ProjectView({ params }: ProjectViewProps) {
                             <button type='submit' className="p-3 bg-blue-600 rounded ml-3 text-white">Add</button>
                         </div>
                     </form>
+                    <ScanView />
+                    <div className="flex flex-col items-center">
+                        <div>
+                            <p>Export your data</p>
+                        </div>
+                        <div className="mt-3">
+                            <div className="p-3 bg-blue-600 rounded  text-white">Export your data</div>
+                        </div>
+                    </div>
                     <div>
                         <div className="flex justify-end">
                             <p>Project: {project.name}</p>
                         </div>
-                        <div className="mt-6">
-                        <Link href={`/projects/${id}?modal=visible`} className="p-3 bg-blue-600 rounded ml-3 text-white">Upload your document</Link>
-                        </div>
+                        <Modal title="Upload Your Image" onClose={onClose} onOk={onOk}>
+                            <form className="h-full">
+                                <div className="h-full">
+                                    <MyDropzone sessionId={sessionId} projectId={id} token={await authObj.getToken()} onClose={onClose}/>
+                                </div>
+                            </form>
+                        </Modal>
                     </div>
                 </div>
 
@@ -126,9 +141,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
                         </div> : null
                 } */}
             </div>
-            <div className="p-4 flex justify-center">
-                <SpreadSheet/>
-            </div>
+            <Records projectId={id} initialFields={fields} initialRecords={records} userId = {user?.id}/>
         </>
     )
 }

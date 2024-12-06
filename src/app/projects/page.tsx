@@ -12,7 +12,8 @@ const url = 'http://localhost:8000/projects'
 
 export default async function Projects () {
     const authObj = await auth()
-    const userObj = await currentUser()
+    const user = await currentUser()
+    console.log('USER', user?.id)
     console.log('SessionId', authObj.sessionId)
 
     const headers = new Headers();
@@ -64,18 +65,22 @@ export default async function Projects () {
           <form action={addProject}>
           <div className="text-lg bold flex justify-end">Register your project</div>
           <div className="mt-3">
-          <input type="text" name="name" className="p-3 rounded text-black" placeholder="Type your project name"/>
-          <button type='submit' className="p-3 bg-blue-600 rounded ml-3">Add</button>
+          <input type="text" name="name" className="p-3 rounded text-black border-2 border-blue-400" placeholder="Type your project name"/>
+          <button type='submit' className="p-3 bg-blue-600 rounded ml-3 text-white">Add</button>
           </div>
           </form>
           </div>
           {projects.length >= 1?
-          <div className="grid grid-cols-4 gap-7 mt-10">
+          <div>
+            <p className="mt-10">Your scalfolded projects</p>
+          <div className="grid grid-cols-4 gap-7">
           {projects.map((project: Project) => (
               <Card project={project} key={project.id}/>
           ))}
+          </div>
+          <p className='mt-10'>Your unguided projects will appear below</p>
           </div>:
-          <p>No project currently</p>
+          <p className='mt-10'>No project currently</p>
         }
         </div>
         </>

@@ -2,20 +2,22 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useModalContext } from './context/modal';
+import { revalidatePath } from 'next/cache';
 import { useRouter } from 'next/navigation';
-
 type MyDropzoneProps = {
   sessionId: string | undefined
   projectId: string
   token: string | null
+  onClose: () => void
 }
 
-export default function MyDropzone({ sessionId, projectId, token }: MyDropzoneProps) {
+export default function MyDropzone({ sessionId, projectId, token, onClose }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter()
-  console.log(file)
   const [preview, setPreview] = useState<string | null>(null);
+  const { closeModal } = useModalContext();
+  const router = useRouter()
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     if (selectedFile) {
@@ -29,6 +31,7 @@ export default function MyDropzone({ sessionId, projectId, token }: MyDropzonePr
     setIsLoading(true)
     if (!file) {
       setIsLoading(false)
+      closeModal()
       router.push(`/projects/${projectId}`)
       return;
     }
@@ -55,12 +58,13 @@ export default function MyDropzone({ sessionId, projectId, token }: MyDropzonePr
         const result = await response.json();
         console.log('Upload result:', result);
         setIsLoading(false)
-        // alert('File uploaded and processed successfully');
+        closeModal()
         router.push(`/projects/${projectId}`)
       } else {
         setIsLoading(false)
         const error = await response.json();
         alert(`Error: ${error.detail}`);
+        closeModal()
         router.push(`/projects/${projectId}`)
       }
     } catch (error) {
@@ -72,18 +76,18 @@ export default function MyDropzone({ sessionId, projectId, token }: MyDropzonePr
 
   return (
     <div>
-      <div {...getRootProps()} className="h-full">
+      <div {...getRootProps()} className="h-full justify-center items-center">
         <input {...getInputProps()} className="h-full" />
         {preview ? (
           <div className="h-full flex justify-center items-center rounded-md">
             <img src={preview} alt="Selected file preview" className="h-full object-contain" />
           </div>
         ) : isDragActive ? (
-          <div className="h-full border-dashed border-2 border-blue-400 bg-blue-400 flex justify-center items-center rounded-md">
+          <div className="mt-6 h-64 border-dashed border-2 border-blue-400 bg-blue-400 flex justify-center items-center rounded-md">
             <p>Drop the file here!</p>
           </div>
         ) : (
-          <div className="h-full border-dashed border-2 border-gray-400 flex justify-center items-center rounded-md">
+          <div className="mt-6 h-64 border-dashed border-2 border-gray-400 flex justify-center items-center rounded-md">
             <p>Drag and Drop a file, or click to select a file</p>
           </div>
         )}

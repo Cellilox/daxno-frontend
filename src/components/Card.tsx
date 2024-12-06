@@ -12,9 +12,10 @@ type Project = {
 export default function Card({project}: any ) {
     console.log('Card rendered')
   return (
-    <div className='bg-white w-full text-black p-3 rounded mt-3 flex justify-center items-center'>
+    <div className='bg-gray-200 w-full text-black p-3 rounded mt-3 flex justify-center items-center'>
       <Link href={`/projects/${project.id}`} key={project.id}>
         <p>{project.name}</p>
+        <p>Type: scalfold / Custom</p>
     </Link>
     </div>
   )

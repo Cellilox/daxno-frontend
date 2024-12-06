@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { ClerkProvider} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/header";
+import ModalProvider from "@/components/context/modal-provider";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -26,14 +27,16 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Header/>
-        {children}
-      </body>
-    </html>
+      <ModalProvider>
+        <html lang="en">
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            <Header />
+            {children}
+          </body>
+        </html>
+      </ModalProvider>
     </ClerkProvider>
   );
 }
