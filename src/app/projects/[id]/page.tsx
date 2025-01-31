@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache"
 import MyDropzone from "@/components/Dropzone"
 import ScanView from "@/components/ScanView"
 import Records from "@/components/Records"
+import ExportCSV from "@/components/DownlaodCSV"
+import ShareToDrive from "@/components/ShareToDrive"
+import { PageProgressBar } from "@/components/ui/ProgressBar"
+import CreateColumn from "@/components/forms/CreateColumn"
 
 type ProjectViewProps = {
     params: {
@@ -18,7 +22,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     const user = await currentUser()
     console.log('USER', user?.id)
     const { id } = await params
-    const url = `http://localhost:8000/projects/${id}`
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${id}`
 
     let sessionId
     const headers = new Headers()
@@ -29,13 +33,6 @@ export default async function ProjectView({ params }: ProjectViewProps) {
         sessionId = authObj.sessionId
     }
 
-    const postHeaders = new Headers();
-    postHeaders.append('Authorization', `Bearer ${await authObj.getToken()}`);
-    postHeaders.append('Content-Type', 'application/json')
-    if (authObj.sessionId) {
-        postHeaders.append('sessionId', authObj.sessionId);
-    }
-
     const res = await fetch(url, {
         method: 'GET',
         headers: headers
@@ -43,7 +40,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     const project = await res.json()
     console.log(project)
 
-    const fieldsUrl = `http://localhost:8000/fields/${project.id}`
+    const fieldsUrl = `${process.env.NEXT_PUBLIC_API_URL}/fields/${project.id}`
 
     const response = await fetch(fieldsUrl, {
         method: 'GET',
@@ -53,26 +50,6 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     const fields = await response.json()
     console.log('FIELS', fields)
 
-
-    async function addField(formData: FormData) {
-        'use server'
-        const name = formData.get('name')
-        const res = await fetch(fieldsUrl,
-            {
-                method: 'POST',
-                headers: postHeaders,
-                body: JSON.stringify({ name })
-            })
-
-        if (!res.ok) {
-            console.error("Error creating project:", await res.text());
-            return;
-        }
-
-        const newField = await res.json();
-        revalidatePath(`/projects/${project.id}`);
-        console.log(newField);
-    }
 
     async function onClose() {
         "use server"
@@ -84,9 +61,14 @@ export default async function ProjectView({ params }: ProjectViewProps) {
         console.log("Ok was clicked")
     }
 
+    const refresh = async () => {
+        'use server'
+      revalidatePath(`/projects/${project.id}`);
+    }
 
 
-    const recordsUrl = `http://localhost:8000/records/${id}`
+
+    const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
     const getRecords = await fetch(recordsUrl, {
         method: 'GET',
         headers: headers
@@ -98,50 +80,51 @@ export default async function ProjectView({ params }: ProjectViewProps) {
 
     return (
         <>
-            <div className="p-4">
-                <div className="flex justify-between">
-                    <form action={addField}>
-                        <div><p>Add a field you need to extract</p></div>
-                        <div className="mt-3">
-                            <input type="text" name="name" className="p-3 rounded text-black border-2 border-blue-400" placeholder="Type a field name" />
-                            <button type='submit' className="p-3 bg-blue-600 rounded ml-3 text-white">Add</button>
-                        </div>
-                    </form>
-                    <ScanView />
-                    <div className="flex flex-col items-center">
-                        <div>
-                            <p>Export your data</p>
-                        </div>
-                        <div className="mt-3">
-                            <div className="p-3 bg-blue-600 rounded  text-white">Export your data</div>
-                        </div>
+          <div className="px-4">
+             {/* Project Info and Modal */}
+             <div className="bg-white p-6 shadow-lg rounded-lg space-y-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+                <p className="text-xl font-bold text-gray-800">Project: {project.name}</p>
+                <Modal title="Upload Your Image" onClose={onClose} onOk={onOk}>
+                  <form className="h-full">
+                    <div className="h-full">
+                      <MyDropzone
+                        user_id={user?.id}
+                        sessionId={sessionId}
+                        projectId={id}
+                        token={await authObj.getToken()}
+                        onClose={onClose}
+                      />
                     </div>
-                    <div>
-                        <div className="flex justify-end">
-                            <p>Project: {project.name}</p>
-                        </div>
-                        <Modal title="Upload Your Image" onClose={onClose} onOk={onOk}>
-                            <form className="h-full">
-                                <div className="h-full">
-                                    <MyDropzone sessionId={sessionId} projectId={id} token={await authObj.getToken()} onClose={onClose}/>
-                                </div>
-                            </form>
-                        </Modal>
-                    </div>
-                </div>
-
-                {/* {
-                    fields.length >= 1 ?
-                        <div>
-                            {fields.map((field: Field) => (
-                                <div key={field.id}>
-                                    <p>{field.name}</p>
-                                </div>
-                            ))}
-                        </div> : null
-                } */}
+                  </form>
+                </Modal>
+              </div>
             </div>
-            <Records projectId={id} initialFields={fields} initialRecords={records} userId = {user?.id}/>
+            {/* Header Section */}
+            <div className="mt-3 flex flex-col md:flex-row md:justify-between md:items-center space-y-6 md:space-y-0">
+              {/* Add Column Form */}
+              <CreateColumn token={await authObj.getToken()} sessionId={sessionId} refresh={refresh} projectId={id}/>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0">
+                <ScanView />
+                <ExportCSV headers={headers} projectId={id} />
+                <ShareToDrive headers={headers} projectId={id} />
+              </div>
+            </div>
+      
+      
+            {/* Records Section */}
+            <div className="mt-3">
+            <Records
+              projectId={id}
+              initialFields={fields}
+              initialRecords={records}
+              userId={user?.id}
+            />
+            </div>
+          </div>
         </>
-    )
+      );
+      
+      
 }

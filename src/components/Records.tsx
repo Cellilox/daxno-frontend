@@ -25,7 +25,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
         setColumns(initialFieldsModifiedArray)
 
         if (!socketRef.current) {
-            socketRef.current = io('http://localhost:8000', {
+            socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
                 path: '/ws/records/sockets',
                 auth: { projectId },
             });
@@ -84,7 +84,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
     }, [projectId]); // Reconnect only if projectId changes
 
     return (
-        <div className='p-4'>
+        <div>
             <SpreadSheet records={rowData} columns= {columns}/>
             <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
         </div>

@@ -15,8 +15,12 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.5.1",
+    "@types/gapi": "^0.0.47",
     "ag-grid-community": "^32.3.3",
     "ag-grid-react": "^32.3.3",
+    "browser-fs-access": "^0.35.0",
+    "gapi-script": "^1.2.0",
+    "llama-ocr": "^0.0.6",
     "next": "15.0.3",
     "qrcode.react": "^4.1.0",
     "react": "19.0.0-rc-66855b96-20241106",

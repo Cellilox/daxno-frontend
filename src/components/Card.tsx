@@ -1,22 +1,22 @@
-'use client'
-import React from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
+'use client';
+import React from 'react';
+import Link from 'next/link';
 
 type Project = {
-    id: number,
-    name: string,
-    owner: string
-  }
+  id: number;
+  name: string;
+  owner: string;
+};
 
-export default function Card({project}: any ) {
-    console.log('Card rendered')
+export default function Card({ project }: { project: Project }) {
   return (
-    <div className='bg-gray-200 w-full text-black p-3 rounded mt-3 flex justify-center items-center'>
+    <div className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden">
       <Link href={`/projects/${project.id}`} key={project.id}>
-        <p>{project.name}</p>
-        <p>Type: scalfold / Custom</p>
-    </Link>
+        <div className="p-4 cursor-pointer">
+          <h3 className="text-lg font-bold text-gray-800 mb-2 truncate">{project.name}</h3>
+          <p className="text-sm text-gray-600">Owner: {project.owner}</p>
+        </div>
+      </Link>
     </div>
-  )
+  );
 }

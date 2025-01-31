@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ProductQRCode from "./QRcode";
 import Image from "next/image";
+
 export default function ScanView() {
     const [isOuterExpanded, setIsOuterExpanded] = useState(false);
     const [isInnerVisible, setIsInnerVisible] = useState(false);
@@ -24,16 +25,18 @@ export default function ScanView() {
         <div>
             <div className="flex flex-col items-center">
                 <div>
-                    <p>Use your smart phone</p>
+                    <p className="text-lg md:text-xl lg:text-sm">Use your smartphone</p>
                 </div>
                 <div className="mt-3">
-                    <button className="p-3 bg-blue-600 rounded text-white"
+                    <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
                         onClick={toggleExpand}
                     >
                         Click to scan
                     </button>
                 </div>
             </div>
+
             <div
                 style={{
                     position: isOuterExpanded ? "fixed" : "absolute",
@@ -45,80 +48,59 @@ export default function ScanView() {
                     transition: "all 0.8s ease",
                     zIndex: 1000,
                     display: "flex",
-                    flexDirection: 'column',
+                    flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
                 }}
             >
-               {
-                isOuterExpanded?
-                 <div style={{
-                    alignSelf: 'end',
-                    marginRight: '50px'
-                 }}
-                onClick={toggleExpand}>
-                    <div>
-                    <Image src="/close.svg" alt="My Icon" width={40} height={40} />
+                {isOuterExpanded ? (
+                    <div
+                        style={{
+                            alignSelf: "flex-end",
+                            marginRight: "20px",
+                        }}
+                        onClick={toggleExpand}
+                    >
+                        <Image src="/close.svg" alt="Close" width={30} height={30} />
                     </div>
-                </div>: null
-               }
-
+                ) : null}
 
                 <div
+                    className="w-4/5 h-4/5 bg-white transform origin-top transition-transform duration-500 flex flex-col items-stretch justify-start"
                     style={{
-                        width: "80%",
-                        height: "80%",
-                        backgroundColor: "white",
                         transform: isInnerVisible ? "scaleY(1)" : "scaleY(0)",
-                        transformOrigin: "top",
-                        transition: "transform 0.5s ease",
-                        display: "flex",
-                        flexDirection: 'column',
-                        alignItems: "stretch",
-                        justifyContent: "flex-start",
                     }}
                 >
-                    <div style={{
-                        opacity: isQRCodeVisible ? 1 : 0,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignContent: 'center'
-                    }}>
-                        <h1 className='text-customBlue text-5xl mt-6'>Scan</h1>
+                    <div
+                        className={`transition-opacity duration-300 ${
+                            isQRCodeVisible ? "opacity-100" : "opacity-0"
+                        } flex justify-center`}
+                    >
+                        <h1 className="text-customBlue text-3xl md:text-4xl lg:text-5xl mt-6">
+                            Scan
+                        </h1>
                     </div>
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginTop: '50px'
-                    }}>
-                        <div style={{ 
-                            width: '50%', 
-                            height: '300px',
-                            opacity: isQRCodeVisible ? 1 : 0, 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            justifyContent: 'flex-start', 
-                            alignItems: 'center', 
-                            }}>
-                            <h1 className="text-3xl bold">Follow Instruction</h1>
-                            <div className="flex justify-center items-center">
-                                <ol>
-                                    <li>Do it on your</li>
-                                    <li>Do it on your</li>
-                                    <li>Do it on your</li>
-                                </ol>
-                            </div>
-                        </div>
+
+                    <div className="flex flex-col md:flex-row items-center justify-center mt-6 md:mt-12">
                         <div
-                            style={{
-                                width: '50%',
-                                opacity: isQRCodeVisible ? 1 : 0,
-                                transition: "opacity 0.3s ease",
-                                display: 'flex',
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
+                            className={`w-full md:w-1/2 h-auto transition-opacity duration-300 ${
+                                isQRCodeVisible ? "opacity-100" : "opacity-0"
+                            } flex flex-col items-center`}
+                        >
+                            <h1 className="text-xl md:text-2xl font-bold">
+                                Follow Instructions
+                            </h1>
+                            <ol className="text-sm md:text-base mt-4">
+                                <li>1. Download our app [Android, IOs]</li>
+                                <li>2. Ensure proper lighting</li>
+                                <li>3. Align the QR code within the frame</li>
+                            </ol>
+                        </div>
+
+                        <div
+                            className={`w-full md:w-1/2 h-auto transition-opacity duration-300 ${
+                                isQRCodeVisible ? "opacity-100" : "opacity-0"
+                            } flex justify-center`}
                         >
                             <ProductQRCode />
                         </div>
