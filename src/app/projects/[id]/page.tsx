@@ -1,27 +1,29 @@
-import Dialog from "@/components/Dialog"
-import { auth } from "@clerk/nextjs/server"
+import { io } from "socket.io-client"
+import Modal from "@/components/Modal"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import MyDropzone from "@/components/Dropzone"
-import Link from "next/link"
-import SpreadSheet from "@/components/SpreadSheet"
+import ScanView from "@/components/ScanView"
+import Records from "@/components/Records"
+import ExportCSV from "@/components/DownlaodCSV"
+import ShareToDrive from "@/components/ShareToDrive"
+import { PageProgressBar } from "@/components/ui/ProgressBar"
+import CreateColumn from "@/components/forms/CreateColumn"
+
 type ProjectViewProps = {
     params: {
         id: string
     }
 }
 
-type Field = {
-    id: string
-    name: string
-    description: string
-}
-
 
 export default async function ProjectView({ params }: ProjectViewProps) {
     const authObj = await auth()
-    const {id} = await params
-    const url = `http://localhost:8000/projects/${id}`
-    
+    const user = await currentUser()
+    console.log('USER', user?.id)
+    const { id } = await params
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${id}`
+
     let sessionId
     const headers = new Headers()
     headers.append('Authorization', `Bearer ${await authObj.getToken()}`)
@@ -31,13 +33,6 @@ export default async function ProjectView({ params }: ProjectViewProps) {
         sessionId = authObj.sessionId
     }
 
-    const postHeaders = new Headers();
-    postHeaders.append('Authorization', `Bearer ${await authObj.getToken()}`);
-    postHeaders.append('Content-Type', 'application/json')
-    if (authObj.sessionId) {
-        postHeaders.append('sessionId', authObj.sessionId);
-    }
-
     const res = await fetch(url, {
         method: 'GET',
         headers: headers
@@ -45,7 +40,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     const project = await res.json()
     console.log(project)
 
-    const fieldsUrl = `http://localhost:8000/fields/${project.id}`
+    const fieldsUrl = `${process.env.NEXT_PUBLIC_API_URL}/fields/${project.id}`
 
     const response = await fetch(fieldsUrl, {
         method: 'GET',
@@ -53,28 +48,8 @@ export default async function ProjectView({ params }: ProjectViewProps) {
     })
 
     const fields = await response.json()
-    console.log(fields)
+    console.log('FIELS', fields)
 
-
-    async function addField(formData: FormData) {
-        'use server'
-        const name = formData.get('name')
-        const res = await fetch(fieldsUrl,
-            {
-                method: 'POST',
-                headers: postHeaders,
-                body: JSON.stringify({ name })
-            })
-
-        if (!res.ok) {
-            console.error("Error creating project:", await res.text());
-            return;
-        }
-
-        const newField = await res.json();
-        revalidatePath(`/projects/${project.id}`);
-        console.log(newField);
-    }
 
     async function onClose() {
         "use server"
@@ -86,49 +61,70 @@ export default async function ProjectView({ params }: ProjectViewProps) {
         console.log("Ok was clicked")
     }
 
+    const refresh = async () => {
+        'use server'
+      revalidatePath(`/projects/${project.id}`);
+    }
+
+
+
+    const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
+    const getRecords = await fetch(recordsUrl, {
+        method: 'GET',
+        headers: headers
+    })
+
+    const records = await getRecords.json()
+    console.log('RECORDS', records)
+
 
     return (
         <>
-            <Dialog title="Upload Your Image" onClose={onClose} onOk={onOk}>
-                <form className="h-full">
+          <div className="px-4">
+             {/* Project Info and Modal */}
+             <div className="bg-white p-6 shadow-lg rounded-lg space-y-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+                <p className="text-xl font-bold text-gray-800">Project: {project.name}</p>
+                <Modal title="Upload Your Image" onClose={onClose} onOk={onOk}>
+                  <form className="h-full">
                     <div className="h-full">
-                    <MyDropzone sessionId = {sessionId} projectId = {id} token={await authObj.getToken()}/>
+                      <MyDropzone
+                        user_id={user?.id}
+                        sessionId={sessionId}
+                        projectId={id}
+                        token={await authObj.getToken()}
+                        onClose={onClose}
+                      />
                     </div>
-                </form>
-            </Dialog>
-            <div className="p-4">
-                <div className="flex justify-between">
-                    <form action={addField}>
-                        <div><p>Add a field you need to extract</p></div>
-                        <div className="mt-3">
-                            <input type="text" name="name" className="p-3 rounded text-black border-2 border-blue-400" placeholder="Type a field name" />
-                            <button type='submit' className="p-3 bg-blue-600 rounded ml-3 text-white">Add</button>
-                        </div>
-                    </form>
-                    <div>
-                        <div className="flex justify-end">
-                            <p>Project: {project.name}</p>
-                        </div>
-                        <div className="mt-6">
-                        <Link href={`/projects/${id}?modal=visible`} className="p-3 bg-blue-600 rounded ml-3 text-white">Upload your document</Link>
-                        </div>
-                    </div>
-                </div>
-
-                {/* {
-                    fields.length >= 1 ?
-                        <div>
-                            {fields.map((field: Field) => (
-                                <div key={field.id}>
-                                    <p>{field.name}</p>
-                                </div>
-                            ))}
-                        </div> : null
-                } */}
+                  </form>
+                </Modal>
+              </div>
             </div>
-            <div className="p-4 flex justify-center">
-                <SpreadSheet/>
+            {/* Header Section */}
+            <div className="mt-3 flex flex-col md:flex-row md:justify-between md:items-center space-y-6 md:space-y-0">
+              {/* Add Column Form */}
+              <CreateColumn token={await authObj.getToken()} sessionId={sessionId} refresh={refresh} projectId={id}/>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0">
+                <ScanView />
+                <ExportCSV headers={headers} projectId={id} />
+                <ShareToDrive headers={headers} projectId={id} />
+              </div>
             </div>
+      
+      
+            {/* Records Section */}
+            <div className="mt-3">
+            <Records
+              projectId={id}
+              initialFields={fields}
+              initialRecords={records}
+              userId={user?.id}
+            />
+            </div>
+          </div>
         </>
-    )
+      );
+      
+      
 }

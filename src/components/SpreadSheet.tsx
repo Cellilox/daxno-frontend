@@ -4,15 +4,36 @@ import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css'; // Core grid CSS
 import 'ag-grid-community/styles/ag-theme-alpine.css'; // Optional theme CSS
 import { ColDef } from 'ag-grid-community';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+type Field = {
+    id: string;
+    name: string;
+    description: string | null;
+};
+
+type SpreadsheetProps = {
+    columns: Field[] | undefined;
+    records: any[] | undefined
+};
+
+type FieldsData = {
+    [key: string]: string; 
+  };
+  
+// type Record = {
+//     fields_data: any
+//   };
 
 
-export default function SpreadSheet() {
-const [rowData, setRowData] = useState([
-    { make: "Toyota", model: "Celica", price: 95430, electric: false},
-    { make: "Ford", model: "Mondeo", price: 32000, electric: true },
-    { make: "Porsche", model: "Boxster", price: 72000, electric: false }
-])
+export default function SpreadSheet({columns, records}: SpreadsheetProps) {
+console.log('FFFF', columns)
+
+const [rowData, setRowData] = useState<any[] | undefined>([])
+
+useEffect(() => {
+    setRowData(records);
+  }, [records])
 
 const defaultColDef = useMemo(() => {
   return {
@@ -23,45 +44,52 @@ const defaultColDef = useMemo(() => {
 }, [])
 
 
-const handleColumnRemoval = (fieldName: string) => {
-  const newColDefs = colDefs.filter((colDef) => colDef.field !== fieldName);
-  setColDefs(newColDefs);
-};
+// const handleColumnRemoval = (fieldName: string) => {
+//   const newColDefs = colDefs.filter((colDef) => colDef.field !== fieldName);
+//   setColDefs(newColDefs);
+// };
 
-const handleClick = () => {
-  alert("Sorting the data now")
-}
+// const handleClick = () => {
+//   alert("Sorting the data now")
+// }
 
-const [colDefs, setColDefs] = useState<ColDef[]>([
-  {
-    field: "make",
-    headerName: "Company",
-    // flex: 1,
-    cellEditor: 'agSelectCellEditor',
-    cellEditorParams: { values: ['Tesla', 'Fold', 'Toyota']},
-  },
-  {
-    field: "model",
-    // flex: 1
-  },
-  {
-    field: "price",
-    // flex: 1
-  },
-  {
-    field: "electric",
-    // flex: 1
-  },
-])
+
+//Sample for future
+// const [colDefs, setColDefs] = useState<ColDef[]>([
+//   {
+//     field: "make",
+//     headerName: "Company",
+//     // flex: 1,
+//     cellEditor: 'agSelectCellEditor',
+//     cellEditorParams: { values: ['Tesla', 'Fold', 'Toyota']},
+//   },
+//   {
+//     field: "model",
+//     // flex: 1
+//   },
+//   {
+//     field: "price",
+//     // flex: 1
+//   },
+//   {
+//     field: "electric",
+//     // flex: 1
+//   },
+// ])
+
+
+const [colDefs, setColDefs] = useState<ColDef[]>([])
+
+useEffect(() => {
+    //@ts-ignore
+    setColDefs(columns);
+}, [columns]);
+
 
 // className="ag-theme-alpine-dark"
 
   return (
-    <div className="ag-theme-alpine" style={{ height: '100vh', width: '100%'}}>
-    {/* <h2 onClick={() => handleColumnRemoval('make')}>Make (X)</h2>
-    <h2 onClick={() => handleColumnRemoval('model')}>Model (X)</h2>
-    <h2 onClick={() => handleColumnRemoval('price')}>Price (X)</h2>
-    <h2 onClick={() => handleColumnRemoval('electric')}>Electric (X)</h2> */}
+    <div className="ag-theme-alpine" style={{ height:'70vh', width: '100%'}}>
     <AgGridReact 
     rowData={rowData}
     columnDefs={colDefs}
