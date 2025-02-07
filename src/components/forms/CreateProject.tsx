@@ -32,7 +32,7 @@ export default function CreateProjectForm({ token, sessionId, refresh }: CreateP
                 headers: postHeaders,
                 body: JSON.stringify({ name })
             })
-
+        console.log("RELQ%@", res)
         if (!res.ok) {
             setIsLoading(false)
             setName('')

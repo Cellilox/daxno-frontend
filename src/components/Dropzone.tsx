@@ -185,6 +185,8 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       if (response.ok) {
         const result = await response.json();
         console.log('Saving result:', result);
+        const historyResult = await submitRecordHistory(result.record)
+        console.log("HIstorResult", historyResult)
         setIsLoading(false);
         setMessage('');
         closeModal();
@@ -203,38 +205,38 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     }
   };
 
+  const submitRecordHistory = async (record: string) => {
+    const data = {
+      owner: user_id,
+      file_name: file?.name,
+      related_record: JSON.stringify(record)
+    }
 
-  // const submitRecordHistory = async (record: string) => {
-  //   const data = {
-  //     owner: user_id,
-  //     file_name: file?.name,
-  //     related_record: record
-  //   }
+    const headers = new Headers()
+    headers.append('Authorization', `Bearer ${token}`)
+    headers.append('Content-Type', 'application/json');
 
-  //   const headers = new Headers()
-  //   headers.append('Authorization', `Bearer ${token}`)
-  //   headers.append('Content-Type', 'application/json');
+    if (sessionId) {
+      headers.append('sessionId', sessionId)
+    }
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records-history/`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data)
+      });
 
-  //   if (sessionId) {
-  //     headers.append('sessionId', sessionId)
-  //   }
-  //   try {
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records-history/`, {
-  //       method: 'POST',
-  //       headers: headers,
-  //       body: JSON.stringify(data)
-  //     });
-
-  //     if(response.ok) {
-  //       const result = await response.json();
-  //       console.log('History record', result);
-  //       return result;
-  //     }
+      // if(!response.ok) {
+      //   alert('An error occured')
+      //   return
+      // }
+        const result = await response.json();
+        console.log('History record', result);
     
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  // }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });

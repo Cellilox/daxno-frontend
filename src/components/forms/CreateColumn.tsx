@@ -1,5 +1,5 @@
 'use client'
-import React, { FormEvent, useState } from 'react'
+import React, { FormEvent, useEffect, useState } from 'react'
 import LoadingSpinner from '../ui/LoadingSpinner'
 
 type CreateColumnProps = {
@@ -12,6 +12,12 @@ type CreateColumnProps = {
 export default function CreateColumn({token, sessionId, projectId, refresh}: CreateColumnProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [name, setName] = useState('')
+    const [id, setId] = useState('')
+    const [description, setDescription] = useState('')
+
+    useEffect(() => {
+        setId(name)
+    }, [name])
 
     async function addColumn(event: FormEvent) {
         event.preventDefault()
@@ -27,7 +33,7 @@ export default function CreateColumn({token, sessionId, projectId, refresh}: Cre
             {
                 method: 'POST',
                 headers: postHeaders,
-                body: JSON.stringify({ name })
+                body: JSON.stringify({ id, name, description })
             })
 
         if (!res.ok) {

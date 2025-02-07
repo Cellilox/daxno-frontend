@@ -9,9 +9,12 @@ type RecordsProps = {
     initialFields: any;
     initialRecords: any;
     userId: string | undefined
+    refresh: () => void
+    token: string | null
+    sessionId: string | undefined
 };
 
-export default function Records({ projectId, initialFields, initialRecords, userId }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, token, sessionId, refresh, userId }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [rowData, setRowData] = useState()
@@ -21,8 +24,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
 
     useEffect(() => {
         setRowData(initialRecords)
-        const initialFieldsModifiedArray = initialFields.map((field: any) => ({ field: field.name}))
-        setColumns(initialFieldsModifiedArray)
+        setColumns(initialFields)
 
         if (!socketRef.current) {
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
@@ -30,10 +32,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
                 auth: { projectId },
             });
         }
-        
-
         const socket = socketRef.current;
-
         socket.on('connect', () => {
           console.log(`Joined room: ${projectId}`);
       });
@@ -60,8 +59,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
         const handleShowRecordsUpdates = (data: any) => {
           console.log('Received records update:', data);
           setRowData(data.records)
-          const updatedFieldModifiedArray = data.fields.map((field: string) => ({field: field}))
-          setColumns(updatedFieldModifiedArray)
+          setColumns(data.fields)
         }
 
         // Add listeners
@@ -85,7 +83,7 @@ export default function Records({ projectId, initialFields, initialRecords, user
 
     return (
         <div>
-            <SpreadSheet records={rowData} columns= {columns}/>
+            <SpreadSheet records={rowData} columns= {columns} refresh={refresh} token={token} sessionId={sessionId} projectId={projectId}/>
             <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
         </div>
     );
