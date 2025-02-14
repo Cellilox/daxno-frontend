@@ -11,14 +11,13 @@ type MyDropzoneProps = {
   projectId: string
   token: string | null
   onClose: () => void
+  onMessageChange: (message: string) => void
 }
 
-export default function MyDropzone({ user_id, sessionId, projectId, token, onClose }: MyDropzoneProps) {
+export default function MyDropzone({ user_id, sessionId, projectId, token, onClose, onMessageChange }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>('')
-  const [fileName, setFileName] = useState<string>('')
   const { closeModal } = useModalContext();
   const router = useRouter()
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -30,14 +29,12 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     }
   }, []);
 
-
-
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault()
     setIsLoading(true)
     if (!file) {
       setIsLoading(false)
-      closeModal()
+      onClose()
       router.push(`/projects/${projectId}`)
       return;
     }
@@ -55,9 +52,8 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
 
     console.log(file, formData)
 
-
     try {
-      setMessage('Uploading...')
+      onMessageChange('Uploading...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/upload`, {
         method: 'POST',
         headers: headers,
@@ -67,22 +63,12 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       if (response.ok) {
         const result = await response.json();
         console.log('Upload result:', result);
-        setFileName(result.filename)
-        // setIsLoading(false)
-        // closeModal()
-        setMessage('')
-        // router.push(`/projects/${projectId}`)
-        // await submitRecordHistory(result.id)
-        console.log('FFFFile', result.filename)
         await handleExtract(result.filename)
-      
       } else {
         setIsLoading(false)
         const error = await response.json();
         alert(`Error: ${error.detail}`);
-        setMessage('')
-        // closeModal()
-        // router.push(`/projects/${projectId}`)
+        onMessageChange('')
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -98,7 +84,7 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     }
 
     try {
-      setMessage('Extracting...')
+      onMessageChange('Extracting...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/extract?filename=${fileName}`, {
         method: 'POST',
         headers: headers,
@@ -115,6 +101,7 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
         }
         await handleAnalyse(fileName, result.textract_response)
       } else {
+        setIsLoading(false)
         const error = await response.json();
         console.error('Extract error response:', error);
         throw new Error(`Extract failed: ${error.detail || 'Unknown error'}`);
@@ -122,11 +109,10 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     } catch (error) {
       console.error('Error in extract:', error);
       setIsLoading(false);
-      setMessage('');
+      onMessageChange('');
       closeModal();
     }
   };
-
 
   const handleAnalyse = async (fileName: string, extractedResponse: any) => {
     const headers = new Headers()
@@ -139,7 +125,7 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     const requestBody = {...extractedResponse}
 
     try {
-      setMessage('Analysing')
+      onMessageChange('Analysing')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/${projectId}/identify-fields?filename=${fileName}`, {
         method: 'POST',
         headers: headers,
@@ -159,12 +145,10 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     } catch (error) {
       console.error('Error in analysis:', error);
       setIsLoading(false);
-      setMessage('');
+      onMessageChange('');
       closeModal();
     }
   };
-
-
 
   const saveData = async (data: any) => {
     const headers = new Headers()
@@ -175,7 +159,7 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     }
 
     try {
-      setMessage('Saving record')
+      onMessageChange('Saving record')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/save`, {
         method: 'POST',
         headers: headers,
@@ -185,8 +169,11 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       if (response.ok) {
         const result = await response.json();
         console.log('Saving result:', result);
+        const historyResult = await submitRecordHistory(result.record)
+        console.log("HIstorResult", historyResult)
         setIsLoading(false);
-        setMessage('');
+        onMessageChange('');
+        onClose();
         closeModal();
         router.push(`/projects/${projectId}`);
       } else {
@@ -198,87 +185,90 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
     } catch (error) {
       console.error('Error in saving:', error);
       setIsLoading(false);
-      setMessage('');
+      onMessageChange('');
       closeModal();
     }
   };
 
+  const submitRecordHistory = async (record: string) => {
+    const data = {
+      owner: user_id,
+      file_name: file?.name,
+      related_record: JSON.stringify(record)
+    }
 
-  // const submitRecordHistory = async (record: string) => {
-  //   const data = {
-  //     owner: user_id,
-  //     file_name: file?.name,
-  //     related_record: record
-  //   }
+    const headers = new Headers()
+    headers.append('Authorization', `Bearer ${token}`)
+    headers.append('Content-Type', 'application/json');
 
-  //   const headers = new Headers()
-  //   headers.append('Authorization', `Bearer ${token}`)
-  //   headers.append('Content-Type', 'application/json');
+    if (sessionId) {
+      headers.append('sessionId', sessionId)
+    }
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records-history/`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data)
+      });
 
-  //   if (sessionId) {
-  //     headers.append('sessionId', sessionId)
-  //   }
-  //   try {
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records-history/`, {
-  //       method: 'POST',
-  //       headers: headers,
-  //       body: JSON.stringify(data)
-  //     });
-
-  //     if(response.ok) {
-  //       const result = await response.json();
-  //       console.log('History record', result);
-  //       return result;
-  //     }
+      // if(!response.ok) {
+      //   alert('An error occured')
+      //   return
+      // }
+        const result = await response.json();
+        console.log('History record', result);
     
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  // }
-
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
-    <div>
-      <div {...getRootProps()} className="h-full justify-center items-center">
-        <input {...getInputProps()} className="h-full" />
+    <div className="flex flex-col">
+      <div {...getRootProps()} className="flex flex-col">
+        <input {...getInputProps()} />
         {preview ? (
-          <div className="relative h-full flex justify-center items-center rounded-md">
-          <img src={preview} alt="Selected file preview" className="h-full object-contain rounded-md" />
-          
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
-            {/* Animated Scanning Line */}
-            {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+          <div className="relative flex justify-center items-center rounded-md">
+            <img 
+              src={preview} 
+              alt="Selected file preview" 
+              className="max-h-[50vh] object-contain rounded-md" 
+            />
+            
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
+              {/* Animated Scanning Line */}
+              {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+            </div>
           </div>
-        </div>
         ) : isDragActive ? (
-          <div className="mt-6 h-64 border-dashed border-2 border-blue-400 bg-blue-400 flex justify-center items-center rounded-md">
+          <div className="h-64 border-dashed border-2 border-blue-400 bg-blue-400 flex justify-center items-center rounded-md">
             <p>Drop the file here!</p>
           </div>
         ) : (
-          <div className="mt-6 h-64 border-dashed border-2 border-gray-400 flex justify-center items-center rounded-md">
+          <div className="h-64 border-dashed border-2 border-gray-400 flex justify-center items-center rounded-md">
             <p>Drag and Drop a file, or click to select a file</p>
           </div>
         )}
       </div>
+      
+      {/* Move button outside of scroll area */}
       {file && (
-        <div className="mt-4 flex justify-between">
-          {isLoading == true ?
-          <div>
-          <div className='flex justify-center items-center'>
-            <div className="loader"></div>
-          </div>
-          <p>{message}</p>
-        </div>:
-        <button
-            onClick={handleUpload}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 mb-3"
-          >
-            Upload File
-          </button>
-        }
+        <div className="mt-4 sticky bottom-0 bg-white py-3">
+          {isLoading ? (
+            <div className='flex justify-center items-center'>
+              <div className="loader"></div>
+            </div>
+          ) : (
+            <button
+              onClick={handleUpload}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Upload File
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -44,7 +44,7 @@ export default function ScanView() {
                     left: isOuterExpanded ? 0 : "50px",
                     width: isOuterExpanded ? "100%" : "0px",
                     height: isOuterExpanded ? "100%" : "0px",
-                    backgroundColor: "#FCF5EB",
+                    backgroundColor: "#EFF6FF",
                     transition: "all 0.8s ease",
                     zIndex: 1000,
                     display: "flex",

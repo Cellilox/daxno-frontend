@@ -4,6 +4,8 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import ModalProvider from "@/components/context/modal-provider";
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import Footer from "@/components/Footer";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -26,17 +28,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <ModalProvider>
-        <html lang="en">
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          >
-            <Header/>
-            {children}
-          </body>
-        </html>
-      </ModalProvider>
-    </ClerkProvider>
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_CLIENT_ID!}>
+      <ClerkProvider>
+        <ModalProvider>
+          <html lang="en">
+            <body
+              className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+            >
+              <Header/>
+              {children}
+              <Footer/>
+            </body>
+          </html>
+        </ModalProvider>
+      </ClerkProvider>
+    </GoogleOAuthProvider>
   );
 }

@@ -15,18 +15,24 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.5.1",
+    "@react-oauth/google": "^0.12.1",
     "@types/gapi": "^0.0.47",
+    "@types/google.accounts": "^0.0.15",
     "ag-grid-community": "^32.3.3",
     "ag-grid-react": "^32.3.3",
     "browser-fs-access": "^0.35.0",
+    "framer-motion": "^12.0.8",
     "gapi-script": "^1.2.0",
     "llama-ocr": "^0.0.6",
+    "lucide-react": "^0.474.0",
     "next": "15.0.3",
     "qrcode.react": "^4.1.0",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-dropzone": "^14.3.5",
-    "socket.io-client": "^4.8.1"
+    "react-icons": "^5.4.0",
+    "socket.io-client": "^4.8.1",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "@types/node": "^20",
