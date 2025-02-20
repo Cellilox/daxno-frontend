@@ -2,8 +2,6 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useModalContext } from './context/modal';
-import { revalidatePath } from 'next/cache';
 import { useRouter } from 'next/navigation';
 type MyDropzoneProps = {
   user_id: string | undefined
@@ -18,7 +16,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const { closeModal } = useModalContext();
   const router = useRouter()
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
@@ -110,7 +107,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       console.error('Error in extract:', error);
       setIsLoading(false);
       onMessageChange('');
-      closeModal();
     }
   };
 
@@ -146,7 +142,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       console.error('Error in analysis:', error);
       setIsLoading(false);
       onMessageChange('');
-      closeModal();
     }
   };
 
@@ -174,7 +169,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
         setIsLoading(false);
         onMessageChange('');
         onClose();
-        closeModal();
         router.push(`/projects/${projectId}`);
       } else {
         const errorText = await response.text();
@@ -186,7 +180,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       console.error('Error in saving:', error);
       setIsLoading(false);
       onMessageChange('');
-      closeModal();
     }
   };
 

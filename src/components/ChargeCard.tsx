@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { v4 as uuidv4 } from 'uuid';
+import { usePaymentContext } from "./context/payment/Payment";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 interface AuthorizationData {
   mode: string;
@@ -15,35 +16,37 @@ interface AuthorizationData {
 }
 
 interface ChargeCardData {
-  amount: number;
+  amount: number | undefined;
   currency: string;
   card_number: string;
   cvv: string;
   expiry_month: string;
   expiry_year: string;
   email: string;
-  tx_ref: string;
+  tx_ref: string | undefined;
   authorization: AuthorizationData;
   preauthorize: boolean;
   fullname: string;
   phone_number: string;
-  payment_plan: string;
+  payment_plan: number | undefined;
   redirect_url: string;
 }
 
 type StepType = "initial" | "pin" | "avs_noauth" | "otp" | "3ds";
 
 export default function ChargeCard(): JSX.Element {
-  const url = 'http://localhost:8000/payments/charge-card'
+  const { amount, paymentPlan, transactionReference } = usePaymentContext()
+  console.log('CCC', amount, paymentPlan, transactionReference)
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/payments/charge-card`
   const [formData, setFormData] = useState<ChargeCardData>({
-    amount: 29.0,
+    amount: amount,
     currency: "USD",
     card_number: "",
     cvv: "",
     expiry_month: "",
     expiry_year: "",
     email: "",
-    tx_ref: uuidv4(),
+    tx_ref: transactionReference,
     authorization: {
       mode: "", 
       pin: 0,
@@ -56,8 +59,8 @@ export default function ChargeCard(): JSX.Element {
     preauthorize: false,
     fullname: "",
     phone_number: "",
-    payment_plan: "72375",
-    redirect_url: "http://localhost:3000",
+    payment_plan: paymentPlan,
+    redirect_url: `${process.env.NEXT_PUBLIC_CLIENT_URL}`,
   });
 
   const [errors, setErrors] = useState<any>({});

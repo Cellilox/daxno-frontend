@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
-import FormModal from './ui/UpdatePopup';
+import FormModal from './ui/Popup';
 import { json } from 'stream/consumers';
 
 type CardProps= {

@@ -2,13 +2,14 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-
+import { usePaymentContext } from "./context/payment/Payment";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChargeMoMo {
-    amount: number,
+    amount: number | undefined,
     currency: string,
     email: string
-    tx_ref: string,
+    tx_ref: string | undefined,
     order_id: string,
     fullname: string,
     phone_number: string
@@ -16,13 +17,17 @@ interface ChargeMoMo {
 
 
 export default function ChargeCard(): JSX.Element {
-  const url = 'http://localhost:8000/payments/charge-mobile-money-rwanda'
+  const { amount, transactionReference } = usePaymentContext()
+  console.log('MMM', amount, transactionReference)
+  const amountInRwf = amount? amount * 1000: 0;
+  console.log('RRRWF', amountInRwf)
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/payments/charge-mobile-money-rwanda`
   const [formData, setFormData] = useState<ChargeMoMo>({
-        "amount": 30000,
+        "amount": amountInRwf,
         "currency": "RWF",
         "email": "",
-        "tx_ref": "rfwe02e90re",
-        "order_id": "02eufasfdalj",
+        "tx_ref": transactionReference,
+        "order_id": uuidv4(),
         "fullname": "",
         "phone_number": ""
   });
@@ -58,32 +63,45 @@ export default function ChargeCard(): JSX.Element {
       setErrors(errs);
       return;
     }
+    
     setErrors({});
     setLoading(true);
+  
     try {
-      console.log('Sent_data', formData)
+      console.log("Sent_data", formData);
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Send the basic form data without extra authorization info.
         body: JSON.stringify(formData),
       });
+  
+      if (!res.ok) {
+        throw new Error(`HTTP Error ${res.status}`);
+      }
+  
       const data = await res.json();
-      setLoading(false);
-      console.log('RESP', data)
-
+      console.log("RESP", data);
+  
       if (data.status === "success" && data.message === "Charge initiated") {
-        alert("Payment Successful!");
-        window.location.href = data.meta.authorization.redirect;
-      }  else {
-        alert("Payment failed: " + data.detail.message);
+        const redirectUrl = data.meta?.authorization?.redirect;
+        if (redirectUrl) {
+          alert("Payment Successful!");
+          window.location.href = redirectUrl;
+        } else {
+          alert("Payment was successful, but no redirect URL was provided.");
+        }
+      } else {
+        alert("Payment failed: " + (data.detail?.message || "Unknown error"));
       }
     } catch (error) {
-      setLoading(false);
       console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      //@ts-ignore
+      alert(`An error occurred: ${error.message || "Please try again."}`);
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   return (
     <div className="max-w-lg mx-auto p-6">

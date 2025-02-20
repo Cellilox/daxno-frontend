@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 const ProductQRCode = () => {
   const router = useRouter()
   const path = usePathname()
-  const qrData = `http://localhost:3000/${path}`
+  const qrData = `${process.env.NEXT_PUBLIC_CLIENT_URL}/${path}`
 
   return (
     <div>

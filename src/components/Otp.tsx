@@ -32,7 +32,7 @@ export default function Otp({flw_ref}: OtpProps) {
             otp: Number(otp),
             flw_rf: flw_ref
           }
-          const verifyUrl = 'http://localhost:8000/payments/validate-charge'
+          const verifyUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/validate-charge`
           console.log('OTP_payload', payload)
           const res = await fetch(verifyUrl, {
             method: "POST",
@@ -44,7 +44,7 @@ export default function Otp({flw_ref}: OtpProps) {
           console.log('DATA_OTP', data)
           if (data.status === "success" && data.message === "Charge validated") {
             alert("Payment Successful!");
-            window.location.href = 'http://localhost:3000/projects';
+            window.location.href = `${process.env.NEXT_PUBLIC_CLIENT_URL}/projects`;
           } else {
             alert("OTP Verification failed: " + data.details.message);
           }

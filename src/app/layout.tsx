@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import Header from "@/components/Header";
-import ModalProvider from "@/components/context/modal-provider";
+
+// import UserProvider from "@/components/context/user-provider";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
+import PaymentClientProvider from "@/components/context/payment/PaymentProvider";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -30,7 +32,7 @@ export default function RootLayout({
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_CLIENT_ID!}>
       <ClerkProvider>
-        <ModalProvider>
+        <PaymentClientProvider>
           <html lang="en">
             <body
               className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -40,7 +42,7 @@ export default function RootLayout({
               <Footer/>
             </body>
           </html>
-        </ModalProvider>
+        </PaymentClientProvider>
       </ClerkProvider>
     </GoogleOAuthProvider>
   );

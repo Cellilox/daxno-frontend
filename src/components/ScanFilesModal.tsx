@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import FormModal from './ui/UpdatePopup'
+import FormModal from './ui/Popup'
 import MyDropzone from './Dropzone'
 
 type ScanFilesModalProps = {
