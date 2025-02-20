@@ -12,6 +12,7 @@ type CreateProjectFormProps = {
     sessionId: string | null
     refresh: () => void
 }
+
 export default function CreateProjectForm({ token, sessionId, refresh }: CreateProjectFormProps) {
     const [name, setName] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
@@ -51,7 +52,7 @@ export default function CreateProjectForm({ token, sessionId, refresh }: CreateP
     return (
         <div>
             <div className="bg-white p-6 rounded shadow-md max-w-3xl mx-auto">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">Register Your Project</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">Create Project</h2>
                 <form className="flex items-center justify-end gap-3">
                     <input
                         type="text"

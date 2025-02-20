@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
-
 type ExportCSVProps = {
     headers: any,
     projectId: string

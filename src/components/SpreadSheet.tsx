@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Eye, Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
-import FormModal from './ui/UpdatePopup';
+import FormModal from './ui/Popup';
 
 type Field = {
   id: string;

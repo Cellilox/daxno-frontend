@@ -1,0 +1,70 @@
+
+import { useState, useEffect } from 'react';
+
+interface Transaction {
+  payment_type: 'mobilemoneyrw' | 'card';
+  end_date?: string;
+  amount?: number;
+  t_id?: number;
+}
+
+interface SubscriptionData {
+  status: string;
+  plan: string;
+  paymentType: string;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useSubscription(currentTransaction: Transaction, headers: Headers): SubscriptionData {
+  const [data, setData] = useState<SubscriptionData>({
+    status: '',
+    plan: '',
+    paymentType: '',
+    loading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    async function fetchSubscription() {
+      try {
+        let status = '';
+        let plan = '';
+        let paymentType = '';
+
+        if (currentTransaction.payment_type === 'mobilemoneyrw') {
+          paymentType = 'MoMo Rwanda';
+          const now = Date.now();
+          const endDate = new Date(currentTransaction.end_date || '').getTime();
+          status = endDate > now ? 'Active' : 'Expired';
+          plan = currentTransaction.amount && currentTransaction.amount <= 29000 ? 'Starter'
+                : currentTransaction.amount && currentTransaction.amount >= 49000 ? 'Pro'
+                : 'Standard';
+        } else if (currentTransaction.payment_type === 'card') {
+          paymentType = 'Card';
+          // Fetch subscription details
+          const subsUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/subscriptions?transsaction_id=${currentTransaction.t_id}`;
+          const subsRes = await fetch(subsUrl, { method: 'GET', headers });
+          const subsData = await subsRes.json();
+          const subscription = subsData?.data?.[0];
+          status = subscription?.status;
+
+          // Fetch plan details
+          const planUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/payment-plans/${subscription?.plan}`;
+          const planRes = await fetch(planUrl, { method: 'GET', headers });
+          const planData = await planRes.json();
+          plan = planData?.data?.name;
+        }
+
+        setData({ status, plan, paymentType, loading: false, error: null });
+      } catch (error: any) {
+        setData({ status: '', plan: '', paymentType: '', loading: false, error: error.message });
+      }
+    }
+
+    fetchSubscription();
+  }, [currentTransaction, headers]);
+
+  return data;
+}
+
