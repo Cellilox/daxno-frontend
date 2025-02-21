@@ -1,4 +1,5 @@
 
+import { getSubscriptions, getUserPlan } from '@/actions/payment-actions';
 import { useState, useEffect } from 'react';
 
 interface Transaction {
@@ -16,7 +17,7 @@ interface SubscriptionData {
   error: string | null;
 }
 
-export function useSubscription(currentTransaction: Transaction, headers: Headers): SubscriptionData {
+export function useSubscription(currentTransaction: Transaction): SubscriptionData {
   const [data, setData] = useState<SubscriptionData>({
     status: '',
     plan: '',
@@ -38,22 +39,18 @@ export function useSubscription(currentTransaction: Transaction, headers: Header
           const endDate = new Date(currentTransaction.end_date || '').getTime();
           status = endDate > now ? 'Active' : 'Expired';
           plan = currentTransaction.amount && currentTransaction.amount <= 29000 ? 'Starter'
-                : currentTransaction.amount && currentTransaction.amount >= 49000 ? 'Pro'
+                : currentTransaction.amount && currentTransaction.amount >= 49000 ? 'Professional'
                 : 'Standard';
         } else if (currentTransaction.payment_type === 'card') {
           paymentType = 'Card';
-          // Fetch subscription details
-          const subsUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/subscriptions?transsaction_id=${currentTransaction.t_id}`;
-          const subsRes = await fetch(subsUrl, { method: 'GET', headers });
-          const subsData = await subsRes.json();
-          const subscription = subsData?.data?.[0];
+          // Fetch all subscription
+          const subsRes = await getSubscriptions(currentTransaction.t_id)
+          const subscription = subsRes?.data?.[0];
           status = subscription?.status;
 
           // Fetch plan details
-          const planUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/payment-plans/${subscription?.plan}`;
-          const planRes = await fetch(planUrl, { method: 'GET', headers });
-          const planData = await planRes.json();
-          plan = planData?.data?.name;
+          const planRes = await getUserPlan(subscription?.plan)
+          plan = planRes?.data?.name;
         }
 
         setData({ status, plan, paymentType, loading: false, error: null });
@@ -63,7 +60,7 @@ export function useSubscription(currentTransaction: Transaction, headers: Header
     }
 
     fetchSubscription();
-  }, [currentTransaction, headers]);
+  }, [currentTransaction]);
 
   return data;
 }

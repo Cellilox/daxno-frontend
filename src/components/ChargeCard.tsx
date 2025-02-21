@@ -4,6 +4,7 @@ import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { usePaymentContext } from "./context/payment/Payment";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { chargeCardWithAVS, chargeCardWithNoAuth, chargeCardWithPin } from "@/actions/payment-actions";
 
 interface AuthorizationData {
   mode: string;
@@ -60,14 +61,14 @@ export default function ChargeCard(): JSX.Element {
     fullname: "",
     phone_number: "",
     payment_plan: paymentPlan,
-    redirect_url: `${process.env.NEXT_PUBLIC_CLIENT_URL}`,
+    redirect_url: `/projects`,
   });
 
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [step, setStep] = useState<StepType>("initial");
   const router = useRouter()
-
+  console.log('ROUTE', formData.redirect_url)
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement>
@@ -130,19 +131,12 @@ export default function ChargeCard(): JSX.Element {
         "mode": "NOAUTH"
       }}
       console.log('Without Auth', payload)
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Send the basic form data without extra authorization info.
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const data = await chargeCardWithNoAuth(payload)
       setLoading(false);
       console.log('DATA_INITIAL', data)
-
       if (data.status === "success" && data.message === "Successful") {
         alert("Payment Successful!");
-        window.location.href = formData.redirect_url;
+        router.push(`${formData.redirect_url}`)
       } else if (data.status === "success" && data.message === "Charge authorization data required" && data.meta.authorization.mode === "pin") {
         setStep(data.meta.authorization.mode);
       } else if (data.status === "success" && data.message === "Charge authorization data required" && data.meta.authorization.mode === "avs_noauth") {
@@ -155,7 +149,7 @@ export default function ChargeCard(): JSX.Element {
     } catch (error) {
       setLoading(false);
       console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      alert(error);
     }
   };
 
@@ -179,17 +173,12 @@ export default function ChargeCard(): JSX.Element {
     setLoading(true);
     try {
       console.log('FormData With PIN', payload)
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const data = await chargeCardWithPin(payload)
       setLoading(false);
       console.log('DATA_SUBMITTED_WITHPIN', data)
       if (data.status === "success" && data.message === "Successful") {
         alert("Payment Successful!");
-        window.location.href = formData.redirect_url;
+        router.push(`${formData.redirect_url}`)
       } else if (data.status === "success" && data.meta.authorization.mode === 'otp') {
         router.push(`/payments/${data.data.flw_ref}`)
       } else {
@@ -198,7 +187,7 @@ export default function ChargeCard(): JSX.Element {
     } catch (error) {
       setLoading(false);
       console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      alert(error);
     }
   };
 
@@ -226,17 +215,12 @@ export default function ChargeCard(): JSX.Element {
     console.log('Payload with AVS', payload)
     setLoading(true);
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
+      const data = await chargeCardWithAVS(payload)
       setLoading(false);
       console.log('DATA_AVS', data)
       if (data.status === "success" && data.message === "Successful") {
         alert("Payment Successful!");
-        window.location.href = formData.redirect_url;
+        router.push(`${formData.redirect_url}`)
       } else if (data.status === "success" && data.message === 'Charge initiated') {
         router.push(`/payments/${data.data.flw_ref}`)
       } else {
@@ -245,7 +229,7 @@ export default function ChargeCard(): JSX.Element {
     } catch (error) {
       setLoading(false);
       console.error("Error:", error);
-      alert("An error occurred. Please try again.");
+      alert(error);
     }
   };
 
