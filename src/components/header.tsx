@@ -14,6 +14,7 @@ const Header = async () => {
   console.log('AllTransactions', transactions)
   return (
     <div className='p-4 flex justify-between'>
+      <div className='flex items-center'>
       <Link href="/">
         <div className="flex flex-col items-center group">
           <div className="flex items-center space-x-2 md:space-x-3">
@@ -34,6 +35,9 @@ const Header = async () => {
           </p>
         </div>
       </Link>
+      {userId && <Link href='/projects' className='ml-7'>Projects</Link>}
+      </div>
+
 
       <div className='flex items-center'>
         <div className='mr-3'>
