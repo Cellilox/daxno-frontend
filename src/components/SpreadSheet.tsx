@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react';
-import { Eye, Pencil, Trash } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import FormModal from './ui/Popup';
+import { deleteColumn, updateColumn } from '@/actions/column-actions';
+import { deleteRecord, updateRecord } from '@/actions/record-actions';
 
 type Field = {
   id: string;
@@ -19,23 +21,17 @@ type Record = {
 type SpreadSheetProps = {
   columns: Field[] | undefined;
   records: Record[] | undefined;
-  refresh: () => void
-  token: string | null
-  sessionId: string | undefined
   projectId: string
 };
 
-export default function SpreadSheet({ columns, records, token, sessionId, projectId, refresh }: SpreadSheetProps) {
-  console.log('COOOO', columns);
-  console.log('ROOO', records);
+export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {;
   const [localColumns, setLocalColumns] = useState<Field[] | undefined>([]);
   const [localRows, setLocalRows] = useState<Record[] | undefined>([]);
-  console.log('LOC_ROOO', localRows);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedColumnToUpdate, setSelectedColumnToUpdate] = useState<Field | null>(null);
-  const popupRef = useRef<HTMLDivElement>(null);
+  
 
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [selectedColumnToDelte, setSelectedColumnTolete] = useState<Field | null>(null);
@@ -69,16 +65,6 @@ export default function SpreadSheet({ columns, records, token, sessionId, projec
 
   const handleUpdateColumnSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('FieldToUPdate', selectedColumnToUpdate)
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/fields/${selectedColumnToUpdate?.hidden_id}`
-    console.log('URL', url)
-    const requestHeaders = new Headers();
-    requestHeaders.append('Authorization', `Bearer ${token}`);
-    requestHeaders.append('Content-Type', 'application/json')
-    if (sessionId) {
-      requestHeaders.append('sessionId', sessionId);
-    }
-
     const updateData = {
       id: selectedColumnToUpdate?.id,
       name: selectedColumnToUpdate?.name,
@@ -87,22 +73,8 @@ export default function SpreadSheet({ columns, records, token, sessionId, projec
     }
 
     try {
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: requestHeaders,
-        body: JSON.stringify(updateData)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Update failed:', errorData);
-        throw new Error(`Update failed: ${JSON.stringify(errorData)}`);
-      }
-
-      const result = await res.json();
-      console.log('Update successful:', result);
+      await updateColumn(selectedColumnToUpdate?.hidden_id, updateData)
       setIsPopupVisible(false);
-      refresh();
     } catch (error) {
       console.error('Error updating project:', error);
     }
@@ -121,20 +93,12 @@ export default function SpreadSheet({ columns, records, token, sessionId, projec
   };
 
   const handleDeleteColumn = async (columnId: string) => {
-    const requestHeaders = new Headers();
-    requestHeaders.append('Authorization', `Bearer ${token}`);
-    if (sessionId) {
-      requestHeaders.append('sessionId', sessionId);
+    try {
+       await deleteColumn(columnId)
+       setIsAlertVisible(false)
+    } catch (error) {
+      alert('Error deleting column')
     }
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/fields/${columnId}`
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: requestHeaders
-    })
-
-    const result = await res.json()
-    setIsAlertVisible(false)
-    refresh()
   }
 
   const handleShowDeleteRecordAlert = (record: Record) => {
@@ -148,26 +112,13 @@ export default function SpreadSheet({ columns, records, token, sessionId, projec
 
   };
 
-  // const handleDeleteRecord = (recordId: string) => {
-  //   alert('Deleted the record of this ' + recordId);
-  // };
-
   const handleDeleteRecord = async (recordId: string) => {
-    const requestHeaders = new Headers();
-    requestHeaders.append('Authorization', `Bearer ${token}`);
-    if (sessionId) {
-      requestHeaders.append('sessionId', sessionId);
+    try {
+      await deleteRecord(recordId)
+      setIsAlertVisible(false)
+    } catch (error) {
+      alert('Error deleting a record')
     }
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/records/${recordId}`
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: requestHeaders
-    })
-
-    const result = await res.json()
-    console.log("@#L$$#RESULLT",result)
-    setIsAlertVisible(false)
-    refresh()
   }
 
 
@@ -209,43 +160,20 @@ export default function SpreadSheet({ columns, records, token, sessionId, projec
       newRows[rowIndex] = updatedRow;
       return newRows;
     });
-   
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/records/${localRows?.[rowIndex].hiddenId}`
-    console.log('URL', url)
-    const requestHeaders = new Headers();
-    requestHeaders.append('Authorization', `Bearer ${token}`);
-    requestHeaders.append('Content-Type', 'application/json')
-    if (sessionId) {
-      requestHeaders.append('sessionId', sessionId);
-    }
 
     try {
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: requestHeaders,
-        body: JSON.stringify(completeRecord)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Update failed:', errorData);
-        throw new Error(`Update failed: ${JSON.stringify(errorData)}`);
-      }
-
-      const result = await res.json();
-      console.log('Update successful:', result);
-      setEditingRow(null);
+      await updateRecord(localRows?.[rowIndex].hiddenId, completeRecord)
+          setEditingRow(null);
       setEditedRecords((prev) => {
         const newEdited = { ...prev };
         delete newEdited[rowIndex];
         return newEdited;
       });
     } catch (error) {
-      console.error('Error updating project:', error);
+      alert('Error updating a record')
     }
   };
 
-  // Cancel editing the row (triggered by the floating trash icon in edit mode)
   const handleCancelRow = (rowIndex: number) => {
     setEditingRow(null);
     setEditedRecords((prev) => {

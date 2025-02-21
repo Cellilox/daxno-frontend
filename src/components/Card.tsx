@@ -4,13 +4,10 @@ import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
 import FormModal from './ui/Popup';
-import { json } from 'stream/consumers';
+import { deleteProject, updateProject } from '@/actions/project-actions';
 
 type CardProps= {
-  headers: any
-  updateHeaders: any
   project: Project
-  refresh: () => void;
 };
 
 type Project = {
@@ -20,16 +17,14 @@ type Project = {
   owner: string;
 }
 
-export default function Card({project, headers, updateHeaders, refresh}: CardProps) {
-  console.log("He0990", updateHeaders)
+export default function Card({project}: CardProps) {
   const router = useRouter()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
 
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
-  console.log('SELE@$', selectedProjectToUpdate)
-  // Deleting a project
+  
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
@@ -37,23 +32,17 @@ export default function Card({project, headers, updateHeaders, refresh}: CardPro
 
   const handleDeleteProject = async (projectId: string) => {
     const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
-    const res = await fetch(url, {
-      method: 'DELETE',
-      headers: headers
-    })
-
-    const result = await res.json()
-    setIsAlertVisible(false)
-    refresh()
+    try {
+      await deleteProject(projectId)
+    } catch (error) {
+      alert('Error deleting a project')
+    }
   }
 
   const handleCancelDeleteProject = () => {
     setIsAlertVisible(false)
     setSelectedProjectToDelete(null)
   }
-
-
-  // updating project
 
   const handleShowProjectUpdateForm = (project: Project) => {
      setIsPopupVisible(true)
@@ -62,31 +51,14 @@ export default function Card({project, headers, updateHeaders, refresh}: CardPro
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${selectedProjectToUpdate?.id}`
-
-    // Create the update data matching ProjectCreateModel structure
     const updateData = {
       name: selectedProjectToUpdate?.name || '',
       description: selectedProjectToUpdate?.description || '',
       owner: selectedProjectToUpdate?.owner || ''  
     };
     try {
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: updateHeaders,
-        body: JSON.stringify(updateData)
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Update failed:', errorData);
-        throw new Error(`Update failed: ${JSON.stringify(errorData)}`);
-      }
-
-      const result = await res.json();
-      console.log('Update successful:', result);
+      await updateProject(selectedProjectToUpdate?.id, updateData)
       setIsPopupVisible(false);
-      refresh();
     } catch (error) {
       console.error('Error updating project:', error);
     }
@@ -105,7 +77,7 @@ export default function Card({project, headers, updateHeaders, refresh}: CardPro
 
   return (
     <>
-      <div className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden" onClick={handleNavigateToProjectPage}>
+      <div className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden hover:cursor-pointer" onClick={handleNavigateToProjectPage}>
         <div className="p-4 hover:cursor-point">
           <div className='flex justify-between items-center'>
             <h3 className="text-lg font-bold text-gray-800 mb-2 truncate">{project.name}</h3>

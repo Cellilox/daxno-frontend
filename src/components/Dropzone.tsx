@@ -3,16 +3,15 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useRouter } from 'next/navigation';
+import { analyseText, extractText, saveRecord, saveRecordHistory, uploadFile } from '@/actions/record-actions';
 type MyDropzoneProps = {
   user_id: string | undefined
-  sessionId: string | undefined
   projectId: string
-  token: string | null
   onClose: () => void
   onMessageChange: (message: string) => void
 }
 
-export default function MyDropzone({ user_id, sessionId, projectId, token, onClose, onMessageChange }: MyDropzoneProps) {
+export default function MyDropzone({ user_id, projectId, onClose, onMessageChange }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -20,7 +19,6 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     if (selectedFile) {
-      console.log('FileOOOO', selectedFile)
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
     }
@@ -35,74 +33,22 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       router.push(`/projects/${projectId}`)
       return;
     }
-
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${token}`)
-
-    if (sessionId) {
-      headers.append('sessionId', sessionId)
-    }
-
     const formData = new FormData();
     formData.append('file', file);
-    console.log('FORM', formData)
-
-    console.log(file, formData)
-
     try {
       onMessageChange('Uploading...')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/upload`, {
-        method: 'POST',
-        headers: headers,
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Upload result:', result);
-        await handleExtract(result.filename)
-      } else {
-        setIsLoading(false)
-        const error = await response.json();
-        alert(`Error: ${error.detail}`);
-        onMessageChange('')
-      }
+      const result = await uploadFile(formData)
+      await handleExtract(result.filename)
     } catch (error) {
-      console.error('Error uploading file:', error);
+      alert('Error uploading a file')
     }
   };
 
   const handleExtract = async (fileName: string) => {
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${token}`)
-
-    if (sessionId) {
-      headers.append('sessionId', sessionId)
-    }
-
     try {
       onMessageChange('Extracting...')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/extract?filename=${fileName}`, {
-        method: 'POST',
-        headers: headers,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Raw extract result:', result);
-        console.log('textract_response type:', typeof result.textract_response);
-        console.log('textract_response:', result.textract_response);
-        
-        if (!result.textract_response) {
-          throw new Error('No textract_response in result');
-        }
-        await handleAnalyse(fileName, result.textract_response)
-      } else {
-        setIsLoading(false)
-        const error = await response.json();
-        console.error('Extract error response:', error);
-        throw new Error(`Extract failed: ${error.detail || 'Unknown error'}`);
-      }
+      const response = await extractText(fileName)
+      await handleAnalyse(fileName, response.textract_response)
     } catch (error) {
       console.error('Error in extract:', error);
       setIsLoading(false);
@@ -111,33 +57,14 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
   };
 
   const handleAnalyse = async (fileName: string, extractedResponse: any) => {
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${token}`)
-    headers.append('Content-Type', 'application/json');
-    if (sessionId) {
-      headers.append('sessionId', sessionId)
-    }
-
     const requestBody = {...extractedResponse}
 
     try {
       onMessageChange('Analysing')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/${projectId}/identify-fields?filename=${fileName}`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(requestBody)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Analysis success:', result);
-        await saveData(result.data)
-      } else {
-        const errorText = await response.text();
-        console.error('Analysis error response:', errorText);
-        console.error('Response status:', response.status);
-        throw new Error(`Analysis failed: ${errorText || 'Unknown error'}`);
-      }
+      const response = await analyseText(projectId, fileName, requestBody)
+      const analysedData = response.data
+      console.log('ANALYSED_DATA', analysedData)
+      await saveData(analysedData)
     } catch (error) {
       console.error('Error in analysis:', error);
       setIsLoading(false);
@@ -146,36 +73,11 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
   };
 
   const saveData = async (data: any) => {
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${token}`)
-    headers.append('Content-Type', 'application/json');
-    if (sessionId) {
-      headers.append('sessionId', sessionId)
-    }
-
     try {
       onMessageChange('Saving record')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records/save`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(data)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Saving result:', result);
-        const historyResult = await submitRecordHistory(result.record)
-        console.log("HIstorResult", historyResult)
-        setIsLoading(false);
-        onMessageChange('');
-        onClose();
-        router.push(`/projects/${projectId}`);
-      } else {
-        const errorText = await response.text();
-        console.error('Saving error response:', errorText);
-        console.error('Response status:', response.status);
-        throw new Error(`Saving failed: ${errorText || 'Unknown error'}`);
-      }
+      const response = await saveRecord(data)
+      console.log('RECORD', response.record)
+      await submitRecordHistory(response.record)
     } catch (error) {
       console.error('Error in saving:', error);
       setIsLoading(false);
@@ -189,30 +91,11 @@ export default function MyDropzone({ user_id, sessionId, projectId, token, onClo
       file_name: file?.name,
       related_record: JSON.stringify(record)
     }
-
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${token}`)
-    headers.append('Content-Type', 'application/json');
-
-    if (sessionId) {
-      headers.append('sessionId', sessionId)
-    }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/records-history/`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(data)
-      });
-
-      // if(!response.ok) {
-      //   alert('An error occured')
-      //   return
-      // }
-        const result = await response.json();
-        console.log('History record', result);
-    
+      await saveRecordHistory(data)
+      onClose()
     } catch (error) {
-      console.log(error)
+      console.log('Error saving record in history', error)
     }
   }
 

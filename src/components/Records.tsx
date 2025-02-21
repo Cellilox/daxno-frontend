@@ -8,13 +8,9 @@ type RecordsProps = {
     projectId: string;
     initialFields: any;
     initialRecords: any;
-    userId: string | undefined
-    refresh: () => void
-    token: string | null
-    sessionId: string | undefined
 };
 
-export default function Records({ projectId, initialFields, initialRecords, token, sessionId, refresh, userId }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [rowData, setRowData] = useState()
@@ -83,7 +79,7 @@ export default function Records({ projectId, initialFields, initialRecords, toke
 
     return (
         <div>
-            <SpreadSheet records={rowData} columns= {columns} refresh={refresh} token={token} sessionId={sessionId} projectId={projectId}/>
+            <SpreadSheet records={rowData} columns= {columns} projectId={projectId}/>
             <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
         </div>
     );
