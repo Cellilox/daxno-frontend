@@ -35,10 +35,8 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className='flex mr-3 items-center'>
-       <div>
-      <p className='mr-7'>Plan: <span className='text-green-500'>{plan}</span></p>
-       </div>
+    <div className='md:flex md:mr-3 items-center text-right'>
+      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan}</span></p>
       <p onClick={() => router.push('/pricing')} className="underline hover:cursor-pointer text-sm">Upgrade</p>
     </div>
   );
