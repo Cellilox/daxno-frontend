@@ -6,14 +6,12 @@ import MyDropzone from './Dropzone'
 
 type ScanFilesModalProps = {
   user_id: string | undefined
-  sessionId: string | undefined
   projectId: string
-  token: string | null
   onClose: () => void
   onOk: () => void
 }
 
-export default function ScanFilesModal({ user_id, sessionId, projectId, token, onClose, onOk }: ScanFilesModalProps) {
+export default function ScanFilesModal({ user_id, projectId, onClose, onOk }: ScanFilesModalProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -46,9 +44,7 @@ export default function ScanFilesModal({ user_id, sessionId, projectId, token, o
         <div className="flex flex-col">
           <MyDropzone
             user_id={user_id}
-            sessionId={sessionId}
             projectId={projectId}
-            token={token}
             onClose={handleClose}
             onMessageChange={setMessage}
           />

@@ -2,40 +2,22 @@
 
 import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
+import { download } from "@/actions/download-actions";
 type ExportCSVProps = {
-    headers: any,
     projectId: string
 }
 
 
-export default function DownLoadCSV({headers, projectId}: ExportCSVProps) {
+export default function DownLoadCSV({projectId}: ExportCSVProps) {
      const [isLoading, setIsLoading] = useState(false)
      async function downloadCSV () {
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/download-csv/${projectId}`;
-
-        // Fetch the CSV file from the backend as a blob
         setIsLoading(true)
-        const getCSV = await fetch(url, {
-            method: 'GET',
-            headers: headers
-        });
-
-        // Check if the response is successful
-        if (!getCSV.ok) {
-            setIsLoading(false)
-            console.error('Failed to fetch CSV');
-            return;
-        }
-
-        // Convert the response to a blob (binary data)
-        const blob = await getCSV.blob();
-
-        // Create a temporary download link
+        const blob = await download(projectId)
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'data.csv';  // The name of the file to download
+        link.download = 'data.csv';
         setIsLoading(false)
-        link.click();  // Trigger the download
+        link.click();
     }
     return (
         <>

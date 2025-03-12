@@ -1,20 +1,19 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react';
-import ShareToDrive from './ShareToDrive';
 import DownLoadCSV from './DownlaodCSV';
+import ShareToDrive from './ShareToDrive';
 
 type OptionsProps = {
-    headers: any
     projectId: string
 }
 
-export default function Options({headers, projectId}: OptionsProps) {
+export default function Options({projectId}: OptionsProps) {
     const [isOptionVisible, setIsOptionVisible] = useState<boolean>(false)
     const modalRef = useRef<HTMLDivElement>(null);
 
     const onCancel = () => {
-        setIsOptionVisible(false)
+        setIsOptionVisible(false) 
     }
 
     useEffect(() => {
@@ -25,7 +24,7 @@ export default function Options({headers, projectId}: OptionsProps) {
         }
         if (isOptionVisible) {
             document.addEventListener('mousedown', handleClickOutside);
-        }
+        } 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -54,8 +53,8 @@ export default function Options({headers, projectId}: OptionsProps) {
                         <button onClick={() => setIsOptionVisible(false)}>Close</button>
                         </div>
                         <div className='flex flex-col justify-end items-end'>
-                        <DownLoadCSV headers={headers} projectId={projectId} />
-                        <ShareToDrive headers={headers} projectId={projectId} />
+                        <DownLoadCSV projectId={projectId} />
+                        <ShareToDrive projectId={projectId} /> 
                         </div>
                     </div>
                 </div>

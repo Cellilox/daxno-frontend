@@ -8,24 +8,16 @@ import Options from './Options'
 
 type MobileMenuProps = {
   user_id: string | undefined
-  sessionId: string | undefined
   projectId: string
-  token: string | null
-  headers: Headers
   onClose: () => void
   onOk: () => void
-  refresh: () => void
 }
 
 export default function MobileMenu({ 
   user_id, 
-  sessionId, 
   projectId, 
-  token, 
-  headers,
   onClose, 
   onOk,
-  refresh 
 }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -65,9 +57,7 @@ export default function MobileMenu({
           <div className="p-4 space-y-4 overflow-y-auto h-[calc(100vh-70px)]">
             <ScanFilesModal
               user_id={user_id}
-              sessionId={sessionId}
               projectId={projectId}
-              token={token}
               onClose={() => {
                 setIsOpen(false);
                 onClose();
@@ -75,17 +65,11 @@ export default function MobileMenu({
               onOk={onOk}
             />
             <CreateColumn 
-              token={token}
-              sessionId={sessionId} 
-              refresh={() => {
-                setIsOpen(false);
-                refresh();
-              }}
               projectId={projectId} 
             />
             <div className="space-y-3">
               <ScanView />
-              <Options headers={headers} projectId={projectId}/>
+              <Options projectId={projectId}/>
             </div>
           </div>
         </div>

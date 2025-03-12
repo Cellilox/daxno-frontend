@@ -1,7 +1,8 @@
 "use client"
 
+import { OtpVerify } from '@/actions/payment-actions'
 import React, { FormEvent, useState } from 'react'
-
+import { useRouter } from 'next/navigation'
 type OtpProps = {
     flw_ref: string
 }
@@ -11,6 +12,7 @@ export default function Otp({flw_ref}: OtpProps) {
     const [errors, setErrors] = useState<any>({});
     const [loading, setLoading] = useState<boolean>(false);
     const [otp, setOtp] = useState<string>("");
+    const router = useRouter()
 
     const validateOtpForm = (): any => {
         let errs: any = {};
@@ -32,19 +34,13 @@ export default function Otp({flw_ref}: OtpProps) {
             otp: Number(otp),
             flw_rf: flw_ref
           }
-          const verifyUrl = `${process.env.NEXT_PUBLIC_API_URL}/payments/validate-charge`
           console.log('OTP_payload', payload)
-          const res = await fetch(verifyUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          const data = await res.json();
+          const data = await OtpVerify(payload)
           setLoading(false);
           console.log('DATA_OTP', data)
           if (data.status === "success" && data.message === "Charge validated") {
             alert("Payment Successful!");
-            window.location.href = `${process.env.NEXT_PUBLIC_CLIENT_URL}/projects`;
+            router.push('/projects')
           } else {
             alert("OTP Verification failed: " + data.details.message);
           }

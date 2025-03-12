@@ -2,13 +2,13 @@
 import { gapi } from 'gapi-script';
 import { useEffect, useState } from 'react';
 import LoadingSpinner from './ui/LoadingSpinner';
+import { download } from '@/actions/download-actions';
 
 type ShareToDriveProps = {
-    headers: any,
     projectId: string
 }
 
-export default function ShareToDrive({ headers, projectId }: ShareToDriveProps) {
+export default function ShareToDrive({ projectId }: ShareToDriveProps) {
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [accessToken, setAccessToken] = useState<string>('');
@@ -33,12 +33,9 @@ export default function ShareToDrive({ headers, projectId }: ShareToDriveProps) 
             setAccessToken(accessToken);
             setRefreshToken(refreshToken || 'No refresh token available');
 
-            // Send tokens to n8n webhook
-            await sendTokensToWebhook(accessToken, refreshToken);
-
             const metadata = {
-                name: file.name,
-                mimeType: file.type,
+                name: file.name.replace('.csv', ''),
+                mimeType: 'application/vnd.google-apps.spreadsheet'
             };
 
             const form = new FormData();
@@ -60,8 +57,7 @@ export default function ShareToDrive({ headers, projectId }: ShareToDriveProps) 
             }
 
             const uploadedFile = await response.json();
-            console.log('File uploaded:', uploadedFile);
-            alert('File uploaded to Google Drive! \n to see your file, navigate to \n \t https://drive.google.com/drive/home');
+            alert('File uploaded at your drive => https://drive.google.com/drive/home');
             setIsLoading(false)
         } catch (error) {
             console.error('Error uploading to Google Drive:', error);
@@ -71,48 +67,10 @@ export default function ShareToDrive({ headers, projectId }: ShareToDriveProps) 
         }
     }
 
-    // Function to send tokens to n8n webhook
-    const sendTokensToWebhook = async (accessToken: string, refreshToken: string | undefined) => {
-        try {
-            const response = await fetch('http://localhost:5678/webhook-test/user-credentials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization':'Bearer my-secret-key-string'
-                },
-                body: JSON.stringify({
-                    access_token: accessToken,
-                    refresh_token: refreshToken,
-                    project_id: projectId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to send tokens to webhook');
-            }
-
-            console.log('Tokens sent to webhook successfully');
-        } catch (error) {
-            console.error('Error sending tokens to webhook:', error);
-        }
-    };
-
     async function downloadCSV() {
         setIsLoading(true)
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/download-csv/${projectId}`;
-
         try {
-            const getCSV = await fetch(url, {
-                method: 'GET',
-                headers: headers,
-            });
-
-            if (!getCSV.ok) {
-                const errorText = await getCSV.text()
-                throw new Error(`Failed to fetch CSV: ${getCSV.status} - ${errorText}`);
-            }
-
-            const blob = await getCSV.blob();
+            const blob = await download(projectId)
             const file = new File([blob], 'data.csv', { type: 'text/csv' });
             await uploadToGoogleDrive(file);
         } catch (error) {
@@ -141,9 +99,6 @@ export default function ShareToDrive({ headers, projectId }: ShareToDriveProps) 
             
             setAccessToken(accessToken);
             setRefreshToken(refreshToken || 'No refresh token available');
-            
-            // Send tokens to webhook upon authentication
-            await sendTokensToWebhook(accessToken, refreshToken);
         } catch (error) {
             console.error('Auth error:', error);
         }
