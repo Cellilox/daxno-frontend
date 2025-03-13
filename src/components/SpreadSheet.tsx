@@ -14,17 +14,32 @@ type Field = {
   hidden_id: string;
 };
 
+type ApiRecord = {
+  id: string;
+  filename?: string;
+  project_id: string;
+  fields_data: {
+    [key: string]: {
+      answer: string;
+      confidence: string;
+      page: string;
+      source: string;
+    };
+  };
+};
+
 type Record = {
-  [key: string]: any;
+  hiddenId: string;
+  [columnId: string]: string;
 };
 
 type SpreadSheetProps = {
   columns: Field[] | undefined;
-  records: Record[] | undefined;
+  records: ApiRecord[] | undefined;
   projectId: string
 };
 
-export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {;
+export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[] | undefined>([]);
   const [localRows, setLocalRows] = useState<Record[] | undefined>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -42,13 +57,29 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
 
   useEffect(() => {
-    setLocalColumns(columns);
-    let fieldsData: any = []
-    records?.forEach(rec => {
-      fieldsData.push({ hiddenId: rec.id, ...rec.fields_data })
-    })
-    setLocalRows(fieldsData);
-
+    if (columns) {
+      setLocalColumns(columns);
+    }
+    
+    if (records) {
+      const transformedRecords = records.map(record => {
+        // Create the base record with hiddenId
+        const transformedRecord: Record = {
+          hiddenId: record.id,
+        };
+        
+        // Add each field's answer to the transformed record
+        Object.entries(record.fields_data).forEach(([fieldId, fieldData]) => {
+          transformedRecord[fieldId] = fieldData.answer;
+        });
+        
+        console.log("Transformed Record:", transformedRecord); // Debug log
+        return transformedRecord;
+      });
+      
+      console.log("All Transformed Records:", transformedRecords); // Debug log
+      setLocalRows(transformedRecords);
+    }
   }, [columns, records]);
 
   // --- Column Popup Functions ---
@@ -114,10 +145,14 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleDeleteRecord = async (recordId: string) => {
     try {
-      await deleteRecord(recordId)
-      setIsAlertVisible(false)
+      await deleteRecord(recordId);
+      setIsAlertVisible(false);
+      
+      setLocalRows((prev) => 
+        prev?.filter(row => row.hiddenId !== recordId)
+      );
     } catch (error) {
-      alert('Error deleting a record')
+      alert('Error deleting a record');
     }
   }
 
@@ -128,7 +163,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setEditingRow(rowIndex);
     setEditedRecords((prev) => ({
       ...prev,
-      [rowIndex]: { ...localRows?.[rowIndex] }
+      [rowIndex]: localRows?.[rowIndex] ? { ...localRows[rowIndex] } : {} as Record
     }));
   };
 
@@ -143,34 +178,71 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   // Save the row's changes (triggered by clicking "save")
   const handleSaveRow = async (rowIndex: number) => {
     const updatedRow = { ...localRows?.[rowIndex], ...editedRecords[rowIndex] };
-    console.log('REEEC to be UPDATED', localRows?.[rowIndex].hiddenId)
-    // Create a complete record with every key from localColumns. If no value, use empty string.
-    const completeRecord: Record = {};
-    localColumns?.forEach((column) => {
-      completeRecord[column.id] =
-        updatedRow[column.id] !== undefined && updatedRow[column.id] !== null
-          ? updatedRow[column.id]
-          : '';
+    console.log("Updated Row before API:", updatedRow);
+
+    // Find the original record to maintain its structure
+    const originalRecord = records?.find(record => record.id === updatedRow.hiddenId);
+    
+    if (!originalRecord) {
+      console.error("Original record not found");
+      return;
+    }
+
+    // Create the fields_data structure while preserving existing data
+    const fields_data: { [key: string]: any } = {};
+    
+    // Preserve the original fields_data structure and update only the answers
+    Object.entries(originalRecord.fields_data).forEach(([fieldId, fieldData]) => {
+      fields_data[fieldId] = {
+        ...fieldData, // Preserve all original field data (including hiddenId)
+        answer: updatedRow[fieldId] || fieldData.answer // Update only the answer if changed
+      };
     });
 
-    // Update localRows state
-    setLocalRows((prev) => {
-      if (!prev) return prev;
-      const newRows = [...prev];
-      newRows[rowIndex] = updatedRow;
-      return newRows;
-    });
+    // Create the complete record structure for the API
+    const apiRecord = {
+      id: updatedRow.hiddenId,
+      fields_data: fields_data,
+      project_id: projectId,
+      filename: originalRecord.filename
+    };
 
     try {
-      await updateRecord(localRows?.[rowIndex].hiddenId, completeRecord)
-          setEditingRow(null);
+      await updateRecord(updatedRow.hiddenId, apiRecord);
+      console.log("API Record being sent:", apiRecord);
+
+      // Update the local state with the new values
+      setLocalRows((prev) => {
+        if (!prev) return prev;
+        
+        return prev.map(row => {
+          if (row.hiddenId === updatedRow.hiddenId) {
+            // Create a new transformed record that matches our display format
+            const transformedRecord: Record = {
+              hiddenId: updatedRow.hiddenId,
+            };
+
+            // Map the answers from fields_data to our flat structure
+            Object.entries(fields_data).forEach(([fieldId, fieldData]) => {
+              transformedRecord[fieldId] = fieldData.answer;
+            });
+            
+            console.log("Transformed Record for display:", transformedRecord);
+            return transformedRecord;
+          }
+          return row;
+        });
+      });
+
+      setEditingRow(null);
       setEditedRecords((prev) => {
         const newEdited = { ...prev };
         delete newEdited[rowIndex];
         return newEdited;
       });
     } catch (error) {
-      alert('Error updating a record')
+      console.error("Error updating record:", error);
+      alert('Error updating a record');
     }
   };
 
@@ -403,8 +475,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
             </button>
           </div>
         </FormModal>
-      )
-}
+      )}
       {/* --- Column Delete Alert --- */}
       {isAlertVisible && selectedColumnToDelte && (
         <AlertDialog

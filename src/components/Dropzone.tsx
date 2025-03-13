@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useRouter } from 'next/navigation';
-import { analyseText, extractText, saveRecord, saveRecordHistory, uploadFile } from '@/actions/record-actions';
+import { uploadFile } from '@/actions/record-actions';
 type MyDropzoneProps = {
   user_id: string | undefined
   projectId: string
@@ -38,66 +38,12 @@ export default function MyDropzone({ user_id, projectId, onClose, onMessageChang
     try {
       onMessageChange('Uploading...')
       const result = await uploadFile(formData)
-      await handleExtract(result.filename)
+      console.log("RESULT AFTER UPLOAD", result)
     } catch (error) {
-      alert('Error uploading a file')
+      console.log('Error uploading a file', error)
     }
   };
 
-  const handleExtract = async (fileName: string) => {
-    try {
-      onMessageChange('Extracting...')
-      const response = await extractText(fileName)
-      await handleAnalyse(fileName, response.textract_response)
-    } catch (error) {
-      console.error('Error in extract:', error);
-      setIsLoading(false);
-      onMessageChange('');
-    }
-  };
-
-  const handleAnalyse = async (fileName: string, extractedResponse: any) => {
-    const requestBody = {...extractedResponse}
-
-    try {
-      onMessageChange('Analysing')
-      const response = await analyseText(projectId, fileName, requestBody)
-      const analysedData = response.data
-      console.log('ANALYSED_DATA', analysedData)
-      await saveData(analysedData)
-    } catch (error) {
-      console.error('Error in analysis:', error);
-      setIsLoading(false);
-      onMessageChange('');
-    }
-  };
-
-  const saveData = async (data: any) => {
-    try {
-      onMessageChange('Saving record')
-      const response = await saveRecord(data)
-      console.log('RECORD', response.record)
-      await submitRecordHistory(response.record)
-    } catch (error) {
-      console.error('Error in saving:', error);
-      setIsLoading(false);
-      onMessageChange('');
-    }
-  };
-
-  const submitRecordHistory = async (record: string) => {
-    const data = {
-      owner: user_id,
-      file_name: file?.name,
-      related_record: JSON.stringify(record)
-    }
-    try {
-      await saveRecordHistory(data)
-      onClose()
-    } catch (error) {
-      console.log('Error saving record in history', error)
-    }
-  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
