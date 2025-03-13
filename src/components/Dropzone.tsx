@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useRouter } from 'next/navigation';
-import { uploadFile } from '@/actions/record-actions';
+
 type MyDropzoneProps = {
   user_id: string | undefined
   projectId: string
@@ -35,14 +35,27 @@ export default function MyDropzone({ user_id, projectId, onClose, onMessageChang
     }
     const formData = new FormData();
     formData.append('file', file);
+    
     try {
-      onMessageChange('Uploading...')
-      const result = await uploadFile(formData)
-      console.log("RESULT AFTER UPLOAD", result)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_OCR_RAG_API_URL}/upload`, {
+        method: "POST",
+        headers: {
+          "X-API-KEY": `${process.env.NEXT_PUBLIC_OCR_API_KEY}`,
+          "X-OpenAI-Key": `${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
+        },
+        body: formData, 
+      });
+      const result = await response.json();
+      console.log(result)
+      if(response.ok) {
+        onClose()
+      }
     } catch (error) {
       console.log('Error uploading a file', error)
     }
   };
+
+
 
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
