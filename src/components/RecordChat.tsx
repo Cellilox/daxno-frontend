@@ -78,9 +78,9 @@ export default function RecordChat({ recordId, filename, onClose }: RecordChatPr
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-[72vh] relative">
       {/* Messages Area - with padding bottom to prevent overlap with fixed form */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-20 min-h-[60vh]">
         <div className="p-4 space-y-4">
           {messages.map((msg, index) => (
             <div
