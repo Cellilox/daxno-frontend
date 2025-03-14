@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthedJson, fetchAuthed } from "@/lib/api-client";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -25,6 +25,22 @@ export async function createProject(formData: projectCreateData) {
   }
 
   revalidatePath('/projects');
+  return await response.json();
+}
+
+export async function getProjects() {
+  const response = await fetchAuthed(`${apiUrl}/projects/`)
+  if(!response.ok) {
+    throw new Error ("Failed to fetch projects")
+  }
+  return await response.json();
+}
+
+export async function getProjectsById(projectId: string) {
+  const response = await fetchAuthed(`${apiUrl}/projects/${projectId}`)
+  if(!response.ok) {
+    throw new Error ("Failed to fetch projects")
+  }
   return await response.json();
 }
 

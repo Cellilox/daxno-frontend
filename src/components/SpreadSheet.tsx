@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, MessageCircle } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import FormModal from './ui/Popup';
 import { deleteColumn, updateColumn } from '@/actions/column-actions';
 import { deleteRecord, updateRecord } from '@/actions/record-actions';
+import RecordChat from './RecordChat';
 
 type Field = {
   id: string;
@@ -14,17 +15,33 @@ type Field = {
   hidden_id: string;
 };
 
+type ApiRecord = {
+  id: string;
+  filename?: string;
+  project_id: string;
+  fields_data: {
+    [key: string]: {
+      answer: string;
+      confidence: string;
+      page: string;
+      source: string;
+    };
+  };
+};
+
 type Record = {
-  [key: string]: any;
+  hiddenId: string;
+  filename: string;
+  [columnId: string]: string;
 };
 
 type SpreadSheetProps = {
   columns: Field[] | undefined;
-  records: Record[] | undefined;
+  records: ApiRecord[] | undefined;
   projectId: string
 };
 
-export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {;
+export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[] | undefined>([]);
   const [localRows, setLocalRows] = useState<Record[] | undefined>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -41,14 +58,33 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
 
-  useEffect(() => {
-    setLocalColumns(columns);
-    let fieldsData: any = []
-    records?.forEach(rec => {
-      fieldsData.push({ hiddenId: rec.id, ...rec.fields_data })
-    })
-    setLocalRows(fieldsData);
+  // Add this state for chat
+  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
 
+  useEffect(() => {
+    if (columns) {
+      setLocalColumns(columns);
+    }
+    
+    if (records) {
+      const transformedRecords = records.map(record => {
+        const transformedRecord: Record = {
+          hiddenId: record.id,
+          filename: record.filename || '',
+        };
+        
+        Object.entries(record.fields_data).forEach(([fieldId, fieldData]) => {
+          transformedRecord[fieldId] = fieldData.answer;
+        });
+        
+        console.log("Transformed Record:", transformedRecord); // Debug log
+        return transformedRecord;
+      });
+      
+      console.log("All Transformed Records:", transformedRecords); // Debug log
+      setLocalRows(transformedRecords);
+    }
   }, [columns, records]);
 
   // --- Column Popup Functions ---
@@ -114,10 +150,14 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleDeleteRecord = async (recordId: string) => {
     try {
-      await deleteRecord(recordId)
-      setIsAlertVisible(false)
+      await deleteRecord(recordId);
+      setIsAlertVisible(false);
+      
+      setLocalRows((prev) => 
+        prev?.filter(row => row.hiddenId !== recordId)
+      );
     } catch (error) {
-      alert('Error deleting a record')
+      alert('Error deleting a record');
     }
   }
 
@@ -128,7 +168,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setEditingRow(rowIndex);
     setEditedRecords((prev) => ({
       ...prev,
-      [rowIndex]: { ...localRows?.[rowIndex] }
+      [rowIndex]: localRows?.[rowIndex] ? { ...localRows[rowIndex] } : {} as Record
     }));
   };
 
@@ -143,34 +183,72 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   // Save the row's changes (triggered by clicking "save")
   const handleSaveRow = async (rowIndex: number) => {
     const updatedRow = { ...localRows?.[rowIndex], ...editedRecords[rowIndex] };
-    console.log('REEEC to be UPDATED', localRows?.[rowIndex].hiddenId)
-    // Create a complete record with every key from localColumns. If no value, use empty string.
-    const completeRecord: Record = {};
-    localColumns?.forEach((column) => {
-      completeRecord[column.id] =
-        updatedRow[column.id] !== undefined && updatedRow[column.id] !== null
-          ? updatedRow[column.id]
-          : '';
+    console.log("Updated Row before API:", updatedRow);
+
+    // Find the original record to maintain its structure
+    const originalRecord = records?.find(record => record.id === updatedRow.hiddenId);
+    
+    if (!originalRecord) {
+      console.error("Original record not found");
+      return;
+    }
+
+    // Create the fields_data structure while preserving existing data
+    const fields_data: { [key: string]: any } = {};
+    
+    // Preserve the original fields_data structure and update only the answers
+    Object.entries(originalRecord.fields_data).forEach(([fieldId, fieldData]) => {
+      fields_data[fieldId] = {
+        ...fieldData, // Preserve all original field data (including hiddenId)
+        answer: updatedRow[fieldId] || fieldData.answer // Update only the answer if changed
+      };
     });
 
-    // Update localRows state
-    setLocalRows((prev) => {
-      if (!prev) return prev;
-      const newRows = [...prev];
-      newRows[rowIndex] = updatedRow;
-      return newRows;
-    });
+    // Create the complete record structure for the API
+    const apiRecord = {
+      id: updatedRow.hiddenId,
+      fields_data: fields_data,
+      project_id: projectId,
+      filename: originalRecord.filename
+    };
 
     try {
-      await updateRecord(localRows?.[rowIndex].hiddenId, completeRecord)
-          setEditingRow(null);
+      await updateRecord(updatedRow.hiddenId, apiRecord);
+      console.log("API Record being sent:", apiRecord);
+
+      // Update the local state with the new values
+      setLocalRows((prev) => {
+        if (!prev) return prev;
+        
+        return prev.map(row => {
+          if (row.hiddenId === updatedRow.hiddenId) {
+            // Create a new transformed record that matches our display format
+            const transformedRecord: Record = {
+              hiddenId: updatedRow.hiddenId,
+              filename: updatedRow.filename,
+            };
+
+            // Map the answers from fields_data to our flat structure
+            Object.entries(fields_data).forEach(([fieldId, fieldData]) => {
+              transformedRecord[fieldId] = fieldData.answer;
+            });
+            
+            console.log("Transformed Record for display:", transformedRecord);
+            return transformedRecord;
+          }
+          return row;
+        });
+      });
+
+      setEditingRow(null);
       setEditedRecords((prev) => {
         const newEdited = { ...prev };
         delete newEdited[rowIndex];
         return newEdited;
       });
     } catch (error) {
-      alert('Error updating a record')
+      console.error("Error updating record:", error);
+      alert('Error updating a record');
     }
   };
 
@@ -181,6 +259,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       delete newEdited[rowIndex];
       return newEdited;
     });
+  };
+
+  // Add this function to handle chat opening
+  const handleOpenChat = (record: Record) => {
+    setSelectedRecordForChat(record);
+    setIsChatVisible(true);
   };
 
   return (
@@ -328,6 +412,13 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                             <Pencil size={14} />
                           </button>
                           <button
+                            className="ml-3 text-blue-500 hover:text-blue-700 text-sm"
+                            title="Chat about record"
+                            onClick={() => handleOpenChat(row)}
+                          >
+                            <MessageCircle size={14} />
+                          </button>
+                          <button
                             className="ml-3 text-red-500 hover:text-red-700 text-sm"
                             title="Delete row"
                             onClick={() => handleShowDeleteRecordAlert(row)}
@@ -403,8 +494,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
             </button>
           </div>
         </FormModal>
-      )
-}
+      )}
       {/* --- Column Delete Alert --- */}
       {isAlertVisible && selectedColumnToDelte && (
         <AlertDialog
@@ -429,6 +519,28 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           onConfirm={() => handleDeleteRecord(selectedRecordToDelete.hiddenId)}
           onCancel={handleCloseDeleteRecordAlert}
         />
+      )}
+
+      {/* --- Record Chat Modal --- */}
+      {isChatVisible && selectedRecordForChat && (
+        <FormModal
+          visible={isChatVisible}
+          title={`Chat about ${selectedRecordForChat.filename}`}
+          onCancel={() => {
+            setIsChatVisible(false);
+            setSelectedRecordForChat(null);
+          }}
+          position="right"
+        >
+          <RecordChat
+            recordId={selectedRecordForChat.hiddenId}
+            filename={selectedRecordForChat.filename}
+            onClose={() => {
+              setIsChatVisible(false);
+              setSelectedRecordForChat(null);
+            }}
+          />
+        </FormModal>
       )}
     </div>
   );

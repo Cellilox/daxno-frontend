@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
-export async function getAuthHeaders() {
+export async function getRequestAuthHeaders() {
   const authObj = await auth();
   const headers = new Headers();
 
@@ -12,9 +12,8 @@ export async function getAuthHeaders() {
   return headers;
 }
 
-export async function getJsonAuthHeaders() {
-  const headers = await getAuthHeaders();
+export async function JsonAuthRequestHeaders() {
+  const headers = await getRequestAuthHeaders();
   headers.append('Content-Type', 'application/json');
   return headers;
 }
-  
