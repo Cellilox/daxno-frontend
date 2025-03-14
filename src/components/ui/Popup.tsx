@@ -5,7 +5,7 @@ type FormModalProps = {
   visible: boolean;
   title: string;
   message?: string;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit?: (e: React.FormEvent) => void;
   onCancel: () => void;
   children: React.ReactNode;
   position?: 'center' | 'right';
@@ -40,11 +40,7 @@ export default function FormModal({
 
   return (
     <div 
-      className={`
-        fixed inset-0 w-full h-full bg-black bg-opacity-50 
-        flex items-center justify-center
-        overflow-y-auto z-[100]
-      `}
+      className="fixed inset-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto z-[100]"
       style={{ minHeight: '100vh' }}
     >
       <div 
@@ -58,18 +54,18 @@ export default function FormModal({
       >
         <ModalHeader title={title} onClose={onCancel} message={message} />
         <div className="p-6 flex-1">
-          <form onSubmit={onSubmit} className="flex flex-col h-full">
+          <div className="flex flex-col h-full">
             <div 
               className="overflow-y-auto scrollbar-hide" 
               style={{ 
-                maxHeight: 'calc(80vh - 150px)',
+                maxHeight: 'calc(90vh - 150px)',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
               }}
             >
               {children}
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from 'react';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, MessageCircle } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import FormModal from './ui/Popup';
 import { deleteColumn, updateColumn } from '@/actions/column-actions';
 import { deleteRecord, updateRecord } from '@/actions/record-actions';
+import RecordChat from './RecordChat';
 
 type Field = {
   id: string;
@@ -30,6 +31,7 @@ type ApiRecord = {
 
 type Record = {
   hiddenId: string;
+  filename: string;
   [columnId: string]: string;
 };
 
@@ -56,6 +58,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
 
+  // Add this state for chat
+  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
+
   useEffect(() => {
     if (columns) {
       setLocalColumns(columns);
@@ -63,12 +69,11 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     
     if (records) {
       const transformedRecords = records.map(record => {
-        // Create the base record with hiddenId
         const transformedRecord: Record = {
           hiddenId: record.id,
+          filename: record.filename || '',
         };
         
-        // Add each field's answer to the transformed record
         Object.entries(record.fields_data).forEach(([fieldId, fieldData]) => {
           transformedRecord[fieldId] = fieldData.answer;
         });
@@ -220,6 +225,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
             // Create a new transformed record that matches our display format
             const transformedRecord: Record = {
               hiddenId: updatedRow.hiddenId,
+              filename: updatedRow.filename,
             };
 
             // Map the answers from fields_data to our flat structure
@@ -253,6 +259,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       delete newEdited[rowIndex];
       return newEdited;
     });
+  };
+
+  // Add this function to handle chat opening
+  const handleOpenChat = (record: Record) => {
+    setSelectedRecordForChat(record);
+    setIsChatVisible(true);
   };
 
   return (
@@ -400,6 +412,13 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                             <Pencil size={14} />
                           </button>
                           <button
+                            className="ml-3 text-blue-500 hover:text-blue-700 text-sm"
+                            title="Chat about record"
+                            onClick={() => handleOpenChat(row)}
+                          >
+                            <MessageCircle size={14} />
+                          </button>
+                          <button
                             className="ml-3 text-red-500 hover:text-red-700 text-sm"
                             title="Delete row"
                             onClick={() => handleShowDeleteRecordAlert(row)}
@@ -500,6 +519,28 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           onConfirm={() => handleDeleteRecord(selectedRecordToDelete.hiddenId)}
           onCancel={handleCloseDeleteRecordAlert}
         />
+      )}
+
+      {/* --- Record Chat Modal --- */}
+      {isChatVisible && selectedRecordForChat && (
+        <FormModal
+          visible={isChatVisible}
+          title={`Chat about ${selectedRecordForChat.filename}`}
+          onCancel={() => {
+            setIsChatVisible(false);
+            setSelectedRecordForChat(null);
+          }}
+          position="right"
+        >
+          <RecordChat
+            recordId={selectedRecordForChat.hiddenId}
+            filename={selectedRecordForChat.filename}
+            onClose={() => {
+              setIsChatVisible(false);
+              setSelectedRecordForChat(null);
+            }}
+          />
+        </FormModal>
       )}
     </div>
   );
