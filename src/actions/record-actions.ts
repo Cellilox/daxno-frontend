@@ -63,7 +63,6 @@ export async function batchQuery(data: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Batch query failed response:", errorText);
       throw new Error(`Querying fields failed: ${errorText}`);
     }
     revalidatePath('/projects');

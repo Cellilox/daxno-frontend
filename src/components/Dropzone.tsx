@@ -68,16 +68,11 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
           hiddenId: hidden_id 
         }));
         
-        console.log("Transformed fields:", fields);
         onMessageChange('Analyzing...');
-        
         const data = { fields }; 
-        console.log('Data being sent:', data);
-        
-        const batchResult = await batchQuery(data, file.name, projectId);
-        console.log('RESULT AFTER BATCH_QUERY', batchResult);
-        
+        await batchQuery(data, file.name, projectId);
         setIsVisible(false);
+        onMessageChange('');
       }
     } catch (error) {
       console.error('Error uploading file:', error);
