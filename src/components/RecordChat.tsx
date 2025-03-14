@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
+import { sendChatMessage } from '@/actions/chat-actions';
 
 type Message = {
   text: string;
@@ -19,36 +20,15 @@ type RecordChatProps = {
 export default function RecordChat({ recordId, filename, onClose }: RecordChatProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const simulateAIResponse = async (userQuestion: string) => {
-    const responses = [
-      `Based on the document ${filename}, I found that...`,
-      `Looking at the record, I can tell you that...`,
-      `According to the information in ${filename}, the answer is...`,
-      `The document shows that...`,
-    ];
-    
-    const loadingMessage: Message = {
-      text: "AI is typing...",
-      isUser: false,
-      timestamp: new Date(),
-      isLoading: true
-    };
-    setMessages(prev => [...prev, loadingMessage]);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    setMessages(prev => {
-      const filtered = prev.filter(msg => !msg.isLoading);
-      return [...filtered, {
-        text: `${randomResponse} "${userQuestion}"`,
-        isUser: false,
-        timestamp: new Date()
-      }];
-    });
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,16 +41,46 @@ export default function RecordChat({ recordId, filename, onClose }: RecordChatPr
     };
     
     setMessages(prev => [...prev, userMessage]);
+    
+    const loadingMessage: Message = {
+      text: "AI is typing...",
+      isUser: false,
+      timestamp: new Date(),
+      isLoading: true
+    };
+    setMessages(prev => [...prev, loadingMessage]);
+
     const questionAsked = message;
     setMessage('');
 
-    await simulateAIResponse(questionAsked);
+    try {
+      const response = await sendChatMessage(filename, questionAsked, null);
+
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.isLoading);
+        return [...filtered, {
+          text: response.answer,
+          isUser: false,
+          timestamp: new Date()
+        }];
+      });
+    } catch (error) {
+      setMessages(prev => {
+        const filtered = prev.filter(msg => !msg.isLoading);
+        return [...filtered, {
+          text: "Sorry, I encountered an error processing your request.",
+          isUser: false,
+          timestamp: new Date()
+        }];
+      });
+      console.error('Chat error:', error);
+    }
   };
 
   return (
-    <div className="flex flex-col h-[71vh]">
+    <div className="flex flex-col h-full relative">
       {/* Messages Area - with padding bottom to prevent overlap with fixed form */}
-      <div className="flex-1 overflow-y-auto pb-20 max-h-[62vh]">
+      <div className="flex-1 overflow-y-auto pb-20">
         <div className="p-4 space-y-4">
           {messages.map((msg, index) => (
             <div
@@ -91,13 +101,14 @@ export default function RecordChat({ recordId, filename, onClose }: RecordChatPr
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* Input Area - fixed at bottom */}
       <form 
         onSubmit={handleSubmit} 
-        className="bg-white"
+        className="absolute bottom-0 left-0 right-0 border-t bg-white"
       >
         <div className="flex items-center gap-2 p-4">
           <input
