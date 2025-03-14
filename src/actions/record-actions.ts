@@ -20,7 +20,6 @@ export async function uploadFile(formData: FormData) {
       method: 'POST',
       headers,
       body: formData,
-      redirect: 'follow',
     });
 
     if (!response.ok) {
@@ -60,7 +59,6 @@ export async function batchQuery(data: {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
-      redirect: 'follow',
     });
 
     if (!response.ok) {
@@ -68,18 +66,13 @@ export async function batchQuery(data: {
       console.error("Batch query failed response:", errorText);
       throw new Error(`Querying fields failed: ${errorText}`);
     }
-
+    revalidatePath('/projects');
     return await response.json();
   } catch (error) {
     console.error("Batch query failed:", error);
     throw error;
   }
 }
-
-
-
-
-
 
 
 export async function updateRecord(recordId: string, formData: any) {
