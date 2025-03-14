@@ -7,18 +7,16 @@ import MyDropzone from './Dropzone'
 type ScanFilesModalProps = {
   user_id: string | undefined
   projectId: string
-  onClose: () => void
-  onOk: () => void
 }
 
-export default function ScanFilesModal({ user_id, projectId, onClose, onOk }: ScanFilesModalProps) {
+export default function ScanFilesModal({ user_id, projectId }: ScanFilesModalProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [message, setMessage] = useState('')
 
   const handleClose = () => {
     setIsVisible(false);
     setMessage('');
-    onClose();
+
   };
 
   return (
@@ -36,7 +34,6 @@ export default function ScanFilesModal({ user_id, projectId, onClose, onOk }: Sc
         message={message}
         onSubmit={async (e) => {
           e.preventDefault();
-          await onOk();
         }}
         onCancel={handleClose}
         position="center"
@@ -45,7 +42,7 @@ export default function ScanFilesModal({ user_id, projectId, onClose, onOk }: Sc
           <MyDropzone
             user_id={user_id}
             projectId={projectId}
-            onClose={handleClose}
+            setIsVisible={setIsVisible}
             onMessageChange={setMessage}
           />
         </div>

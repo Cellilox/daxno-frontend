@@ -1,7 +1,7 @@
-import { getAuthHeaders, getJsonAuthHeaders } from "./server-headers";
+import { getRequestAuthHeaders, JsonAuthRequestHeaders } from "./server-headers";
 
 export async function fetchAuthed(url: string, options?: RequestInit) {
-    const headers = await getAuthHeaders();
+    const headers = await getRequestAuthHeaders();
 
     if (options?.headers) {
       const extraHeaders = new Headers(options.headers);
@@ -17,7 +17,7 @@ export async function fetchAuthed(url: string, options?: RequestInit) {
   }
   
   export async function fetchAuthedJson(url: string, options?: RequestInit) {
-    const headers = await getJsonAuthHeaders();
+    const headers = await JsonAuthRequestHeaders();
   
     if (options?.headers) {
       const extraHeaders = new Headers(options.headers);
@@ -31,4 +31,6 @@ export async function fetchAuthed(url: string, options?: RequestInit) {
       headers,
     });
   }
+
   
+

@@ -3,15 +3,18 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useRouter } from 'next/navigation';
+import { uploadFile } from '@/actions/record-actions';
+import { getColumns } from '@/actions/column-actions';
+
 
 type MyDropzoneProps = {
   user_id: string | undefined
   projectId: string
-  onClose: () => void
+  setIsVisible: (isVisible: boolean) => void
   onMessageChange: (message: string) => void
 }
 
-export default function MyDropzone({ user_id, projectId, onClose, onMessageChange }: MyDropzoneProps) {
+export default function MyDropzone({ user_id, projectId, setIsVisible, onMessageChange }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,40 +28,49 @@ export default function MyDropzone({ user_id, projectId, onClose, onMessageChang
   }, []);
 
   const handleUpload = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setIsLoading(true)
+    event.preventDefault();
+    setIsLoading(true);
+    
     if (!file) {
-      setIsLoading(false)
-      onClose()
-      router.push(`/projects/${projectId}`)
+      setIsLoading(false);
+      setIsVisible(false);
       return;
     }
-    const formData = new FormData();
-    formData.append('file', file);
-    
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_OCR_RAG_API_URL}/upload`, {
-        method: "POST",
-        headers: {
-          "X-API-KEY": `${process.env.NEXT_PUBLIC_OCR_API_KEY}`,
-          "X-OpenAI-Key": `${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`
-        },
-        body: formData, 
-      });
-      const result = await response.json();
-      console.log(result)
-      if(response.ok) {
-        onClose()
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('project_id', projectId);
+      if (user_id) {
+        formData.append('user_id', user_id);
+      }
+      
+      console.log("Sending file:", file.name);
+      const result = await uploadFile(formData);
+      console.log("Upload result:", result);
+      
+      if (result) {
+        const columns = await getColumns(projectId)
+        console.log("Fieldssss", columns)
+        setIsVisible(false);
       }
     } catch (error) {
-      console.log('Error uploading a file', error)
+      console.error('Error uploading file:', error);
+      onMessageChange('Error uploading file. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/*': ['.png', '.jpg', '.jpeg']
+    },
+    maxFiles: 1,
+    multiple: false
+  });
 
   return (
     <div className="flex flex-col">

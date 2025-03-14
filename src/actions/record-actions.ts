@@ -1,32 +1,45 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthedJson } from "@/lib/api-client";
+import { getRequestAuthHeaders } from "@/lib/server-headers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
 
-// export async function uploadFile(formData: FormData) {
-//   try {
-//     const response = await fetch(`http://localhost:8000/upload`, {
-//       method: "POST",
-//       headers: {
-//         "X-API-KEY": "my-secret-key-u94u23",
-//         "X-OpenAI-Key": "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",
-//       },
-//       body: formData, // Let browser set Content-Type automatically
-//     });
+export async function uploadFile(formData: FormData) {
+  try {
+    const uploadUrl = `${ocrRagApiUrl}/upload/`.replace(/\/+$/, '/');
+    
+    console.log("Uploading to URL:", uploadUrl);
+    const headers = await getRequestAuthHeaders();
+    headers.append('X-API-KEY', process.env.NEXT_PUBLIC_OCR_API_KEY || '');
+    headers.append('X-OpenAI-Key', process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
+    
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers,
+      body: formData,
+      redirect: 'follow',
+    });
 
-//     if (!response.ok) {
-//       const errorBody = await response.text();
-//       throw new Error(`Upload failed: ${errorBody}`);
-//     }
-//     return await response.json();
-//   } catch (error) {
-//     console.error("Upload error:", error);
-//     throw error;
-//   }
-// }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Upload failed response:", errorText);
+      throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Upload error:", error);
+    throw error;
+  }
+}
+
+
+
+
+
 
 
 export async function updateRecord(recordId: string, formData: any) {

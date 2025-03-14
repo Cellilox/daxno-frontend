@@ -9,15 +9,11 @@ import Options from './Options'
 type MobileMenuProps = {
   user_id: string | undefined
   projectId: string
-  onClose: () => void
-  onOk: () => void
 }
 
 export default function MobileMenu({ 
   user_id, 
   projectId, 
-  onClose, 
-  onOk,
 }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -58,11 +54,6 @@ export default function MobileMenu({
             <ScanFilesModal
               user_id={user_id}
               projectId={projectId}
-              onClose={() => {
-                setIsOpen(false);
-                onClose();
-              }}
-              onOk={onOk}
             />
             <CreateColumn 
               projectId={projectId} 

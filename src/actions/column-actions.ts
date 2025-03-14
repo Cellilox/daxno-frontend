@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -23,6 +23,17 @@ export async function createColumn(formData: ColumnCreateData, projectId: string
   revalidatePath('/projects');
   return await response.json();
 }
+
+
+export async function getColumns(projectId: string) {
+  const response = await fetchAuthed(`${apiUrl}/fields/${projectId}`)
+  if(!response.ok) {
+    throw new Error ("Failed to fetch columns")
+  }
+  return await response.json();
+}
+
+
 
 export async function updateColumn(fieldId: string | undefined , formData: any) {
     console.log('Updating data', formData)

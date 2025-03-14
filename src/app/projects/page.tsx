@@ -1,8 +1,8 @@
-import { revalidatePath } from "next/cache"
-import { auth, currentUser } from "@clerk/nextjs/server"
 import Card from "@/components/Card"
 import CreateProjectForm from "@/components/forms/CreateProject"
-import { fetchAuthed } from "@/lib/api-client"
+
+import { getProjects } from "@/actions/project-actions"
+
 type Project = {
   id: string,
   name: string,
@@ -14,9 +14,8 @@ const url = `${process.env.NEXT_PUBLIC_API_URL}/projects`
 
 
 export default async function Projects() {
-  const response = await fetchAuthed(url);
-  const projects = await response.json();
-
+  const projects = await getProjects()
+ 
   return (
     <>
       <div className="min-h-screen p-6 bg-gray-50">
