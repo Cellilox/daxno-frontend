@@ -2,10 +2,9 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useRouter } from 'next/navigation';
-import { uploadFile } from '@/actions/record-actions';
+import { batchQuery, uploadFile } from '@/actions/record-actions';
 import { getColumns } from '@/actions/column-actions';
-
+import { FileIcon } from 'lucide-react';
 
 type MyDropzoneProps = {
   user_id: string | undefined
@@ -14,16 +13,26 @@ type MyDropzoneProps = {
   onMessageChange: (message: string) => void
 }
 
+type BatchFieldsType = {
+  name: string, 
+  description: string | null, 
+  hidden_id: string
+}
+
 export default function MyDropzone({ user_id, projectId, setIsVisible, onMessageChange }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const router = useRouter()
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile));
+      if (selectedFile.type === 'application/pdf') {
+        setPreview(selectedFile.name);
+      } else {
+        setPreview(URL.createObjectURL(selectedFile));
+      }
     }
   }, []);
 
@@ -46,12 +55,28 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
       }
       
       console.log("Sending file:", file.name);
+      onMessageChange('Uploading...')
       const result = await uploadFile(formData);
       console.log("Upload result:", result);
       
       if (result) {
-        const columns = await getColumns(projectId)
-        console.log("Fieldssss", columns)
+        const columns = await getColumns(projectId);
+        console.log("Original columns:", columns);
+        const fields = columns.map(({ name, description, hidden_id }: BatchFieldsType) => ({
+          name,
+          description: description || "", 
+          hiddenId: hidden_id 
+        }));
+        
+        console.log("Transformed fields:", fields);
+        onMessageChange('Analyzing...');
+        
+        const data = { fields }; 
+        console.log('Data being sent:', data);
+        
+        const batchResult = await batchQuery(data, file.name, projectId);
+        console.log('RESULT AFTER BATCH_QUERY', batchResult);
+        
         setIsVisible(false);
       }
     } catch (error) {
@@ -72,36 +97,50 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
     multiple: false
   });
 
+  const isPDF = file?.type === 'application/pdf';
+
   return (
     <div className="flex flex-col">
       <div {...getRootProps()} className="flex flex-col">
         <input {...getInputProps()} />
         {preview ? (
           <div className="relative flex justify-center items-center rounded-md">
-            <img 
-              src={preview} 
-              alt="Selected file preview" 
-              className="max-h-[50vh] object-contain rounded-md" 
-            />
+            {isPDF ? (
+              <div className="h-[50vh] w-full flex flex-col items-center justify-center border border-gray-200 rounded-md">
+                <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center">
+                  <FileIcon size={48} className="text-blue-500 mb-3" />
+                  <p className="text-gray-800 font-medium text-lg truncate max-w-xs">
+                    {file?.name}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    <p className="text-gray-500 text-sm">PDF Document</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <img 
+                src={preview} 
+                alt="Selected file preview" 
+                className="max-h-[50vh] object-contain rounded-md" 
+              />
+            )}
             
-            {/* Overlay */}
             <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
-              {/* Animated Scanning Line */}
               {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
             </div>
           </div>
         ) : isDragActive ? (
-          <div className="h-64 border-dashed border-2 border-blue-400 bg-blue-400 flex justify-center items-center rounded-md">
-            <p>Drop the file here!</p>
+          <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md">
+            <p className="text-blue-500">Drop the file here!</p>
           </div>
         ) : (
-          <div className="h-64 border-dashed border-2 border-gray-400 flex justify-center items-center rounded-md">
+          <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors flex justify-center items-center rounded-md">
             <p>Drag and Drop a file, or click to select a file</p>
           </div>
         )}
       </div>
       
-      {/* Move button outside of scroll area */}
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">
           {isLoading ? (

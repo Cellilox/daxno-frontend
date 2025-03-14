@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { fetchAuthedJson } from "@/lib/api-client";
-import { getRequestAuthHeaders } from "@/lib/server-headers";
+import { getRequestAuthHeaders, JsonAuthRequestHeaders } from "@/lib/server-headers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
@@ -32,6 +32,46 @@ export async function uploadFile(formData: FormData) {
     return await response.json();
   } catch (error) {
     console.error("Upload error:", error);
+    throw error;
+  }
+}
+
+
+export async function batchQuery(data: {
+  fields: Array<{
+    name: string;
+    description: string;
+    hiddenId: string;
+  }>;
+}, fileName: string, projectId: string) {
+  try {
+    const url = `${ocrRagApiUrl}/batch-query?file_name=${fileName}&project_id=${projectId}`;
+    
+    const headers = await JsonAuthRequestHeaders();
+    headers.append('X-API-KEY', process.env.NEXT_PUBLIC_OCR_API_KEY || '');
+    headers.append('X-OpenAI-Key', process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
+    
+    console.log('Sending batch query with data:', {
+      url,
+      data
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+      redirect: 'follow',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Batch query failed response:", errorText);
+      throw new Error(`Querying fields failed: ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Batch query failed:", error);
     throw error;
   }
 }
