@@ -4,13 +4,13 @@ import { getRequestAuthHeaders } from "@/lib/server-headers";
 
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
 
-export async function sendChatMessage(filename: string, message: string, conversationId: string | null) {
+export async function sendChatMessage(filename: string, projectId: string, message: string, conversationId: string | null) {
   const headers = await getRequestAuthHeaders();
   headers.append('X-API-KEY', process.env.NEXT_PUBLIC_OCR_API_KEY || '');
   headers.append('X-OpenAI-Key', process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
 
   // Build the base URL
-  let url = `${ocrRagApiUrl}/query?file_name=${filename}&query=${message}`;
+  let url = `${ocrRagApiUrl}/query?file_name=${filename}&query=${message}&project_id=${projectId}`;
   
   // Add conversationId to URL if it exists
   if (conversationId) {

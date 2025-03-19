@@ -7,8 +7,8 @@ import { getColumns } from '@/actions/column-actions';
 import { FileIcon } from 'lucide-react';
 
 type MyDropzoneProps = {
-  user_id: string | undefined
   projectId: string
+  linkOwner: string
   setIsVisible: (isVisible: boolean) => void
   onMessageChange: (message: string) => void
 }
@@ -19,7 +19,9 @@ type BatchFieldsType = {
   hidden_id: string
 }
 
-export default function MyDropzone({ user_id, projectId, setIsVisible, onMessageChange }: MyDropzoneProps) {
+export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessageChange }: MyDropzoneProps) {
+  console.log('LIIII', linkOwner)
+
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -36,6 +38,17 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
     }
   }, []);
 
+  const getColumnsFunc = async (proj_id: string) => {
+    const columns = await getColumns(proj_id);
+    console.log("Original columns:", columns);
+    const fields = columns.map(({ name, description, hidden_id }: BatchFieldsType) => ({
+      name,
+      description: description || "", 
+      hiddenId: hidden_id 
+    }));
+    return fields
+  }
+
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
@@ -50,25 +63,22 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
       const formData = new FormData();
       formData.append('file', file, file.name);
       formData.append('project_id', projectId);
-      if (user_id) {
-        formData.append('user_id', user_id);
-      }
       
       console.log("Sending file:", file.name);
       onMessageChange('Uploading...')
-      const result = await uploadFile(formData);
+      const result = await uploadFile(formData, projectId);
       console.log("Upload result:", result);
-      
-      if (result) {
-        const columns = await getColumns(projectId);
-        console.log("Original columns:", columns);
-        const fields = columns.map(({ name, description, hidden_id }: BatchFieldsType) => ({
-          name,
-          description: description || "", 
-          hiddenId: hidden_id 
-        }));
-        
+      if(linkOwner && linkOwner) {
+        onMessageChange('')
+        setIsVisible(false)
+        const fields = await getColumnsFunc(projectId)
+        const data = { fields }; 
+        await batchQuery(data, file.name, projectId);
+      }
+
+      if (result && !linkOwner) {
         onMessageChange('Analyzing...');
+        const fields = await getColumnsFunc(projectId)
         const data = { fields }; 
         await batchQuery(data, file.name, projectId);
         setIsVisible(false);
@@ -127,11 +137,11 @@ export default function MyDropzone({ user_id, projectId, setIsVisible, onMessage
           </div>
         ) : isDragActive ? (
           <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md">
-            <p className="text-blue-500">Drop the file here!</p>
+            <p className="text-blue-500 text-center p-2">Drop the file here!</p>
           </div>
         ) : (
           <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:text-blue-500 transition-colors flex justify-center items-center rounded-md">
-            <p>Drag and Drop a file, or click to select a file</p>
+            <p className="text-center p-2">Drag and Drop a file, or click to select a file</p>
           </div>
         )}
       </div>

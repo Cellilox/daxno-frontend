@@ -615,12 +615,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           position="right"
         >
           <RecordChat
-            recordId={selectedRecordForChat.hiddenId}
+            projectId={projectId}
             filename={selectedRecordForChat.filename}
-            onClose={() => {
-              setIsChatVisible(false);
-              setSelectedRecordForChat(null);
-            }}
           />
         </FormModal>
       )}

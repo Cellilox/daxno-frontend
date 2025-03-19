@@ -12,12 +12,11 @@ type Message = {
 };
 
 type RecordChatProps = {
-  recordId: string;
+  projectId: string;
   filename: string;
-  onClose: () => void;
 };
 
-export default function RecordChat({ recordId, filename, onClose }: RecordChatProps) {
+export default function RecordChat({ projectId, filename, }: RecordChatProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,7 +53,7 @@ export default function RecordChat({ recordId, filename, onClose }: RecordChatPr
     setMessage('');
 
     try {
-      const response = await sendChatMessage(filename, questionAsked, null);
+      const response = await sendChatMessage(filename, projectId, questionAsked, null);
 
       setMessages(prev => {
         const filtered = prev.filter(msg => !msg.isLoading);
