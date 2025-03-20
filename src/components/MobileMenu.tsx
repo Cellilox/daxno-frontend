@@ -5,14 +5,15 @@ import ScanFilesModal from './ScanFilesModal'
 import CreateColumn from './forms/CreateColumn'
 import ScanView from './ScanView'
 import Options from './Options'
+import GenOverlayWrapper from './GenOverlayWrapper'
 
 type MobileMenuProps = {
-  user_id: string | undefined
+  linkOwner: string
   projectId: string
 }
 
 export default function MobileMenu({ 
-  user_id, 
+  linkOwner, 
   projectId, 
 }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -52,9 +53,10 @@ export default function MobileMenu({
 
           <div className="p-4 space-y-4 overflow-y-auto h-[calc(100vh-70px)]">
             <ScanFilesModal
-              user_id={user_id}
+              linkOwner={linkOwner}
               projectId={projectId}
             />
+            <GenOverlayWrapper />
             <CreateColumn 
               projectId={projectId} 
             />

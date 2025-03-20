@@ -5,11 +5,11 @@ import FormModal from './ui/Popup'
 import MyDropzone from './Dropzone'
 
 type ScanFilesModalProps = {
-  user_id: string | undefined
   projectId: string
+  linkOwner: string
 }
 
-export default function ScanFilesModal({ user_id, projectId }: ScanFilesModalProps) {
+export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -40,7 +40,7 @@ export default function ScanFilesModal({ user_id, projectId }: ScanFilesModalPro
       >
         <div className="flex flex-col">
           <MyDropzone
-            user_id={user_id}
+            linkOwner={linkOwner}
             projectId={projectId}
             setIsVisible={setIsVisible}
             onMessageChange={setMessage}
