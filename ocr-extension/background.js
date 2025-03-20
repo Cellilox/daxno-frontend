@@ -1,16 +1,16 @@
-// Handle external messages from auth page
+// Handle external messages
 chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-    if (sender.url.startsWith('http://localhost:3000/') && request.type === 'CLERK_AUTH_COMPLETE') {
+    if (sender.origin === 'http://localhost:3000' && request.type === 'CLERK_AUTH_COMPLETE') {
       chrome.storage.local.set({
         clerkSession: {
           token: request.token,
           sessionId: request.sessionId
         }
       }, () => {
-        chrome.tabs.query({url: "http://localhost:3000/api/auth/clerk*"}, (tabs) => {
+        sendResponse({ success: true });
+        chrome.tabs.query({ url: sender.url }, (tabs) => {
           tabs.forEach(tab => chrome.tabs.remove(tab.id));
         });
-        sendResponse({success: true});
       });
       return true;
     }
@@ -21,7 +21,7 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
     if (request.action === "GET_RECORDS") {
       chrome.storage.local.get(['clerkSession'], async (data) => {
         if (!data.clerkSession) {
-          sendResponse({error: "Not authenticated"});
+          sendResponse({ error: "Please login first" });
           return;
         }
         
@@ -32,9 +32,9 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
               'sessionId': data.clerkSession.sessionId
             }
           });
-          sendResponse({data: await response.json()});
+          sendResponse({ data: await response.json() });
         } catch (error) {
-          sendResponse({error: error.message});
+          sendResponse({ error: error.message });
         }
       });
       return true;

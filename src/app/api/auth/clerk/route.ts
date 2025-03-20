@@ -1,32 +1,39 @@
-import {auth } from '@clerk/nextjs/server'
+import { NextRequest } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
-export async function GET() {
-    try {
-      const session = await auth();
-      if (!session.sessionId) return new Response('Unauthorized', {status: 401});
-  
-      return new Response(`
-        <html>
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const extensionId = searchParams.get('extensionId');
+    const session = await auth();
+    const sessionId = session.sessionId;
+    const getToken = session.getToken;
+    
+    if (!sessionId) return new Response('Unauthorized', { status: 401 });
+
+    return new Response(`
+      <html>
+        <head>
+          <title>Authentication Complete</title>
           <script>
-            chrome.runtime.sendMessage(
-              '${process.env.NEXT_PUBLIC_CHROME_EXTENSION_ID}',
-              {
+            window.onload = function() {
+              chrome.runtime.sendMessage('${extensionId}', {
                 type: 'CLERK_AUTH_COMPLETE',
-                token: '${await session.getToken()}',
-                sessionId: '${session.sessionId}'
-              },
-              () => window.close()
-            );
+                token: '${await getToken()}',
+                sessionId: '${sessionId}'
+              });
+            }
           </script>
-          <body>
-            <h1>Authentication Complete</h1>
-            <p>You can close this window</p>
-          </body>
-        </html>
-      `, {
-        headers: {'Content-Type': 'text/html'}
-      });
-    } catch (error) {
-      return new Response('Authentication failed', {status: 500});
-    }
+        </head>
+        <body>
+          <h1>Authentication Successful!</h1>
+          <p>You can safely close this window</p>
+        </body>
+      </html>
+    `, {
+      headers: { 'Content-Type': 'text/html' }
+    });
+  } catch (error) {
+    return new Response('Authentication failed', { status: 500 });
   }
+}
