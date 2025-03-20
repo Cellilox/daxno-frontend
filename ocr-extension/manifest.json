@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "SaaS Data Fetcher",
+    "version": "1.0",
+    "permissions": [
+      "storage",
+      "tabs",
+      "scripting"
+    ],
+    "externally_connectable": {
+    "matches": ["*://localhost/*"]
+  },
+    "host_permissions": [
+      "http://localhost:3000/*"
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "web_accessible_resources": [{
+      "resources": ["popup.html"],
+      "matches": ["*://localhost/*"]
+    }]
+  }

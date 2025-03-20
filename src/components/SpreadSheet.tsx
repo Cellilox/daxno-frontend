@@ -91,6 +91,11 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     }
   }, [columns, records]);
 
+  useEffect(() => {
+    (window as any).spreadsheetRecords = localRows;
+    console.log("Exposed Records:", localRows);
+  }, [localRows]);
+
   // --- Column Popup Functions ---
   const handleShowColumnUpdatePopup = (column: Field) => {
     setSelectedColumnToUpdate(column);
@@ -316,9 +321,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           {localRows?.map((row, rowIndex) => (
             <tr
               key={rowIndex}
-              className={`relative ${editingRow === rowIndex ? 'border-2 border-blue-500' : ''}`}
-              onMouseEnter={() => setHoveredRow(rowIndex)}
-              onMouseLeave={() => setHoveredRow(null)}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/plain", JSON.stringify(row)); // Store the row data
+              }}
             >
               {localColumns?.map((column, colIndex) => (
                 <td
