@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { CopyIcon } from 'lucide-react';
 
 type AlertDialogProps = {
   visible: boolean;
@@ -8,6 +9,8 @@ type AlertDialogProps = {
   cancelText?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  showCopyIcon?: boolean;
+  copiedMessage?: string;
 };
 
 export default function AlertDialog({
@@ -18,6 +21,7 @@ export default function AlertDialog({
   cancelText = 'Cancel',
   onConfirm,
   onCancel,
+  copiedMessage,
 }: AlertDialogProps) {
   const alertRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +49,11 @@ export default function AlertDialog({
       >
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
         <p>{message}</p>
+        {copiedMessage !="" && (
+          <div className="flex items-center mt-2">
+            {copiedMessage && <span className="text-green-500">{copiedMessage}</span>}
+          </div>
+        )}
         <div className="flex justify-end gap-2 mt-6 w-full">
           <button
             type="button"

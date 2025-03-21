@@ -8,6 +8,7 @@ import MobileMenu from '@/components/MobileMenu'
 import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
+import GenOverlayWrapper from "@/components/GenOverlayWrapper"
 
 
 type ProjectViewProps = {
@@ -21,11 +22,10 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const { id } = await params
   const project = await getProjectsById(id)
   const fields = await getColumns(project.id)
-
+  const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
-
 
   return (
     <>
@@ -38,16 +38,17 @@ export default async function ProjectView({ params }: ProjectViewProps) {
             
             <div className="md:hidden">
               <MobileMenu
-                user_id={user?.id}
+                linkOwner={linkOwner}
                 projectId={id}
               />
             </div>
 
             <div className="hidden md:block">
               <ScanFilesModal
-                user_id={user?.id}
+                linkOwner={linkOwner}
                 projectId={id}
               />
+              <GenOverlayWrapper />
             </div>
           </div>
         </div>
@@ -72,6 +73,4 @@ export default async function ProjectView({ params }: ProjectViewProps) {
       </div>
     </>
   );
-
-
 }

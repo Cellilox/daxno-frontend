@@ -32,7 +32,10 @@ type ApiRecord = {
 type Record = {
   hiddenId: string;
   filename: string;
-  [columnId: string]: string;
+  [columnId: string]: string | { 
+    value: string;
+    confidence: string;
+  };
 };
 
 type SpreadSheetProps = {
@@ -75,14 +78,15 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         };
         
         Object.entries(record.fields_data).forEach(([fieldId, fieldData]) => {
-          transformedRecord[fieldId] = fieldData.answer;
+          transformedRecord[fieldId] = {
+            value: fieldData.answer,
+            confidence: fieldData.confidence
+          };
         });
         
-        console.log("Transformed Record:", transformedRecord); // Debug log
         return transformedRecord;
       });
       
-      console.log("All Transformed Records:", transformedRecords); // Debug log
       setLocalRows(transformedRecords);
     }
   }, [columns, records]);
@@ -330,9 +334,13 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                           type="text"
                           className="w-full outline-none"
                           value={
-                            editedRecords[rowIndex]?.[column.id] ??
-                            row[column.id] ??
-                            ''
+                            typeof editedRecords[rowIndex]?.[column.id] === 'object'
+                              ? (editedRecords[rowIndex]?.[column.id] as any)?.value
+                              : editedRecords[rowIndex]?.[column.id] ??
+                                (typeof row[column.id] === 'object'
+                                  ? (row[column.id] as any).value
+                                  : row[column.id]) ??
+                                ''
                           }
                           onChange={(e) =>
                             handleCellChange(rowIndex, column.id, e.target.value)
@@ -344,10 +352,45 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                           }}
                         />
                       ) : (
-                        <span className="flex-1">
-                          {/* {row[column.id] !== undefined ? row[column.id] : 'N/A'} */}
-                          {row[column.id]}
-                        </span>
+                        <div className="group relative">
+                          <span className="flex-1">
+                            {typeof row[column.id] === 'object'
+                              ? (row[column.id] as any).value
+                              : row[column.id]}
+                          </span>
+                          {/* Confidence Score Overlay */}
+                          {typeof row[column.id] === 'object' && (
+                            <div className="
+                              absolute 
+                              invisible 
+                              group-hover:visible 
+                              bg-gray-800/90
+                              text-white 
+                              text-xs
+                              px-2 
+                              py-1 
+                              rounded-md
+                              right-0
+                              top-0
+                              transform
+                              translate-x-1
+                              -translate-y-1
+                              shadow-lg
+                              z-10
+                              min-w-[80px]
+                              text-center
+                              backdrop-blur-sm
+                              border border-gray-700
+                            ">
+                              <div className="flex items-center gap-1">
+                                <span>Confidence:</span>
+                                <span className="font-semibold">
+                                  {(row[column.id] as any).confidence}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -356,9 +399,13 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                         type="text"
                         className="w-full outline-none"
                         value={
-                          editedRecords[rowIndex]?.[column.id] ??
-                          row[column.id] ??
-                          ''
+                          typeof editedRecords[rowIndex]?.[column.id] === 'object'
+                            ? (editedRecords[rowIndex]?.[column.id] as any)?.value
+                            : editedRecords[rowIndex]?.[column.id] ??
+                              (typeof row[column.id] === 'object'
+                                ? (row[column.id] as any).value
+                                : row[column.id]) ??
+                              ''
                         }
                         onChange={(e) =>
                           handleCellChange(rowIndex, column.id, e.target.value)
@@ -370,10 +417,45 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
                         }}
                       />
                     ) : (
-                      <span className="flex-1">
-                        {/* {row[column.id] !== undefined ? row[column.id] : 'N/A'} */}
-                        {row[column.id]}
-                      </span>
+                      <div className="group relative">
+                        <span className="flex-1">
+                          {typeof row[column.id] === 'object'
+                            ? (row[column.id] as any).value
+                            : row[column.id]}
+                        </span>
+                        {/* Confidence Score Overlay */}
+                        {typeof row[column.id] === 'object' && (
+                          <div className="
+                            absolute 
+                            invisible 
+                            group-hover:visible 
+                            bg-gray-800/90
+                            text-white 
+                            text-xs
+                            px-2 
+                            py-1 
+                            rounded-md
+                            right-0
+                            top-0
+                            transform
+                            translate-x-1
+                            -translate-y-1
+                            shadow-lg
+                            z-10
+                            min-w-[80px]
+                            text-center
+                            backdrop-blur-sm
+                            border border-gray-700
+                          ">
+                            <div className="flex items-center gap-1">
+                              <span>Confidence:</span>
+                              <span className="font-semibold">
+                                {(row[column.id] as any).confidence}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )
                   )}
                   {/* Floating icons only in the first column */}
@@ -533,12 +615,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           position="right"
         >
           <RecordChat
-            recordId={selectedRecordForChat.hiddenId}
+            projectId={projectId}
             filename={selectedRecordForChat.filename}
-            onClose={() => {
-              setIsChatVisible(false);
-              setSelectedRecordForChat(null);
-            }}
           />
         </FormModal>
       )}

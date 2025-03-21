@@ -1,13 +1,24 @@
 'use server';
-
-import { revalidatePath } from "next/cache";
-import { fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthed } from "@/lib/api-client";
 import { getRequestAuthHeaders, JsonAuthRequestHeaders } from "@/lib/server-headers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
 
-export async function uploadFile(formData: FormData, projectId: string) {
+export async function getLinkData(token: string) {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/links/get-link/?token=${token}`);
+        if (!response.ok) {
+            return null; 
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching link data:', error);
+        return null; 
+    }
+}
+
+export async function submitFile(formData: FormData, projectId: string) {
   try {
     const uploadUrl = `${ocrRagApiUrl}/upload/?project_id=${projectId}`;
     
@@ -63,34 +74,9 @@ export async function batchQuery(data: {
       const errorText = await response.text();
       throw new Error(`Querying fields failed: ${errorText}`);
     }
-    revalidatePath('/projects');
     return await response.json();
   } catch (error) {
     console.error("Batch query failed:", error);
     throw error;
   }
-}
-
-
-export async function updateRecord(recordId: string, formData: any) {
-  const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
-    method: 'PUT',
-    body: JSON.stringify(formData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update record');
-  }
-  revalidatePath('/projects');
-}
-
-export async function deleteRecord(recordId: string) {
-  const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
-    method: 'DELETE'
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete a record');
-  }
-  revalidatePath('/projects');
 }
