@@ -22,6 +22,7 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
   const router = useRouter();
 
   const { status, plan, paymentType, loading, error } = useSubscription(currentTransaction);
+  console.log('CCCurent_Transaction', currentTransaction)
   if (currentTransaction == undefined) {
     return (
       <div>
@@ -31,7 +32,7 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
       </div>
     )
   }
-  if (loading) return <p>Loading subscription data...</p>;
+  if (loading) return <p>loading...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
