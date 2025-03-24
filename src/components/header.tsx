@@ -8,10 +8,12 @@ import { fetchAuthed } from '@/lib/api-client'
 const Header = async () => {
   const user = await currentUser()
   const userId = user?.id
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/transactions?t_ref=${userId}`
+  console.log('USERIDDD', userId)
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/?user_id=${userId}`
   const response = await fetchAuthed(url)
   const transactions = await response.json()
   console.log('AllTransactions', transactions)
+  const currentSubscription = transactions[0]
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
@@ -41,7 +43,7 @@ const Header = async () => {
 
       <div className='md:flex md:items-center'>
         <div className='md:mr-3'>
-        <CurrentPlan currentTransaction={transactions[1]}/>
+        <CurrentPlan currentTransaction={currentSubscription}/>
         </div>
         <div className='text-right mt-3 md:mt-0'>
         <SignedOut>

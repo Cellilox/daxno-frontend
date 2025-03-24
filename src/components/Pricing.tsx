@@ -17,7 +17,8 @@ export default function Pricing({headers, userId}: PricingTypes) {
   console.log(amount, paymentPlan, transactionReference)
   const [plansList, setPlansList] = useState<any>()
   console.log('PPPPPP', plansList)
-
+  const crypto = require('crypto');
+  const randomBytes = crypto.randomBytes(16).toString('hex'); 
   const getAvailablePlans = async () => {
     const url = `${process.env.NEXT_PUBLIC_API_URL}/payments/payment-plans?status=active`
     const response = await fetch(url, {
@@ -32,13 +33,54 @@ export default function Pricing({headers, userId}: PricingTypes) {
     getAvailablePlans()
   }, [])
 
+  const url = "http://localhost:8001/payments/charge-card-and-mobilerwanda"
+  const requestPayment = async (tx_ref: string, amount: number, plan_id: number) => {
+    const payload = {
+      "tx_ref": tx_ref,
+      "amount": Number(amount),
+      "currency": "RWF",
+      "redirect_url": "http://localhost:3000/projects",
+      "payment_options": "card",
+      "customer": {
+        "email": "ntirandth@gmail.com",
+        "phonenumber": "0787295921",
+        "name": "Thierry Ntirandekura"
+      },
+      "customization": {
+        "title": "Daxno OCR service",
+        "description": "This is for Daxno OCR service",
+        "logo": "http://logo.png"
+      },
+      "payment_plan": Number(plan_id),
+      "payment_type": "recurrence",
+      "recurrence": {
+        "interval": "weekly"
+      }
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(payload)
+    } )
+
+    const result = await response.json()
+    router.push(result.data.link)
+
+  }
+
   const pickPlan = (plan: planTypes) => {
     const pickedPlan = plansList.filter((x: any) => x.name === plan)
     console.log('PICKED', pickedPlan)
     setPaymentPlan(pickedPlan[0].id)
     setAmount(pickedPlan[0].amount)
-    setTransactionReference(userId)
-    router.push('/payments')
+    setTransactionReference(`${userId}*~*plan*~*${paymentPlan}*~*${randomBytes}`)
+    if(transactionReference && amount && paymentPlan) {
+      requestPayment(transactionReference, amount, paymentPlan)
+    }
   }
 
 
@@ -61,7 +103,7 @@ export default function Pricing({headers, userId}: PricingTypes) {
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Starter</h3>
               <div className="text-4xl font-bold mb-6">
-                    $29<span className="text-lg text-gray-500">/mo</span>
+                    Rwf 10<span className="text-lg text-gray-500">/mo</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
@@ -127,7 +169,7 @@ export default function Pricing({headers, userId}: PricingTypes) {
                 Professional
               </h3>
               <div className="text-4xl font-bold mb-6">
-                    $49<span className="text-lg text-gray-500">/mo</span>
+                    Rwf 30<span className="text-lg text-gray-500">/mo</span>
               </div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
