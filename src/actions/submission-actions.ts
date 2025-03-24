@@ -1,9 +1,22 @@
 'use server';
-import { fetchAuthed } from "@/lib/api-client";
+import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 import { getRequestAuthHeaders, JsonAuthRequestHeaders } from "@/lib/server-headers";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
+
+
+export async function generateLink (project_id: string)  {
+      const response = await fetchAuthedJson (`${apiUrl}/links/generate_link?project_id=${project_id}`, {
+        method: 'POST',
+      });
+    console.log({response})
+    if (!response.ok) {
+    throw new Error('Failed to generate a link');
+    }
+    return await response.json()
+  };
+
 
 export async function getLinkData(token: string) {
     try {

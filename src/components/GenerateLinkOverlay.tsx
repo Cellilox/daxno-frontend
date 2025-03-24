@@ -1,16 +1,21 @@
 'use client'; 
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import AlertDialog from "./ui/AlertDialog"; 
+import { generateLink } from "@/actions/submission-actions";
 
 export default function GenerateLinkOverlay() {
-  const generatedLink = "https://example.com/generated-link"; 
+  const pathname = usePathname();
+  const projectId = pathname.split('/')[2];
+  console.log("proj", projectId)
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [link, setLink] = useState("");
 
   const copyToClipboardHandler = async () => {
     try {
-      await navigator.clipboard.writeText(generatedLink);
+      await navigator.clipboard.writeText(link);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
@@ -18,10 +23,25 @@ export default function GenerateLinkOverlay() {
     }
   };
 
+  const handleGenerateLink = async (proj_id: string) => {
+    try {
+      const response = await generateLink(proj_id);
+      console.log({response})
+      setLink(response.url);
+    } catch (error) {
+      console.error('Error generating link:', error);
+    }
+  };
+
+ const toggleDialog =() => {
+  setDialogVisible(true);
+  handleGenerateLink(projectId)
+ }
+
   return (
     <>
       <button 
-        onClick={() => setDialogVisible(true)} 
+        onClick={toggleDialog} 
         className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
       >
         Share Link
@@ -30,7 +50,7 @@ export default function GenerateLinkOverlay() {
       <AlertDialog
         visible={isDialogVisible}
         title="Share Link"
-        message={generatedLink}
+        message={link}
         confirmText="Copy"
         cancelText="Close"
         onConfirm={copyToClipboardHandler}
