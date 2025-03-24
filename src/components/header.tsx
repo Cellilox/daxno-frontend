@@ -43,7 +43,9 @@ const Header = async () => {
 
       <div className='md:flex md:items-center'>
         <div className='md:mr-3'>
+        <SignedIn>
         <CurrentPlan currentTransaction={currentSubscription}/>
+        </SignedIn>
         </div>
         <div className='text-right mt-3 md:mt-0'>
         <SignedOut>
