@@ -1,4 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server"
+import { Undo } from "lucide-react"
 import ScanView from "@/components/ScanView"
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
@@ -40,16 +41,23 @@ export default async function ProjectView({ params }: ProjectViewProps) {
               <MobileMenu
                 linkOwner={linkOwner}
                 projectId={id}
+                columns={fields}
+                records={records}
               />
             </div>
-
-            <div className="hidden md:block">
-              <ScanFilesModal
-                linkOwner={linkOwner}
-                projectId={id}
-              />
-              <GenOverlayWrapper />
-            </div>
+             {fields.length >=1 && 
+             <div className="hidden md:flex md:items-center">
+               <button className="inline-flex items-center px-4 py-2 mr-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+                 <Undo className="w-4 h-4 mr-2" />
+                 Undo
+               </button>
+               <ScanFilesModal
+                 linkOwner={linkOwner}
+                 projectId={id}
+               />
+               <GenOverlayWrapper />
+             </div>
+             }
           </div>
         </div>
 
@@ -57,10 +65,12 @@ export default async function ProjectView({ params }: ProjectViewProps) {
           <CreateColumn 
             projectId={id} 
           />
-          <div className="flex items-center space-x-4">
-            <ScanView />
-            <Options projectId={id}/>
-          </div>
+          {fields.length >= 1 &&
+           <div className="flex items-center space-x-4">
+           <ScanView />
+           <Options projectId={id}/>
+         </div>
+          }
         </div>
 
         <div className="mt-3">

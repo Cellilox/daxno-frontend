@@ -1,8 +1,9 @@
 import { Pencil, Trash } from 'lucide-react';
-import { Field } from './types';
+import { Field, ApiRecord } from './types';
 
 type TableHeaderProps = {
   columns: Field[];
+  records: ApiRecord[] | undefined
   hoveredColumn: string | null;
   setHoveredColumn: (id: string | null) => void;
   onEditColumn: (column: Field) => void;
@@ -11,19 +12,21 @@ type TableHeaderProps = {
 
 export default function TableHeader({
   columns,
+  records,
   hoveredColumn,
   setHoveredColumn,
   onEditColumn,
   onDeleteColumn,
 }: TableHeaderProps) {
+    console.log('RRLE', records)
   return (
     <thead>
       <tr>
-        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 sticky left-0 bg-white shadow-r md:hidden">
-          Actions
+        <th className={`px-4 ${records && records.length >= 1? 'py-2' : 'py-0'} text-left text-sm font-semibold text-gray-600 sticky left-0 bg-white shadow-r md:hidden`}>
+          {records && records.length >= 1 ? 'Actions' : ''}
         </th>
-        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 min-w-[200px] relative">
-          Filename
+        <th className={`px-4 ${records && records.length >= 1? 'py-2' : 'py-0'} text-left text-sm font-semibold text-gray-600 min-w-[200px] relative`}>
+          {records && records.length >= 1 ? 'Filename' : ''}
         </th>
         {columns.map((column) => (
           <th

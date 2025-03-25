@@ -184,6 +184,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           setHoveredColumn={setHoveredColumn}
           onEditColumn={handleShowColumnUpdatePopup}
           onDeleteColumn={handleShowDeleteColumnAlert}
+          records={records}
         />
         <tbody>
           {localRows.map((row, rowIndex) => (

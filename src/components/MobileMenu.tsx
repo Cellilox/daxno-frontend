@@ -1,20 +1,26 @@
 'use client'
 
 import { useState } from 'react'
+import { Undo } from 'lucide-react'
 import ScanFilesModal from './ScanFilesModal'
 import CreateColumn from './forms/CreateColumn'
 import ScanView from './ScanView'
 import Options from './Options'
 import GenOverlayWrapper from './GenOverlayWrapper'
+import { Field, ApiRecord } from './spreadsheet/types'
 
 type MobileMenuProps = {
   linkOwner: string
   projectId: string
+  columns: Field[]
+  records: ApiRecord[]
 }
 
 export default function MobileMenu({ 
   linkOwner, 
   projectId, 
+  records,
+  columns
 }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -49,21 +55,29 @@ export default function MobileMenu({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </div>
+            </div>
 
           <div className="p-4 space-y-4 overflow-y-auto h-[calc(100vh-70px)]">
-            <ScanFilesModal
-              linkOwner={linkOwner}
-              projectId={projectId}
-            />
-            <GenOverlayWrapper />
-            <CreateColumn 
+          <CreateColumn 
               projectId={projectId} 
             />
-            <div className="space-y-3">
-              <ScanView />
-              <Options projectId={projectId}/>
-            </div>
+            {columns.length >=1 && 
+            <>
+            <button className="inline-flex items-center px-4 py-2 mr-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+            <Undo className="w-4 h-4 mr-2" />
+            Undo
+          </button>
+       <ScanFilesModal
+         linkOwner={linkOwner}
+         projectId={projectId}
+       />
+       <GenOverlayWrapper />
+       <div className="space-y-3">
+         <ScanView />
+         <Options projectId={projectId}/>
+       </div>
+       </>
+            }
           </div>
         </div>
       </div>
