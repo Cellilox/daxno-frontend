@@ -7,6 +7,7 @@ import FormModal from './ui/Popup';
 import { deleteColumn, updateColumn } from '@/actions/column-actions';
 import { deleteRecord, updateRecord } from '@/actions/record-actions';
 import RecordChat from './RecordChat';
+import LoadingSpinner from './ui/LoadingSpinner';
 
 type Field = {
   id: string;
@@ -65,6 +66,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
 
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
   useEffect(() => {
     if (columns) {
       setLocalColumns(columns);
@@ -105,6 +108,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleUpdateColumnSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     const updateData = {
       id: selectedColumnToUpdate?.id,
       name: selectedColumnToUpdate?.name,
@@ -114,6 +118,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
     try {
       await updateColumn(selectedColumnToUpdate?.hidden_id, updateData)
+      setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
@@ -133,8 +138,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   const handleDeleteColumn = async (columnId: string) => {
+    setIsLoading(true)
     try {
        await deleteColumn(columnId)
+       setIsLoading(false)
        setIsAlertVisible(false)
     } catch (error) {
       alert('Error deleting column')
@@ -569,10 +576,17 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               Cancel
             </button>
             <button
+              onClick={handleUpdateColumnSubmit}
+              disabled={isLoading}
               type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
+                isLoading 
+                  ? 'bg-blue-300 cursor-not-allowed' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
-              Save
+              {!isLoading && 'Save'}
+              {isLoading && <LoadingSpinner />}
             </button>
           </div>
         </FormModal>
@@ -585,6 +599,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           message="This column will be deleted permanently, and there is no going back."
           confirmText="Delete"
           cancelText="Cancel"
+          disabled={isLoading}
+          isLoading={isLoading}
           onConfirm={() => handleDeleteColumn(selectedColumnToDelte.hidden_id)}
           onCancel={handleCloseDeleteColumnAlert}
         />

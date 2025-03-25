@@ -5,6 +5,7 @@ import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
 import FormModal from './ui/Popup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
+import LoadingSpinner from './ui/LoadingSpinner';
 
 type CardProps= {
   project: Project
@@ -55,14 +56,15 @@ export default function Card({project}: CardProps) {
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     const updateData = {
       name: selectedProjectToUpdate?.name || '',
       description: selectedProjectToUpdate?.description || '',
       owner: selectedProjectToUpdate?.owner || ''  
     };
-    console.log({updateData})
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)
+      setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
@@ -176,9 +178,15 @@ export default function Card({project}: CardProps) {
             </button>
             <button
               onClick={handleUpdateProject}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              disabled={isLoading}
+              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
+                isLoading 
+                  ? 'bg-blue-300 cursor-not-allowed' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
-              Save
+              {!isLoading && 'Save'}
+              {isLoading && <LoadingSpinner />}
             </button>
           </div>
         </FormModal>
