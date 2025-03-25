@@ -10,7 +10,8 @@ import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
 import GenOverlayWrapper from "@/components/GenOverlayWrapper"
-
+import ExpandableDescription from "@/components/ExpandableDescription"
+import CollapsibleActions from "@/components/CollapsibleActions"
 
 type ProjectViewProps = {
   params: {
@@ -30,50 +31,31 @@ export default async function ProjectView({ params }: ProjectViewProps) {
 
   return (
     <>
-      <div className="px-4">
-        <div className="bg-white p-6 shadow-lg rounded-lg">
-          <div className="flex justify-between items-center">
-            <p className="text-xl md:text-2xl font-bold text-gray-800 truncate max-w-[200px] sm:max-w-none">
-              Project: {project.name}
-            </p>
-            
-            <div className="md:hidden">
-              <MobileMenu
-                linkOwner={linkOwner}
-                projectId={id}
-                columns={fields}
-                records={records}
-              />
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg">
+          <div className="flex flex-col space-y-4 sm:space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start w-full">
+              <div className="flex flex-col gap-1 min-w-0 flex-shrink">
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 truncate">
+                  Project: {project.name}
+                </p>
+                <ExpandableDescription description={project.description} />
+              </div>
+              <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
+                <CreateColumn projectId={id} />
+              </div>
             </div>
-             {fields.length >=1 && 
-             <div className="hidden md:flex md:items-center">
-               <button className="inline-flex items-center px-4 py-2 mr-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
-                 <Undo className="w-4 h-4 mr-2" />
-                 Undo
-               </button>
-               <ScanFilesModal
-                 linkOwner={linkOwner}
-                 projectId={id}
-               />
-               <GenOverlayWrapper />
-             </div>
-             }
+            
+            {/* Action Buttons */}
+            {fields.length >= 1 && (
+              <CollapsibleActions projectId={id} linkOwner={linkOwner} />
+            )}
           </div>
         </div>
 
-        <div className="mt-3 hidden md:flex md:flex-row md:justify-between md:items-center">
-          <CreateColumn 
-            projectId={id} 
-          />
-          {fields.length >= 1 &&
-           <div className="flex items-center space-x-4">
-           <ScanView />
-           <Options projectId={id}/>
-         </div>
-          }
-        </div>
-
-        <div className="mt-3">
+        {/* Records Section */}
+        <div className="mt-4 sm:mt-6 lg:mt-8">
           <Records
             projectId={id}
             initialFields={fields}

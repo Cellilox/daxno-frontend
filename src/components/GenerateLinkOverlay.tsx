@@ -42,7 +42,7 @@ export default function GenerateLinkOverlay() {
     <>
       <button 
         onClick={toggleDialog} 
-        className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+        className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
       >
         Share Link
       </button>

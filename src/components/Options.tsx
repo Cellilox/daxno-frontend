@@ -32,19 +32,12 @@ export default function Options({projectId}: OptionsProps) {
 
     return (
         <div className="z-10">
-            <div className="flex flex-col items-center">
-                <div>
-                    <p className="text-lg md:text-xl lg:text-sm">Sharing</p>
-                </div>
-                <div className="mt-3">
-                    <button
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
-                        onClick={() => setIsOptionVisible(true)}
-                    >
-                        Options
-                    </button>
-                </div>
-            </div>
+            <button
+                className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                onClick={() => setIsOptionVisible(true)}
+            >
+                Options
+            </button>
             {isOptionVisible &&
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end p-4">
                     <div ref={modalRef} className="bg-white w-full lg:w-2/5 h-full p-6 rounded-lg shadow-lg">

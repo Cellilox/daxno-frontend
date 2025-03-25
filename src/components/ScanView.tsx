@@ -25,14 +25,11 @@ export default function ScanView() {
         <div>
             <div className="flex flex-col items-center">
                 <div>
-                    <p className="text-lg md:text-xl lg:text-sm">Use your smartphone</p>
-                </div>
-                <div className="mt-3">
                     <button
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                        className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                         onClick={toggleExpand}
                     >
-                        Click to scan
+                        Use your smart phone
                     </button>
                 </div>
             </div>
