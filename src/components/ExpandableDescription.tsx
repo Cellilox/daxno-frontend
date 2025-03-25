@@ -25,7 +25,10 @@ export default function ExpandableDescription({ description, maxLength = 150 }: 
         {isExpanded ? description : `${description.slice(0, maxLength)}...`}
       </p>
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
         className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 w-fit"
       >
         {isExpanded ? (

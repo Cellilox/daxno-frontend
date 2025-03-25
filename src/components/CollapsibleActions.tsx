@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Undo } from 'lucide-react';
 import ScanFilesModal from './ScanFilesModal';
-import GenOverlayWrapper from './GenOverlayWrapper';
+import GenerateLinkOverlay from './GenerateLinkOverlay';
 import ScanView from './ScanView';
 import Options from './Options';
 
@@ -47,7 +47,7 @@ export default function CollapsibleActions({ projectId, linkOwner }: Collapsible
                 linkOwner={linkOwner}
                 projectId={projectId}
               />
-              <GenOverlayWrapper />
+              <GenerateLinkOverlay />
             </div>
 
             {/* Right Action Group */}

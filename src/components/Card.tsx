@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import FormModal from './ui/Popup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
+import ExpandableDescription from './ExpandableDescription';
 
 type CardProps= {
   project: Project
@@ -111,7 +112,9 @@ export default function Card({project}: CardProps) {
               </button>
             </div>
           </div>
-          <p className="text-sm text-gray-600">Description: {project.description}</p>
+          <div className="mt-2">
+            <ExpandableDescription description={project.description} maxLength={100} />
+          </div>
         </div>
       </div>
       {/* --- Record Delete Alert --- */}

@@ -9,7 +9,6 @@ import MobileMenu from '@/components/MobileMenu'
 import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
-import GenOverlayWrapper from "@/components/GenOverlayWrapper"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 
