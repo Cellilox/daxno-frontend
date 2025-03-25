@@ -71,7 +71,7 @@ export default function AlertDialog({
             disabled={disabled}
             type="button"
             onClick={onConfirm}
-            className={`px-4 py-2 rounded-md text-white ${
+            className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
               disabled 
                 ? 'bg-red-300 cursor-not-allowed' 
                 : 'bg-red-500 hover:bg-red-600'
