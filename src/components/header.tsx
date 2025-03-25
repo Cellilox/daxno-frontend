@@ -37,7 +37,7 @@ const Header = async () => {
           </p>
         </div>
       </Link>
-      {userId && <Link href='/projects' className='ml-7'>Projects</Link>}
+      {userId && <Link href='/dashboard' className='ml-7'>Dashboard</Link>}
       </div>
 
 

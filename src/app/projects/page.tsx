@@ -10,12 +10,9 @@ type Project = {
   owner: string
 }
 
-const url = `${process.env.NEXT_PUBLIC_API_URL}/projects`
-
-
 export default async function Projects() {
   const projects = await getProjects()
- 
+  console.log({projects})
   return (
     <>
       <div className="min-h-screen p-6 bg-gray-50">

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { CopyIcon } from 'lucide-react';
+import { CopyIcon, Loader2 } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 type AlertDialogProps = {
   visible: boolean;
@@ -11,6 +12,8 @@ type AlertDialogProps = {
   onCancel: () => void;
   showCopyIcon?: boolean;
   copiedMessage?: string;
+  disabled?: boolean;
+  isLoading?: boolean;
 };
 
 export default function AlertDialog({
@@ -22,6 +25,8 @@ export default function AlertDialog({
   onConfirm,
   onCancel,
   copiedMessage,
+  disabled,
+  isLoading
 }: AlertDialogProps) {
   const alertRef = useRef<HTMLDivElement>(null);
 
@@ -63,11 +68,17 @@ export default function AlertDialog({
             {cancelText}
           </button>
           <button
+            disabled={disabled}
             type="button"
             onClick={onConfirm}
-            className="bg-red-500 text-white px-4 py-2 rounded-md"
+            className={`px-4 py-2 rounded-md text-white ${
+              disabled 
+                ? 'bg-red-300 cursor-not-allowed' 
+                : 'bg-red-500 hover:bg-red-600'
+            }`}
           >
-            {confirmText}
+            {isLoading && <LoadingSpinner></LoadingSpinner>}
+            {!isLoading && confirmText}
           </button>
         </div>
       </div>

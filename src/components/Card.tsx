@@ -24,16 +24,19 @@ export default function Card({project}: CardProps) {
 
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
-  
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
   }
 
   const handleDeleteProject = async (projectId: string) => {
+    setIsLoading(true)
     const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
     try {
       await deleteProject(projectId)
+      setIsLoading(false)
     } catch (error) {
       alert('Error deleting a project')
     }
@@ -42,6 +45,7 @@ export default function Card({project}: CardProps) {
   const handleCancelDeleteProject = () => {
     setIsAlertVisible(false)
     setSelectedProjectToDelete(null)
+    setIsLoading(false)
   }
 
   const handleShowProjectUpdateForm = (project: Project) => {
@@ -56,6 +60,7 @@ export default function Card({project}: CardProps) {
       description: selectedProjectToUpdate?.description || '',
       owner: selectedProjectToUpdate?.owner || ''  
     };
+    console.log({updateData})
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)
       setIsPopupVisible(false);
@@ -104,7 +109,7 @@ export default function Card({project}: CardProps) {
               </button>
             </div>
           </div>
-          <p className="text-sm text-gray-600">Owner: {project.owner}</p>
+          <p className="text-sm text-gray-600">Description: {project.description}</p>
         </div>
       </div>
       {/* --- Record Delete Alert --- */}
@@ -116,6 +121,8 @@ export default function Card({project}: CardProps) {
           confirmText="Delete"
           cancelText="Cancel"
           onConfirm={() => handleDeleteProject(selectedProjectToDelete.id)}
+          isLoading={isLoading}
+          disabled={isLoading}
           onCancel={handleCancelDeleteProject}
         />
       )}
@@ -168,7 +175,7 @@ export default function Card({project}: CardProps) {
               Cancel
             </button>
             <button
-              type="submit"
+              onClick={handleUpdateProject}
               className="bg-blue-500 text-white px-4 py-2 rounded-md"
             >
               Save
