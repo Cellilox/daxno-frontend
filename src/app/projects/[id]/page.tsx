@@ -41,9 +41,11 @@ export default async function ProjectView({ params }: ProjectViewProps) {
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
+              {fields.length >=1 &&
               <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
-                <CreateColumn projectId={id} />
-              </div>
+              <CreateColumn projectId={id} />
+            </div>
+              }
             </div>
             
             {/* Action Buttons */}

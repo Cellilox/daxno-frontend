@@ -42,7 +42,7 @@ export default function TableRow({
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="px-4 py-2 sticky left-0 bg-white shadow-r md:hidden">
+      <td className="px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r">
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
@@ -83,7 +83,7 @@ export default function TableRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-2 text-sm text-gray-900 min-w-[200px] relative">
+      <td className="px-4 py-2 text-sm text-gray-900 min-w-[200px] relative border-r">
         <div className="flex items-center gap-4">
           <span className="relative z-0">{row.filename}</span>
           
@@ -132,7 +132,7 @@ export default function TableRow({
         </div>
       </td>
       {columns.map((column) => (
-        <td key={column.id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px]">
+        <td key={column.id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px] border-r">
           {isEditing ? (
             <textarea
               value={(editedRow[column.id] as { value: string })?.value || ''}

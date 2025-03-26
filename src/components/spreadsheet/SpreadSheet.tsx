@@ -180,11 +180,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
+          records={records}
           hoveredColumn={hoveredColumn}
           setHoveredColumn={setHoveredColumn}
           onEditColumn={handleShowColumnUpdatePopup}
           onDeleteColumn={handleShowDeleteColumnAlert}
-          records={records}
+          projectId={projectId}
         />
         <tbody>
           {localRows.map((row, rowIndex) => (

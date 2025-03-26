@@ -6,7 +6,9 @@ import { createColumn } from '@/actions/column-actions'
 import { ChevronDown, ChevronUp, Plus } from 'lucide-react'
 
 type CreateColumnProps = {
-    projectId: string
+    projectId: string;
+    onSuccess?: () => void;
+    showToggle?: boolean;
 }
 
 type ColumnCreateData = {
@@ -15,10 +17,10 @@ type ColumnCreateData = {
     description: string 
 }
 
-export default function CreateColumn({projectId }: CreateColumnProps) {
+export default function CreateColumn({ projectId, onSuccess, showToggle = true }: CreateColumnProps) {
     const {register, handleSubmit, resetField, formState: {errors}} = useForm<ColumnCreateData>()
     const [isLoading, setIsLoading] = useState(false)
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(!showToggle) // Start expanded if no toggle
 
     async function addColumn(data: ColumnCreateData) {
         data.id = data.name
@@ -29,7 +31,8 @@ export default function CreateColumn({projectId }: CreateColumnProps) {
             await createColumn(data, projectId)
             setIsLoading(false)
             resetField("name")
-            setIsExpanded(false) // Close the form after successful submission on mobile
+            setIsExpanded(!showToggle) // Reset to initial state
+            onSuccess?.() // Call onSuccess callback if provided
         } catch (error) {
             alert('Error creating a column')
         }
@@ -38,25 +41,27 @@ export default function CreateColumn({projectId }: CreateColumnProps) {
     return (
         <div className="w-full">
             {/* Mobile Toggle Button */}
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-                {isExpanded ? (
-                    <>
-                        Hide Column Form
-                        <ChevronUp size={16} />
-                    </>
-                ) : (
-                    <>
-                        Add Column
-                        <Plus size={16} />
-                    </>
-                )}
-            </button>
+            {showToggle && (
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="w-full flex sm:hidden items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                    {isExpanded ? (
+                        <>
+                            Hide Column Form
+                            <ChevronUp size={16} />
+                        </>
+                    ) : (
+                        <>
+                            Add Column
+                            <Plus size={16} />
+                        </>
+                    )}
+                </button>
+            )}
 
             {/* Form - Hidden on mobile when collapsed, always visible on desktop */}
-            <div className={`${!isExpanded ? 'hidden sm:block' : 'block'} w-full`}>
+            <div className={`w-full ${showToggle ? (!isExpanded ? 'hidden sm:block' : 'block') : 'block'}`}>
                 <form onSubmit={handleSubmit(addColumn)} className="mt-4 sm:mt-0 w-full">
                     <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-2">
                         <div className="flex-1 min-w-0">
@@ -64,8 +69,8 @@ export default function CreateColumn({projectId }: CreateColumnProps) {
                                 type="text"
                                 id="name"
                                 {...register('name', {required: 'Name is required'})}
-                                className="w-full p-3 rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter the column name"
+                                className="w-full p-3 rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                                placeholder="Add a column"
                             />
                         </div>
                         <div className="flex-shrink-0">
