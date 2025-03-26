@@ -3,6 +3,7 @@ import { gapi } from 'gapi-script';
 import { useEffect, useState } from 'react';
 import LoadingSpinner from './ui/LoadingSpinner';
 import { download } from '@/actions/download-actions';
+import { HardDrive, LogOut } from 'lucide-react';
 
 type ShareToDriveProps = {
     projectId: string
@@ -29,7 +30,6 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
             const accessToken = googleUser.getAuthResponse().access_token;
             const refreshToken = googleUser.getAuthResponse(true).refresh_token;
             
-            // Set the tokens in state
             setAccessToken(accessToken);
             setRefreshToken(refreshToken || 'No refresh token available');
 
@@ -92,7 +92,7 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
         try {
             // @ts-ignore
             const googleAuth = await gapi.auth2.getAuthInstance().signIn({
-                prompt: 'consent' // This forces the consent screen to appear
+                prompt: 'consent'
             });
             const accessToken = googleAuth.getAuthResponse().access_token;
             const refreshToken = googleAuth.getAuthResponse(true).refresh_token;
@@ -117,9 +117,8 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
                 discoveryDocs: process.env.NEXT_PUBLIC_DISCOVERY_DOCS?.split(','),
                 scope: process.env.NEXT_PUBLIC_SCOPES?.split(' ').join(' '),
             }).then(() => {
-                // @ts-ignore - auth2 exists but TypeScript doesn't recognize it
+                // @ts-ignore
                 gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-
                 // @ts-ignore
                 setSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
             });
@@ -131,47 +130,46 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
     }, []);
 
     return (
-        <>
-            <div className="flex flex-col items-center">
+        <div className="w-full mt-5">
+            <div className="flex flex-col items-center gap-3">
+                <p className="text-sm font-medium text-gray-700">Share to Google</p>
                 {!isSignedIn ? (
-                    <div>
-                        <p>Share to your drive</p>
-                        <div className='mt-3'>
-                            <button onClick={handleAuthClick} className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">Connect to Google Drive</button>
-                        </div>
-
-                        <div className='mt-3'>
-                            <button onClick={handleAuthClick} className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">connect to Gmail</button>
-                        </div>
+                    <div className="w-full space-y-2">
+                        <button 
+                            onClick={handleAuthClick} 
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                        >
+                            <HardDrive className="w-4 h-4" />
+                            <span className="text-sm">Connect Drive</span>
+                        </button>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center">
-                        <button onClick={handleSignOutClick} className='text-black border-b border-red-500 '>Disconnect from Google Drive</button>
-                        <div className="mt-2 text-sm text-gray-600">
-                            <p>Access Token: {accessToken.substring(0, 20)}...</p>
-                            <p>Refresh Token: {refreshToken ? refreshToken.substring(0, 20) + '...' : 'No refresh token'}</p>
-                        </div>
-                        <div className='mt-3'>
-                            {isLoading ? (
-                                <div className="flex justify-between px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
-                                    <LoadingSpinner />
-                                    <p className="ml-3">Uploading...</p>
-                                </div>
-                            ) : (
-                                <div>
-                                <button
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
-                                    onClick={downloadCSV}
-                                >
-                                    Share to your Drive
-                                </button>
-                                </div>
-                            )}
-                        </div>
+                    <div className="w-full space-y-2">
+                        {isLoading ? (
+                            <div className="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
+                                <LoadingSpinner />
+                                <span className="text-sm">Uploading...</span>
+                            </div>
+                        ) : (
+                            <button
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                                onClick={downloadCSV}
+                            >
+                                <HardDrive className="w-4 h-4" />
+                                <span className="text-sm">Share to Drive</span>
+                            </button>
+                        )}
+                        <button 
+                            onClick={handleSignOutClick} 
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>Disconnect</span>
+                        </button>
                     </div>
                 )}
             </div>
-        </>
+        </div>
     );
 }
 

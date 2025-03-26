@@ -71,7 +71,7 @@ export default function SpreadsheetModals({
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
-                Description
+                Description (optional)
               </label>
               <label className="block text-xs font-medium text-gray-700">
                 (Tell the AI how you would discribe this sentiment for proper detection and accuracy)
