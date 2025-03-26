@@ -135,12 +135,12 @@ export default function TableRow({
         <td key={column.id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px]">
           {isEditing ? (
             <textarea
-              value={(editedRow[column.id] as { value: string }).value || ''}
+              value={(editedRow[column.id] as { value: string })?.value || ''}
               onChange={(e) => onCellChange(rowIndex, column.id, e.target.value)}
               className="w-full p-1 border rounded min-h-[200px]"
             />
           ) : (
-            <span>{(row[column.id] as { value: string }).value || ''}</span>
+            <span>{(row[column.id] as { value: string })?.value || ''}</span>
           )}
         </td>
       ))}
