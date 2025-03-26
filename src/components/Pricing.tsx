@@ -101,7 +101,12 @@ export default function Pricing({headers, userId}: PricingTypes) {
 
             {/* Starter Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg">
+              <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Starter</h3>
+              <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                  Current Plan
+                </span>
+              </div>
               <div className="text-4xl font-bold mb-6">
                     Rwf 10<span className="text-lg text-gray-500">/mo</span>
               </div>
@@ -160,9 +165,12 @@ export default function Pricing({headers, userId}: PricingTypes) {
 
             {/* Professional Plan (Featured) */}
             <div className="bg-white p-8 rounded-xl shadow-lg border-2 border-blue-600 transform scale-105">
-              <div className="mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
                   Most Popular
+                </span>
+                <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                  Current Plan
                 </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
@@ -226,7 +234,12 @@ export default function Pricing({headers, userId}: PricingTypes) {
 
             {/* Enterprise Plan */}
             <div className="bg-white p-8 rounded-xl shadow-lg">
+              <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Enterprise</h3>
+              <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm">
+                  Current Plan
+                </span>
+              </div>
               <div className="text-4xl font-bold mb-6">Custom</div>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
@@ -268,13 +281,6 @@ export default function Pricing({headers, userId}: PricingTypes) {
               </Link>
             </div>
           </div>
-
-          <p className="text-center text-gray-600 mt-8 text-sm">
-            All plans include 14-day free trial. Need more?{" "}
-            <Link href="/contact" className="text-blue-600 hover:underline">
-              Contact us
-            </Link>
-          </p>
         </div>
       </div>
     </div>

@@ -1,9 +1,8 @@
-
 "use client"
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useSubscription } from './hooks/useSubscription';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface Transaction {
   payment_type: 'mobilemoneyrw' | 'card';

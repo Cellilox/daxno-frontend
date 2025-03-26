@@ -37,13 +37,15 @@ const Header = async () => {
           </p>
         </div>
       </Link>
-      {userId && <Link href='/projects' className='ml-7'>Projects</Link>}
+      {userId && <Link href='/dashboard' className='ml-7'>Dashboard</Link>}
       </div>
 
 
       <div className='md:flex md:items-center'>
         <div className='md:mr-3'>
+        <SignedIn>
         <CurrentPlan currentTransaction={currentSubscription}/>
+        </SignedIn>
         </div>
         <div className='text-right mt-3 md:mt-0'>
         <SignedOut>

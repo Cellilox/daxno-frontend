@@ -19,10 +19,10 @@ export default function Home() {
         </p>
         <div className="flex gap-4 justify-center">
           <Link
-            href="/projects"
+            href="/dashboard"
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105"
           >
-            Start Free Trial
+            Get Started
           </Link>
           <Link
             href="/demo"

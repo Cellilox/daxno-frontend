@@ -1,17 +1,18 @@
 'use client'; 
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
 import AlertDialog from "./ui/AlertDialog"; 
 import { generateLink } from "@/actions/submission-actions";
+import { Link, Share2 } from "lucide-react";
 
 export default function GenerateLinkOverlay() {
   const pathname = usePathname();
   const projectId = pathname.split('/')[2];
-  console.log("proj", projectId)
   const [isDialogVisible, setDialogVisible] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [link, setLink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const copyToClipboardHandler = async () => {
     try {
@@ -25,25 +26,28 @@ export default function GenerateLinkOverlay() {
 
   const handleGenerateLink = async (proj_id: string) => {
     try {
+      setIsLoading(true);
       const response = await generateLink(proj_id);
-      console.log({response})
       setLink(response.url);
     } catch (error) {
       console.error('Error generating link:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
- const toggleDialog =() => {
-  setDialogVisible(true);
-  handleGenerateLink(projectId)
- }
+  const toggleDialog = () => {
+    setDialogVisible(true);
+    handleGenerateLink(projectId);
+  }
 
   return (
     <>
       <button 
         onClick={toggleDialog} 
-        className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+        className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
       >
+        <Share2 className="w-4 h-4 mr-2" />
         Share Link
       </button>
 
@@ -56,6 +60,9 @@ export default function GenerateLinkOverlay() {
         onConfirm={copyToClipboardHandler}
         onCancel={() => setDialogVisible(false)}
         copiedMessage={copySuccess ? "Link copied!" : ""}
+        isLoading={isLoading}
+        showLinkIcon
+        centerContent
       />
     </>
   );

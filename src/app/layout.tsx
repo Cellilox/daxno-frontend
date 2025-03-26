@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 // import UserProvider from "@/components/context/user-provider";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Footer from "@/components/Footer";
-import Header from "@/components/Header";
+import Header from "@/components/header/header";
 import PaymentClientProvider from "@/components/context/payment/PaymentProvider";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

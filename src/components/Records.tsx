@@ -1,8 +1,7 @@
-
 'use client';
 import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
-import SpreadSheet from './SpreadSheet';
+import SpreadSheet from './spreadsheet/SpreadSheet';
 
 type RecordsProps = {
     projectId: string;

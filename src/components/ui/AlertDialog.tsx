@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { CopyIcon } from 'lucide-react';
+import { CopyIcon, Link } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 type AlertDialogProps = {
   visible: boolean;
@@ -10,7 +11,11 @@ type AlertDialogProps = {
   onConfirm: () => void;
   onCancel: () => void;
   showCopyIcon?: boolean;
+  showLinkIcon?: boolean;
   copiedMessage?: string;
+  disabled?: boolean;
+  isLoading?: boolean;
+  centerContent?: boolean;
 };
 
 export default function AlertDialog({
@@ -22,8 +27,13 @@ export default function AlertDialog({
   onConfirm,
   onCancel,
   copiedMessage,
+  disabled,
+  isLoading,
+  showLinkIcon,
+  centerContent
 }: AlertDialogProps) {
   const alertRef = useRef<HTMLDivElement>(null);
+  const isCopyAction = confirmText === 'Copy';
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -45,29 +55,50 @@ export default function AlertDialog({
     <div className="z-50 fixed inset-0 top-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div
         ref={alertRef}
-        className="bg-white w-full lg:w-2/5 p-6 flex flex-col justify-center items-center rounded-lg shadow-lg"
+        className="bg-white w-full max-w-2xl p-6 flex flex-col justify-center items-center rounded-lg shadow-lg"
       >
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
-        <p>{message}</p>
-        {copiedMessage !="" && (
+        <div className={`w-full max-w-full break-all ${centerContent ? 'flex justify-center' : ''}`}>
+          {showLinkIcon ? (
+            <div className={`flex items-start gap-2 bg-gray-50 p-3 rounded-md ${centerContent ? 'max-w-[90%]' : 'w-full'}`}>
+              <Link className="w-4 h-4 mt-1 flex-shrink-0 text-blue-600" />
+              <p className="text-sm text-gray-700 break-all">{message}</p>
+            </div>
+          ) : (
+            <p className="text-center">{message}</p>
+          )}
+        </div>
+        {copiedMessage && (
           <div className="flex items-center mt-2">
-            {copiedMessage && <span className="text-green-500">{copiedMessage}</span>}
+            <span className="text-green-500 text-sm">{copiedMessage}</span>
           </div>
         )}
         <div className="flex justify-end gap-2 mt-6 w-full">
           <button
             type="button"
             onClick={onCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded-md"
+            className="bg-gray-500 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-600"
           >
             {cancelText}
           </button>
           <button
+            disabled={disabled || isLoading}
             type="button"
             onClick={onConfirm}
-            className="bg-red-500 text-white px-4 py-2 rounded-md"
+            className={`min-w-[80px] px-4 py-2 rounded-md text-white text-sm flex items-center justify-center ${
+              isCopyAction
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-red-500 hover:bg-red-600'
+            } ${disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {confirmText}
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {confirmText}
+                {isCopyAction && <CopyIcon className="w-4 h-4 ml-2" />}
+              </>
+            )}
           </button>
         </div>
       </div>

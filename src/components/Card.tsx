@@ -5,6 +5,8 @@ import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
 import FormModal from './ui/Popup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
+import LoadingSpinner from './ui/LoadingSpinner';
+import ExpandableDescription from './ExpandableDescription';
 
 type CardProps= {
   project: Project
@@ -24,16 +26,19 @@ export default function Card({project}: CardProps) {
 
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
-  
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
   }
 
   const handleDeleteProject = async (projectId: string) => {
+    setIsLoading(true)
     const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
     try {
       await deleteProject(projectId)
+      setIsLoading(false)
     } catch (error) {
       alert('Error deleting a project')
     }
@@ -42,6 +47,7 @@ export default function Card({project}: CardProps) {
   const handleCancelDeleteProject = () => {
     setIsAlertVisible(false)
     setSelectedProjectToDelete(null)
+    setIsLoading(false)
   }
 
   const handleShowProjectUpdateForm = (project: Project) => {
@@ -51,6 +57,7 @@ export default function Card({project}: CardProps) {
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     const updateData = {
       name: selectedProjectToUpdate?.name || '',
       description: selectedProjectToUpdate?.description || '',
@@ -58,6 +65,7 @@ export default function Card({project}: CardProps) {
     };
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)
+      setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
@@ -104,7 +112,9 @@ export default function Card({project}: CardProps) {
               </button>
             </div>
           </div>
-          <p className="text-sm text-gray-600">Owner: {project.owner}</p>
+          <div className="mt-2">
+            <ExpandableDescription description={project.description} maxLength={100} />
+          </div>
         </div>
       </div>
       {/* --- Record Delete Alert --- */}
@@ -116,6 +126,8 @@ export default function Card({project}: CardProps) {
           confirmText="Delete"
           cancelText="Cancel"
           onConfirm={() => handleDeleteProject(selectedProjectToDelete.id)}
+          isLoading={isLoading}
+          disabled={isLoading}
           onCancel={handleCancelDeleteProject}
         />
       )}
@@ -168,10 +180,16 @@ export default function Card({project}: CardProps) {
               Cancel
             </button>
             <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded-md"
+              onClick={handleUpdateProject}
+              disabled={isLoading}
+              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
+                isLoading 
+                  ? 'bg-blue-300 cursor-not-allowed' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              }`}
             >
-              Save
+              {!isLoading && 'Save'}
+              {isLoading && <LoadingSpinner />}
             </button>
           </div>
         </FormModal>
