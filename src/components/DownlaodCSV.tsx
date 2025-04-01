@@ -3,10 +3,11 @@
 import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
 import { download } from "@/actions/download-actions";
+import { Download } from 'lucide-react';
+
 type ExportCSVProps = {
     projectId: string
 }
-
 
 export default function DownLoadCSV({projectId}: ExportCSVProps) {
      const [isLoading, setIsLoading] = useState(false)
@@ -20,27 +21,27 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
         link.click();
     }
     return (
-        <>
-            <div className="flex flex-col items-center">
-                    <p>Download</p>
-                    <div className="mt-3">
-                    {isLoading ?
-                        <div
-                            className="flex justify-between px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
-                        >
+        <div className="w-full">
+            <div className="flex flex-col items-center gap-3">
+                <p className="text-sm font-medium text-gray-700">Download your data</p>
+                <div className="w-full">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
                             <LoadingSpinner />
-                            <p className="ml-3">Downloading...</p>
-                        </div> :
+                            <span className="text-sm">Downloading...</span>
+                        </div>
+                    ) : (
                         <button
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
                             onClick={downloadCSV}
                         >
-                            Download your file
+                            <Download className="w-4 h-4" />
+                            <span className="text-sm">Download CSV</span>
                         </button>
-                    }
-                    </div>
+                    )}
+                </div>
             </div>
-        </>
+        </div>
     );
 }
 
