@@ -1,31 +1,32 @@
 export type Field = {
   id: string;
-  name: string;
-  description: string | null;
   hidden_id: string;
+  name: string;
+  description?: string;
+  type: string;
+  project_id: string;
 };
 
 export type ApiRecord = {
   id: string;
-  filename?: string;
-  project_id: string;
-  fields_data: {
-    [key: string]: {
-      answer: string;
-      confidence: string;
-      page: string;
-      source: string;
-    };
+  answers: {
+    [key: string]: string;
   };
+  updated_at: string;
+  created_at: string;
+  filename: string;
+  project_id: string;
 };
 
 export type Record = {
-  hiddenId: string;
+  id: string;
   filename: string;
-  [columnId: string]: string | { 
-    value: string;
-    confidence: string;
+  project_id: string;
+  answers: {
+    [key: string]: string;
   };
+  created_at: string;
+  updated_at: string;
 };
 
 export type SpreadSheetProps = {

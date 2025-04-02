@@ -1,9 +1,8 @@
 'use client'
-import { gapi } from 'gapi-script';
 import { useEffect, useState } from 'react';
 import LoadingSpinner from './ui/LoadingSpinner';
 import { download } from '@/actions/download-actions';
-import { HardDrive, LogOut } from 'lucide-react';
+import { HardDrive, Mail, LogOut } from 'lucide-react';
 
 type ShareToDriveProps = {
     projectId: string
@@ -14,8 +13,11 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [accessToken, setAccessToken] = useState<string>('');
     const [refreshToken, setRefreshToken] = useState<string>('');
+    const [gapi, setGapi] = useState<any>(null);
 
     async function uploadToGoogleDrive(file: any) {
+        if (!gapi) return;
+        
         setIsLoading(true)
         try {
             await gapi.client.init({
@@ -25,7 +27,6 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
                 scope: process.env.NEXT_PUBLIC_SCOPES,
             });
 
-            // @ts-ignore
             const googleUser = gapi.auth2.getAuthInstance().currentUser.get();
             const accessToken = googleUser.getAuthResponse().access_token;
             const refreshToken = googleUser.getAuthResponse(true).refresh_token;
@@ -80,17 +81,10 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
         }
     }
 
-    const setSignInStatus = (isSignedIn: boolean) => {
-        setIsSignedIn(isSignedIn);
-    };
-
-    const updateSignInStatus = (isSignedIn: boolean) => {
-        setSignInStatus(isSignedIn);
-    };
-
     const handleAuthClick = async () => {
+        if (!gapi) return;
+        
         try {
-            // @ts-ignore
             const googleAuth = await gapi.auth2.getAuthInstance().signIn({
                 prompt: 'consent'
             });
@@ -105,32 +99,45 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
     };
 
     const handleSignOutClick = () => {
-        // @ts-ignore
+        if (!gapi) return;
         gapi.auth2.getAuthInstance().signOut();
     };
 
-    function loadGapi() {
-        gapi.load('client:auth2', () => {
-            gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_API_KEY,
-                clientId: process.env.NEXT_PUBLIC_CLIENT_ID,
-                discoveryDocs: process.env.NEXT_PUBLIC_DISCOVERY_DOCS?.split(','),
-                scope: process.env.NEXT_PUBLIC_SCOPES?.split(' ').join(' '),
-            }).then(() => {
-                // @ts-ignore
-                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSignInStatus);
-                // @ts-ignore
-                setSignInStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+    useEffect(() => {
+        // Dynamically import gapi-script
+        import('gapi-script').then((gapiModule) => {
+            const { gapi } = gapiModule;
+            setGapi(gapi);
+            
+            gapi.load('client:auth2', () => {
+                gapi.client.init({
+                    apiKey: process.env.NEXT_PUBLIC_API_KEY,
+                    clientId: process.env.NEXT_PUBLIC_CLIENT_ID,
+                    discoveryDocs: process.env.NEXT_PUBLIC_DISCOVERY_DOCS?.split(','),
+                    scope: process.env.NEXT_PUBLIC_SCOPES?.split(' ').join(' '),
+                }).then(() => {
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    setIsSignedIn(authInstance.isSignedIn.get());
+                    authInstance.isSignedIn.listen((signedIn: boolean) => {
+                        setIsSignedIn(signedIn);
+                    });
+                });
             });
         });
-    }
 
-    useEffect(() => {
-        loadGapi();
+        return () => {
+            // Cleanup if needed
+            if (gapi) {
+                const authInstance = gapi.auth2?.getAuthInstance();
+                if (authInstance) {
+                    authInstance.signOut();
+                }
+            }
+        };
     }, []);
 
     return (
-        <div className="w-full mt-5">
+        <div className="w-full">
             <div className="flex flex-col items-center gap-3">
                 <p className="text-sm font-medium text-gray-700">Share to Google</p>
                 {!isSignedIn ? (
@@ -142,9 +149,23 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
                             <HardDrive className="w-4 h-4" />
                             <span className="text-sm">Connect Drive</span>
                         </button>
+                        <button 
+                            onClick={handleAuthClick} 
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                        >
+                            <Mail className="w-4 h-4" />
+                            <span className="text-sm">Connect Gmail</span>
+                        </button>
                     </div>
                 ) : (
                     <div className="w-full space-y-2">
+                        <button 
+                            onClick={handleSignOutClick} 
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>Disconnect</span>
+                        </button>
                         {isLoading ? (
                             <div className="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
                                 <LoadingSpinner />
@@ -159,13 +180,6 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
                                 <span className="text-sm">Share to Drive</span>
                             </button>
                         )}
-                        <button 
-                            onClick={handleSignOutClick} 
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span>Disconnect</span>
-                        </button>
                     </div>
                 )}
             </div>

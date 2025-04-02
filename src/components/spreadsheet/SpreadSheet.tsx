@@ -3,58 +3,48 @@
 import { useEffect, useState } from 'react';
 import { deleteColumn, updateColumn } from '@/actions/column-actions';
 import { deleteRecord, updateRecord } from '@/actions/record-actions';
-import { Field, Record,  SpreadSheetProps } from './types';
+import { Field, Record, ApiRecord } from './types';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
+import { useRouter } from 'next/navigation';
+import { Pencil, Trash } from 'lucide-react';
+
+type SpreadSheetProps = {
+  columns: Field[];
+  records: ApiRecord[];
+  projectId: string;
+};
 
 export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {
-  const [localColumns, setLocalColumns] = useState<Field[] | undefined>([]);
-  const [localRows, setLocalRows] = useState<Record[] | undefined>([]);
+  const [localColumns, setLocalColumns] = useState<Field[]>([]);
+  const [localRecords, setLocalRecords] = useState<Record[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedColumnToUpdate, setSelectedColumnToUpdate] = useState<Field | null>(null);
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedColumnToDelete, setSelectedColumnToDelete] = useState<Field | null>(null);
   const [selectedRecordToDelete, setSelectedRecordToDelete] = useState<Record | null>(null);
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
-  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const router = useRouter();
 
   useEffect(() => {
-    if (columns) {
-      setLocalColumns(columns);
-    }
-    
-    if (records) {
-      const transformedRecords = records.map(record => {
-        const transformedRecord: Record = {
-          hiddenId: record.id,
-          filename: record.filename || '',
-        };
-        
-        Object.entries(record.fields_data).forEach(([fieldId, fieldData]) => {
-          transformedRecord[fieldId] = {
-            value: fieldData.answer,
-            confidence: fieldData.confidence
-          };
-        });
-        
-        return transformedRecord;
-      });
-      
-      setLocalRows(transformedRecords);
-    }
-  }, [columns, records]);
+    setLocalColumns(columns);
+    setLocalRecords(records);
+  }, [records, columns]);
 
   // Column handlers
   const handleShowColumnUpdatePopup = (column: Field) => {
     setSelectedColumnToUpdate(column);
     setIsPopupVisible(true);
   };
+
+  
 
   const handleCloseColumnUpdatePopup = () => {
     setIsPopupVisible(false);
@@ -116,7 +106,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     try {
       await deleteRecord(recordId);
       setIsAlertVisible(false);
-      setLocalRows((prev) => prev?.filter(row => row.hiddenId !== recordId));
+      setLocalRecords((prev) => prev.filter(row => row.id !== recordId));
     } catch (error) {
       alert('Error deleting a record');
     }
@@ -124,41 +114,48 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleEditRow = (rowIndex: number) => {
     setEditingRow(rowIndex);
-    setEditedRecords((prev) => ({
-      ...prev,
-      [rowIndex]: localRows?.[rowIndex] ? { ...localRows[rowIndex] } : {} as Record
-    }));
   };
 
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
-    setEditedRecords((prev) => ({
-      ...prev,
-      [rowIndex]: { ...prev[rowIndex], [columnId]: value }
-    }));
+    const record = localRecords[rowIndex];
+    const updatedRecord = {
+      ...record,
+      answers: {
+        ...record.answers,
+        [columnId]: value,
+      },
+    };
+
+    setEditedRecords({
+      ...editedRecords,
+      [rowIndex]: updatedRecord,
+    });
   };
 
   const handleSaveRow = async (rowIndex: number) => {
+    const editedRecord = editedRecords[rowIndex];
+    if (!editedRecord) return;
+
     try {
-      const updatedRecord = editedRecords[rowIndex];
-      await updateRecord(updatedRecord.hiddenId, updatedRecord);
+      await updateRecord(editedRecord.id, editedRecord);
       setEditingRow(null);
       setEditedRecords((prev) => {
-        const newRecords = { ...prev };
-        delete newRecords[rowIndex];
-        return newRecords;
+        const newState = { ...prev };
+        delete newState[rowIndex];
+        return newState;
       });
     } catch (error) {
-      console.error('Error saving row:', error);
+      console.error('Error updating record:', error);
     }
   };
 
   const handleCancelEdit = (rowIndex: number) => {
-    setEditingRow(null);
     setEditedRecords((prev) => {
-      const newRecords = { ...prev };
-      delete newRecords[rowIndex];
-      return newRecords;
+      const newState = { ...prev };
+      delete newState[rowIndex];
+      return newState;
     });
+    setEditingRow(null);
   };
 
   const handleChatRow = (record: Record) => {
@@ -171,7 +168,28 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordForChat(null);
   };
 
-  if (!localColumns || !localRows) {
+  const handleConfirmDelete = async () => {
+    if (!selectedRecordToDelete) return;
+
+    try {
+      setIsLoading(true);
+      await deleteRecord(selectedRecordToDelete.id);
+      setIsAlertVisible(false);
+      setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
+    } catch (error) {
+      alert('Error deleting a record');
+    } finally {
+      setIsLoading(false);
+      setSelectedRecordToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsAlertVisible(false);
+    setSelectedRecordToDelete(null);
+  };
+
+  if (!localColumns || !localRecords) {
     return <div>Loading...</div>;
   }
 
@@ -188,9 +206,9 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           projectId={projectId}
         />
         <tbody>
-          {localRows.map((row, rowIndex) => (
+          {localRecords.map((row, rowIndex) => (
             <TableRow
-              key={row.hiddenId}
+              key={`${row.id}-${rowIndex}`}
               row={row}
               columns={localColumns}
               rowIndex={rowIndex}
@@ -226,6 +244,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         onCloseDeleteRecordAlert={handleCloseDeleteRecordAlert}
         onDeleteRecord={handleDeleteRecord}
         onCloseChat={handleCloseChat}
+        onConfirmDelete={handleConfirmDelete}
+        onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
       />
     </div>

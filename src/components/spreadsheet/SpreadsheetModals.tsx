@@ -21,7 +21,9 @@ type SpreadsheetModalsProps = {
   onCloseDeleteRecordAlert: () => void;
   onDeleteRecord: (recordId: string) => void;
   onCloseChat: () => void;
-  setSelectedColumnToUpdate: (column: Field) => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
+  setSelectedColumnToUpdate: (column: Field | null) => void;
 };
 
 export default function SpreadsheetModals({
@@ -41,8 +43,16 @@ export default function SpreadsheetModals({
   onCloseDeleteRecordAlert,
   onDeleteRecord,
   onCloseChat,
+  onConfirmDelete,
+  onCancelDelete,
   setSelectedColumnToUpdate,
 }: SpreadsheetModalsProps) {
+  const handleDeleteRecord = () => {
+    if (selectedRecordToDelete) {
+      onDeleteRecord(selectedRecordToDelete.id);
+    }
+  };
+
   return (
     <>
       {/* Column Update Modal */}
@@ -136,7 +146,7 @@ export default function SpreadsheetModals({
           message="This record will be deleted permanently, and there is no going back."
           confirmText="Delete"
           cancelText="Cancel"
-          onConfirm={() => onDeleteRecord(selectedRecordToDelete.hiddenId)}
+          onConfirm={handleDeleteRecord}
           onCancel={onCloseDeleteRecordAlert}
         />
       )}
