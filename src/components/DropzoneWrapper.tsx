@@ -28,7 +28,7 @@ export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrappe
         onCancel={() => setIsVisible(false)}
       >
 
-        <MyDropzone  
+        <MyDropzone
           projectId={projectId} 
           linkOwner={linkOwner}
           setIsVisible={setIsVisible} 

@@ -37,6 +37,7 @@ export default function TableRow({
 
   return (
     <tr
+      key={row.id}
       className="border-b hover:bg-gray-50"
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
