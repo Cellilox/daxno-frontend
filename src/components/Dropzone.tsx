@@ -2,10 +2,10 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-// import { batchQuery, uploadFile } from '@/actions/record-actions';
 import { FileIcon } from 'lucide-react';
-import { analyseText, createDocument, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { analyseText, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
 import { useRouter } from 'next/navigation';
+import { createDocument } from '@/actions/documents-action';
 
 type MyDropzoneProps = {
   projectId: string

@@ -12,7 +12,6 @@ type Project = {
 
 export default async function Projects() {
   const projects = await getProjects()
-  console.log({projects})
   return (
     <>
       <div className="min-h-screen p-6 bg-gray-50">

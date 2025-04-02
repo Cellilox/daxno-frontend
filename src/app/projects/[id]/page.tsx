@@ -1,16 +1,11 @@
 import { currentUser } from "@clerk/nextjs/server"
-import { Undo } from "lucide-react"
-import ScanView from "@/components/ScanView"
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
-import Options from "@/components/Options"
-import ScanFilesModal from "@/components/ScanFilesModal"
 import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
-import { ApiRecord } from "@/components/spreadsheet/types"
 
 type ProjectViewProps = {
   params: {
@@ -27,17 +22,6 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
-  console.log('FFF', fields)
-  // // Transform records to match the new structure if needed
-  // const records: ApiRecord[] = recordsData.map((record: any) => ({
-  //   hiddenId: record.hiddenId,
-  //   id: record.id,
-  //   file_name: record.file_name,
-  //   project_id: record.project_id,
-  //   answers: record.answers || {}
-  // }));
-
-console.log('IIIII>>>', records)
 
   return (
     <>
