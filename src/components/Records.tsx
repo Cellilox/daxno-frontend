@@ -2,25 +2,21 @@
 import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
+import { Field, ApiRecord } from './spreadsheet/types';
 
 type RecordsProps = {
     projectId: string;
-    initialFields: any;
-    initialRecords: any;
+    initialFields: Field[];
+    initialRecords: ApiRecord[];
 };
 
 export default function Records({ projectId, initialFields, initialRecords }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [rowData, setRowData] = useState()
-    const [columns, setColumns] = useState()
-    console.log('DATA', rowData)
-    console.log('Cols', columns)
-
+    const [rowData, setRowData] = useState<ApiRecord[]>(initialRecords)
+    const [columns, setColumns] = useState<Field[]>(initialFields)
+    console.log('IINNI', rowData)
     useEffect(() => {
-        setRowData(initialRecords)
-        setColumns(initialFields)
-
         if (!socketRef.current) {
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
                 path: '/ws/records/sockets',
@@ -30,7 +26,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         const socket = socketRef.current;
         socket.on('connect', () => {
           console.log(`Joined room: ${projectId}`);
-      });
+        });
 
         const handleConnect = () => {
             setIsConnected(true);
@@ -51,7 +47,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             console.warn('WebSocket connection timeout');
         };
 
-        const handleShowRecordsUpdates = (data: any) => {
+        const handleShowRecordsUpdates = (data: { records: ApiRecord[], fields: Field[] }) => {
           console.log('Received records update:', data);
           setRowData(data.records)
           setColumns(data.fields)
@@ -70,7 +66,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socket.off('disconnect', handleDisconnect);
             socket.off('connect_error', handleError);
             socket.off('connect_timeout', handleTimeout);
-            socket.on('records_fetched', handleShowRecordsUpdates)
+            socket.off('records_fetched', handleShowRecordsUpdates)
             socket.disconnect();
             socketRef.current = null;
         };
@@ -78,7 +74,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
 
     return (
         <div>
-            <SpreadSheet records={rowData} columns= {columns} projectId={projectId}/>
+            <SpreadSheet records={rowData} columns={columns} projectId={projectId}/>
             <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
         </div>
     );

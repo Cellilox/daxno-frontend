@@ -2,9 +2,10 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { batchQuery, uploadFile } from '@/actions/record-actions';
-import { getColumns } from '@/actions/column-actions';
+// import { batchQuery, uploadFile } from '@/actions/record-actions';
 import { FileIcon } from 'lucide-react';
+import { analyseText, createDocument, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { useRouter } from 'next/navigation';
 
 type MyDropzoneProps = {
   projectId: string
@@ -13,11 +14,6 @@ type MyDropzoneProps = {
   onMessageChange: (message: string) => void
 }
 
-type BatchFieldsType = {
-  name: string, 
-  description: string | null, 
-  hidden_id: string
-}
 
 export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessageChange }: MyDropzoneProps) {
   console.log('LIIII', linkOwner)
@@ -25,72 +21,98 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-
+  const router = useRouter()
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selectedFile = acceptedFiles[0];
     if (selectedFile) {
       setFile(selectedFile);
-      if (selectedFile.type === 'application/pdf') {
-        setPreview(selectedFile.name);
-      } else {
-        setPreview(URL.createObjectURL(selectedFile));
-      }
+      setPreview(URL.createObjectURL(selectedFile));
     }
   }, []);
 
-  const getColumnsFunc = async (proj_id: string) => {
-    const columns = await getColumns(proj_id);
-    console.log("Original columns:", columns);
-    const fields = columns.map(({ name, description, hidden_id }: BatchFieldsType) => ({
-      name,
-      description: description || "", 
-      hiddenId: hidden_id 
-    }));
-    return fields
-  }
-
   const handleUpload = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setIsLoading(true);
-    
+    event.preventDefault()
+    setIsLoading(true)
     if (!file) {
-      setIsLoading(false);
-      setIsVisible(false);
+      setIsLoading(false)
+      setIsVisible(false)
+      router.push(`/projects/${projectId}`)
       return;
     }
-
+    const formData = new FormData();
+    formData.append('file', file);
     try {
-      const formData = new FormData();
-      formData.append('file', file, file.name);
-      formData.append('project_id', projectId);
-      
-      console.log("Sending file:", file.name);
       onMessageChange('Uploading...')
-      const result = await uploadFile(formData, projectId);
-      console.log("Upload result:", result);
-      if(linkOwner && linkOwner) {
-        onMessageChange('')
-        setIsVisible(false)
-        const fields = await getColumnsFunc(projectId)
-        const data = { fields }; 
-        await batchQuery(data, file.name, projectId);
-      }
-
-      if (result && !linkOwner) {
-        onMessageChange('Analyzing...');
-        const fields = await getColumnsFunc(projectId)
-        const data = { fields }; 
-        await batchQuery(data, file.name, projectId);
-        setIsVisible(false);
-        onMessageChange('');
-      }
+      const result = await uploadFile(formData)
+      await handleExtract(result.filename)
     } catch (error) {
-      console.error('Error uploading file:', error);
-      onMessageChange('Error uploading file. Please try again.');
-    } finally {
-      setIsLoading(false);
+      alert('Error uploading a file')
     }
   };
+
+  const handleExtract = async (fileName: string) => {
+    try {
+      onMessageChange('Extracting...')
+      const response = await extractText(fileName)
+      console.log('EXTRACTED_DATA', response.textract_response)
+      await handleAnalyse(fileName, response.textract_response)
+    } catch (error) {
+      console.error('Error in extract:', error);
+      setIsLoading(false);
+      onMessageChange('');
+    }
+  };
+
+  const handleAnalyse = async (fileName: string, extractedResponse: any) => {
+    const requestBody = {...extractedResponse}
+
+    try {
+      onMessageChange('Analysing')
+      const pro = true
+      if(pro) {
+        console.log('Analysing...,...')
+        const response = await analyseText(projectId, fileName, requestBody)
+        console.log('ANALYSED_DATA', response)
+        await saveData(response)
+      } else {
+        console.log('Querrying....')
+        const response = await queryDocument(projectId, fileName)
+        console.log('Queried_DATA', response)
+        await saveData(response)
+      }
+    } catch (error) {
+      console.error('Error in analysis:', error);
+      setIsLoading(false);
+      onMessageChange('');
+    }
+  };
+
+  const saveData = async (data: any) => {
+    try {
+      onMessageChange('Saving record')
+      const response = await saveRecord(data)
+      console.log('RECORD', response)
+      const doc_data = {
+        filename: response.record.filename,
+        page_number: 2
+      }
+      await saveDocument(doc_data)
+    } catch (error) {
+      console.error('Error in saving:', error);
+      setIsLoading(false);
+      onMessageChange('');
+    }
+  };
+
+  const saveDocument = async (data: any) => {
+    try {
+      await createDocument(data)
+      setIsVisible(false)
+      onMessageChange('')
+    } catch (error) {
+      console.log('Error saving document', error)
+    }
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
     onDrop,
