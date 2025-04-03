@@ -29,7 +29,7 @@ export default async function Dashboard() {
           <p className="text-gray-500">Total Projects</p>
         </Link>
 
-        <div className="bg-white p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+        <div className="bg-white p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Pages</h2>
           <p className="text-4xl font-bold text-blue-600">{pages}</p>
           <p className="text-gray-500">{docs?.length} Documents</p>

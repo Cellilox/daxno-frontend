@@ -68,8 +68,8 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
 
     try {
       onMessageChange('Analysing')
-      const pro = true
-      if(pro) {
+      const basic = true
+      if(basic) {
         console.log('Analysing...,...')
         const response = await analyseText(projectId, fileName, requestBody)
         console.log('ANALYSED_DATA', response)
@@ -78,7 +78,7 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
         console.log('Querrying....')
         const response = await queryDocument(projectId, fileName)
         console.log('Queried_DATA', response)
-        await saveData(response)
+        // await saveData(response)
       }
     } catch (error) {
       console.error('Error in analysis:', error);
