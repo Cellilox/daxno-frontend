@@ -117,18 +117,18 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
-    const record = localRecords[rowIndex];
-    const updatedRecord = {
-      ...record,
-      answers: {
-        ...record.answers,
-        [columnId]: value,
-      },
-    };
-
-    setEditedRecords({
-      ...editedRecords,
-      [rowIndex]: updatedRecord,
+    setEditedRecords((prev) => {
+      const currentRecord = prev[rowIndex] || localRecords[rowIndex];
+      return {
+        ...prev,
+        [rowIndex]: {
+          ...currentRecord,
+          answers: {
+            ...currentRecord.answers,
+            [columnId]: value,
+          },
+        },
+      };
     });
   };
 
