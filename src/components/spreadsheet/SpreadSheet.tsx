@@ -7,7 +7,7 @@ import { Field, Record, ApiRecord } from './types';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
-import { useRouter } from 'next/navigation';
+import { deleteFileUrl } from '@/actions/aws-url-actions';
 
 type SpreadSheetProps = {
   columns: Field[];
@@ -101,16 +101,20 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordToDelete(null);
   };
 
-  const handleDeleteRecord = async (recordId: string) => {
+  const handleDeleteRecord = async (recordId: string, file_key: string) => {
     try {
-      console.log('RECORD_ID_TO_DELETE', recordId)
       await deleteRecord(recordId);
-      setIsAlertVisible(false);
-      // setLocalRecords((prev) => prev.filter(row => row.id !== recordId));
+      await handleDeleteFileUrl(file_key)
     } catch (error) {
       alert('Error deleting a record');
     }
   };
+
+  const handleDeleteFileUrl = async(file_key: string) => {
+    const key = file_key.split('/')[1]
+    await deleteFileUrl(key)
+    setIsAlertVisible(false);
+  }
 
   const handleEditRow = (rowIndex: number) => {
     setEditingRow(rowIndex);

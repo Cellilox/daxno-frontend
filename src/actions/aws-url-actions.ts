@@ -14,11 +14,15 @@ export async function getFileUrl(key: string) {
 
 
 export async function deleteFileUrl(key: string) {
-    const response = await fetchAuthedJson(`${apiUrl}/records/delete-file/?file_key=${key}`, {
-      method: 'DELETE'
-    });
-  
-    if (!response.ok) {
-      throw new Error('Failed to delete a file');
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/records/delete-file/?file_key=${key}`, {
+            method: 'DELETE'
+          });
+        
+          if (!response.ok) {
+            throw new Error('Failed to delete a file');
+          }
+    } catch (error) {
+         console.log(error)
     }
   }
