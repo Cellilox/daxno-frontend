@@ -43,12 +43,11 @@ export default function SpreadsheetModals({
   onCloseDeleteRecordAlert,
   onDeleteRecord,
   onCloseChat,
-  onConfirmDelete,
-  onCancelDelete,
   setSelectedColumnToUpdate,
 }: SpreadsheetModalsProps) {
   const handleDeleteRecord = () => {
     if (selectedRecordToDelete) {
+      console.log('RECORD_IDDDD', selectedColumnToDelete)
       onDeleteRecord(selectedRecordToDelete.id);
     }
   };
@@ -123,7 +122,7 @@ export default function SpreadsheetModals({
         </FormModal>
       )}
 
-      {/* Column Delete Alert */}
+      {/* Column Delete Alert
       {isAlertVisible && selectedColumnToDelete && (
         <AlertDialog
           visible={isAlertVisible}
@@ -136,7 +135,7 @@ export default function SpreadsheetModals({
           onConfirm={() => onDeleteColumn(selectedColumnToDelete.hidden_id)}
           onCancel={onCloseDeleteColumnAlert}
         />
-      )}
+      )} */}
 
       {/* Record Delete Alert */}
       {isAlertVisible && selectedRecordToDelete && (
@@ -146,6 +145,8 @@ export default function SpreadsheetModals({
           message="This record will be deleted permanently, and there is no going back."
           confirmText="Delete"
           cancelText="Cancel"
+          isLoading={isLoading}
+          disabled={isLoading}
           onConfirm={handleDeleteRecord}
           onCancel={onCloseDeleteRecordAlert}
         />

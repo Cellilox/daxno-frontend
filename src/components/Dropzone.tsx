@@ -44,18 +44,24 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     try {
       onMessageChange('Uploading...')
       const result = await uploadFile(formData)
-      await handleExtract(result.filename)
+      console.log('RES', result)
+      const filename = result.filename
+      const orginal_file_name = result.original_filename
+      const file_key = result.Key
+      console.log('OOOO', orginal_file_name, file_key)
+      await handleExtract(filename, orginal_file_name, file_key)
     } catch (error) {
       alert('Error uploading a file')
     }
   };
 
-  const handleExtract = async (fileName: string) => {
+  const handleExtract = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
       onMessageChange('Extracting...')
       const response = await extractText(fileName)
       console.log('EXTRACTED_DATA', response.textract_response)
-      await handleAnalyse(fileName, response.textract_response)
+      const extracted_response = response.textract_response
+      await handleAnalyse(fileName, extracted_response, orginal_file_name, file_key)
     } catch (error) {
       console.error('Error in extract:', error);
       setIsLoading(false);
@@ -63,8 +69,9 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     }
   };
 
-  const handleAnalyse = async (fileName: string, extractedResponse: any) => {
+  const handleAnalyse = async (fileName: string, extractedResponse: any, orginal_file_name: string, file_key: string) => {
     const requestBody = {...extractedResponse}
+    console.log({orginal_file_name, file_key})
 
     try {
       onMessageChange('Analysing')
@@ -73,12 +80,16 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
         console.log('Analysing...,...')
         const response = await analyseText(projectId, fileName, requestBody)
         console.log('ANALYSED_DATA', response)
-        await saveData(response)
+        const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key}
+        console.log('FIRSTXX', recordPayload)
+        await saveData(recordPayload)
       } else {
         console.log('Querrying....')
         const response = await queryDocument(projectId, fileName)
         console.log('Queried_DATA', response)
-        // await saveData(response)
+        const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key}
+        console.log('SECONDXX', recordPayload)
+        await saveData(recordPayload)
       }
     } catch (error) {
       console.error('Error in analysis:', error);
@@ -91,7 +102,7 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     try {
       onMessageChange('Saving record')
       const response = await saveRecord(data)
-      console.log('RECORD', response)
+      console.log('RECORDxx', response)
       const doc_data = {
         filename: response.record.filename,
         page_number: 2

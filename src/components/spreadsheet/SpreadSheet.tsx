@@ -8,7 +8,6 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { useRouter } from 'next/navigation';
-import { Pencil, Trash } from 'lucide-react';
 
 type SpreadSheetProps = {
   columns: Field[];
@@ -31,7 +30,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter();
+
 
   useEffect(() => {
     setLocalColumns(columns);
@@ -104,9 +103,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleDeleteRecord = async (recordId: string) => {
     try {
+      console.log('RECORD_ID_TO_DELETE', recordId)
       await deleteRecord(recordId);
       setIsAlertVisible(false);
-      setLocalRecords((prev) => prev.filter(row => row.id !== recordId));
+      // setLocalRecords((prev) => prev.filter(row => row.id !== recordId));
     } catch (error) {
       alert('Error deleting a record');
     }
@@ -134,10 +134,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleSaveRow = async (rowIndex: number) => {
     const editedRecord = editedRecords[rowIndex];
+    console.log('EditedRec', editedRecord)
     if (!editedRecord) return;
 
     try {
-      await updateRecord(editedRecord.id, editedRecord);
+      const result = await updateRecord(editedRecord.id, editedRecord);
+      console.log('TLEWKQE', result)
       setEditingRow(null);
       setEditedRecords((prev) => {
         const newState = { ...prev };
@@ -175,7 +177,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       setIsLoading(true);
       await deleteRecord(selectedRecordToDelete.id);
       setIsAlertVisible(false);
-      setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
+      // setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
     } catch (error) {
       alert('Error deleting a record');
     } finally {

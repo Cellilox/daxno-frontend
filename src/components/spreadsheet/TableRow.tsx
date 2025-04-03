@@ -1,4 +1,4 @@
-import { Pencil, Trash, MessageCircle } from 'lucide-react';
+import { Pencil, Trash, MessageCircle, Eye } from 'lucide-react';
 import { Field, Record } from './types';
 
 type TableRowProps = {
@@ -85,8 +85,8 @@ export default function TableRow({
       </td>
       <td className="px-4 py-2 text-sm text-gray-900 min-w-[200px] relative border-r">
         <div className="flex items-center gap-4">
-          <span className="relative z-0">{row.filename}</span>
-          
+          <span className="relative z-0">{row.orginal_file_name}</span>
+          {/* <span className="relative z-0 text-blue-500 underline cursor-pointer">View</span> */}
           {/* Floating actions for larger screens */}
           {hoveredRow === rowIndex && (
             <div className="hidden md:flex items-center gap-2 absolute bg-white shadow-md rounded-md px-2 py-1 z-20">
