@@ -3,15 +3,16 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon } from 'lucide-react';
-import { analyseText, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { analyseText, checkFileType, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
+import { messageType, messageTypeEnum } from '@/types';
 
 type MyDropzoneProps = {
   projectId: string
   linkOwner: string
   setIsVisible: (isVisible: boolean) => void
-  onMessageChange: (message: string) => void
+  onMessageChange: (message: messageType) => void
 }
 
 
@@ -27,8 +28,21 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     if (selectedFile) {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      handleCheckFileType(formData)
     }
+
   }, []);
+
+  const handleCheckFileType = async (formData: any) => {
+    const res = await checkFileType(formData)
+    console.log('CHECK_FILE_TYPE', res)
+    if(res.document_type) {
+      onMessageChange({type: messageTypeEnum.SUGGEST_TO_UPGRADE, text: `This document is [${res.document_type}] pattern. Basic Plan extraction may miss critical data.`})
+    }
+  }
+
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -42,13 +56,11 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     const formData = new FormData();
     formData.append('file', file);
     try {
-      onMessageChange('Uploading...')
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',})
       const result = await uploadFile(formData)
-      console.log('RES', result)
       const filename = result.filename
       const orginal_file_name = result.original_filename
       const file_key = result.Key
-      console.log('OOOO', orginal_file_name, file_key)
       await handleExtract(filename, orginal_file_name, file_key)
     } catch (error) {
       alert('Error uploading a file')
@@ -57,61 +69,60 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
 
   const handleExtract = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      onMessageChange('Extracting...')
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Extracting...',})
       const response = await extractText(fileName)
-      console.log('EXTRACTED_DATA', response.textract_response)
+      console.log('EXTRACTED_RESPONSE', response)
       const extracted_response = response.textract_response
       await handleAnalyse(fileName, extracted_response, orginal_file_name, file_key)
     } catch (error) {
       console.error('Error in extract:', error);
       setIsLoading(false);
-      onMessageChange('');
+      onMessageChange({type: messageTypeEnum.NONE, text: '',})
     }
   };
 
   const handleAnalyse = async (fileName: string, extractedResponse: any, orginal_file_name: string, file_key: string) => {
     const requestBody = {...extractedResponse}
-    console.log({orginal_file_name, file_key})
-
+    const pageNumber = requestBody.DocumentMetadata.Pages
+    console.log('REQ', pageNumber)
     try {
-      onMessageChange('Analysing')
-      const basic = true
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Analysing...',})
+      const basic = false
       if(basic) {
         console.log('Analysing...,...')
         const response = await analyseText(projectId, fileName, requestBody)
         console.log('ANALYSED_DATA', response)
         const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key}
-        console.log('FIRSTXX', recordPayload)
-        await saveData(recordPayload)
+        await saveData(recordPayload, pageNumber)
       } else {
         console.log('Querrying....')
         const response = await queryDocument(projectId, fileName)
         console.log('Queried_DATA', response)
         const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key}
         console.log('SECONDXX', recordPayload)
-        await saveData(recordPayload)
+        await saveData(recordPayload, pageNumber)
       }
     } catch (error) {
       console.error('Error in analysis:', error);
       setIsLoading(false);
-      onMessageChange('');
+      onMessageChange({type: messageTypeEnum.NONE, text: '',})
     }
   };
 
-  const saveData = async (data: any) => {
+  const saveData = async (data: any, pageNumber: number) => {
     try {
-      onMessageChange('Saving record')
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',})
       const response = await saveRecord(data)
       console.log('RECORDxx', response)
       const doc_data = {
         filename: response.record.filename,
-        page_number: 2
+        page_number: pageNumber
       }
       await saveDocument(doc_data)
     } catch (error) {
       console.error('Error in saving:', error);
       setIsLoading(false);
-      onMessageChange('');
+      onMessageChange({type: messageTypeEnum.NONE, text: '',})
     }
   };
 
@@ -119,7 +130,7 @@ export default function MyDropzone({ projectId, linkOwner, setIsVisible, onMessa
     try {
       await createDocument(data)
       setIsVisible(false)
-      onMessageChange('')
+      onMessageChange({type: messageTypeEnum.NONE, text: '',})
     } catch (error) {
       console.log('Error saving document', error)
     }

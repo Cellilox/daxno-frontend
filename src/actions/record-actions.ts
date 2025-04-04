@@ -18,6 +18,19 @@ export async function uploadFile (formData:any)  {
     return await response.json()
   };
 
+  export async function checkFileType (formData:any)  {
+    console.log('TLTTTTl', formData)
+      const response = await fetchAuthed(`${apiUrl}/records/check-file-type`, {
+        method: 'POST',
+        body: formData
+      });
+
+    if (!response.ok) {
+    throw new Error('Failed to extract text ');
+    }
+    return await response.json()
+  };
+
 
 export async function extractText(fileName: string) {
     const response = await fetchAuthedJson(`${apiUrl}/records/extract?filename=${fileName}`, {

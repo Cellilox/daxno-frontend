@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import AlertDialog from "./ui/AlertDialog"; 
 import { generateLink } from "@/actions/submission-actions";
 import { Link, Share2 } from "lucide-react";
+import { messageTypeEnum } from "@/types";
 
 export default function GenerateLinkOverlay() {
   const pathname = usePathname();
@@ -41,6 +42,11 @@ export default function GenerateLinkOverlay() {
     handleGenerateLink(projectId);
   }
 
+  const notification = {
+    type: messageTypeEnum.REQUEST_TO_UPGRADE,
+    text: 'This feature is not allowed for your current plan'
+  }
+
   return (
     <>
       <button 
@@ -63,6 +69,7 @@ export default function GenerateLinkOverlay() {
         isLoading={isLoading}
         showLinkIcon
         centerContent
+        notification={notification}
       />
     </>
   );
