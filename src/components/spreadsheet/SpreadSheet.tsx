@@ -102,19 +102,22 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   const handleDeleteRecord = async (recordId: string, file_key: string) => {
+    setIsLoading(true);
     try {
       await deleteRecord(recordId);
-      await handleDeleteFileUrl(file_key)
+      await handleDeleteFileUrl(file_key);
+      setIsAlertVisible(false)
     } catch (error) {
       alert('Error deleting a record');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteFileUrl = async(file_key: string) => {
-    const key = file_key.split('/')[1]
-    await deleteFileUrl(key)
-    setIsAlertVisible(false);
-  }
+    const key = file_key.split('/')[1];
+    await deleteFileUrl(key);
+  };
 
   const handleEditRow = (rowIndex: number) => {
     setEditingRow(rowIndex);
