@@ -345,7 +345,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         ) : isSingleDragActive ? (
           <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
             <div className="flex flex-col items-center justify-center gap-3">
-              <FileIcon className="w-12 h-12 text-blue-500" />
               <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
               <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
             </div>
@@ -353,7 +352,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         ) : (
           <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
             <div className="flex flex-col items-center justify-center gap-3">
-              <FileIcon className="w-12 h-12 text-gray-400 group-hover:text-blue-500" />
               <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
               <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
             </div>
@@ -388,11 +386,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         ${files.length > 0 ? 'h-32' : 'h-64'} transition-colors`}>
         <input {...getBulkInputProps()} />
         <div className="flex flex-col items-center justify-center gap-4 h-full">
-          <div className="flex items-center justify-center gap-2">
-            <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-blue-500" />
-            <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-blue-500" />
-            <FileIcon className="w-10 h-10 text-gray-400 group-hover:text-blue-500" />
-          </div>
           <div>
             <p className="font-medium text-gray-900">
               Drag & drop files here, or click to select
