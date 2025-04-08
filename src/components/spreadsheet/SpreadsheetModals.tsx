@@ -121,6 +121,21 @@ export default function SpreadsheetModals({
         </FormModal>
       )}
 
+      {/* Column Delete Alert */}
+      {isAlertVisible && selectedColumnToDelete && (
+        <AlertDialog
+          visible={isAlertVisible}
+          title="Delete Column"
+          message="This column will be deleted permanently, and there is no going back."
+          confirmText="Delete"
+          cancelText="Cancel"
+          disabled={isLoading}
+          isLoading={isLoading}
+          onConfirm={() => onDeleteColumn(selectedColumnToDelete.hidden_id)}
+          onCancel={onCloseDeleteColumnAlert}
+        />
+      )}
+
       {/* Record Delete Alert */}
       {isAlertVisible && selectedRecordToDelete && (
         <AlertDialog

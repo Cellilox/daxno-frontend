@@ -116,6 +116,7 @@ export default function ShareToDrive({ projectId }: ShareToDriveProps) {
                     discoveryDocs: process.env.NEXT_PUBLIC_DISCOVERY_DOCS?.split(','),
                     scope: process.env.NEXT_PUBLIC_SCOPES?.split(' ').join(' '),
                 }).then(() => {
+                    //@ts-ignore
                     const authInstance = gapi.auth2.getAuthInstance();
                     setIsSignedIn(authInstance.isSignedIn.get());
                     authInstance.isSignedIn.listen((signedIn: boolean) => {

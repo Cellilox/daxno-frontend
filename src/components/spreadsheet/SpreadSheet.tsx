@@ -85,8 +85,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       await deleteColumn(columnId);
       setIsLoading(false);
       setIsAlertVisible(false);
+      setSelectedColumnToDelete(null);
     } catch (error) {
       alert('Error deleting column');
+      setIsLoading(false);
     }
   };
 
@@ -106,11 +108,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     try {
       await deleteRecord(recordId);
       await handleDeleteFileUrl(file_key);
-      setIsAlertVisible(false)
     } catch (error) {
       alert('Error deleting a record');
     } finally {
       setIsLoading(false);
+      setIsAlertVisible(false);
+      setSelectedRecordToDelete(null);
     }
   };
 

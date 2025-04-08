@@ -69,7 +69,7 @@ export default function GenerateLinkOverlay() {
         isLoading={isLoading}
         showLinkIcon
         centerContent
-        notification={notification}
+        // notification={notification}
       />
     </>
   );

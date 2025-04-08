@@ -5,6 +5,10 @@ import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+export async function revalidate() {
+  revalidatePath('/projects');
+}
+
 export async function uploadFile (formData:any)  {
     console.log('TLTTTTl', formData)
       const response = await fetchAuthed(`${apiUrl}/records/upload`, {
