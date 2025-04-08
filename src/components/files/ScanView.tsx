@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import ProductQRCode from "./QRcode";
+import ProductQRCode from "../QRcode";
 import Image from "next/image";
 
 export default function ScanView() {

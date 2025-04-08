@@ -1,5 +1,5 @@
 import { getLinkData } from "@/actions/submission-actions"
-import DropzoneWrapper from "@/components/DropzoneWrapper"
+import DropzoneWrapper from "@/components/files/DropzoneWrapper"
 
 type SubmissionViewProps = {
   params: {

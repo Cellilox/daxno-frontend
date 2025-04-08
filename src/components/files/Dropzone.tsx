@@ -8,14 +8,7 @@ import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { revalidate } from '@/actions/record-actions';
-type FileStatus = {
-  file: File;
-  preview: string;
-  progress: number;
-  status: 'pending' | 'uploading' | 'extracting' | 'analyzing' | 'saving' | 'complete' | 'error';
-  error?: string;
-  result?: any;
-};
+import { FileStatus } from './types';
 
 type MyDropzoneProps = {
   projectId: string;

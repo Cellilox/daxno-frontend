@@ -1,8 +1,8 @@
 'use client'; // This makes it a client component
 
-import MyDropzone from "@/components/Dropzone";
+import MyDropzone from "./Dropzone";
 import { useState } from "react";
-import FormModal from "@/components/ui/Popup"; // Import the FormModal component
+import FormModal from "../ui/Popup"; // Import the FormModal component
 import { messageType } from "@/types";
 
 type DropzoneWrapperProps = {
