@@ -5,9 +5,26 @@ import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+export async function revalidate() {
+  revalidatePath('/projects');
+}
+
 export async function uploadFile (formData:any)  {
     console.log('TLTTTTl', formData)
       const response = await fetchAuthed(`${apiUrl}/records/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+    if (!response.ok) {
+    throw new Error('Failed to extract text ');
+    }
+    return await response.json()
+  };
+
+  export async function checkFileType (formData:any)  {
+    console.log('TLTTTTl', formData)
+      const response = await fetchAuthed(`${apiUrl}/records/check-file-type`, {
         method: 'POST',
         body: formData
       });
@@ -54,38 +71,47 @@ export async function extractText(fileName: string) {
   }
 
   export async function saveRecord(formData: any) {
-    const response = await fetchAuthedJson(`${apiUrl}/records/save`, {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    });
-  
-    if (!response.ok) {
-      throw new Error('Failed to save a record');
+    try {
+      const response = await fetchAuthedJson(`${apiUrl}/records/save`, {
+        method: 'POST',
+        body: JSON.stringify(formData)
+      });
+    
+      // if (!response.ok) {
+      //   throw new Error('Failed to save a record');
+      // }
+      return await response.json();
+    } catch (error) {
+      console.log(error)
     }
-    return await response.json();
   }
 
 export async function updateRecord(recordId: string | undefined , formData: any) {
-    console.log('Updating data', formData)
-    console.log('hiddenId', recordId)
-  const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
-    method: 'PUT',
-    body: JSON.stringify(formData),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update record');
-  }
-  revalidatePath('/projects');
+   try {
+    const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
+      method: 'PUT',
+      body: JSON.stringify(formData),
+    });
+    // if (!response.ok) {
+    //   throw new Error('Failed to update record');
+    // }
+    revalidatePath('/projects');
+   } catch (error) {
+     console.log(error)
+   }
 }
 
 export async function deleteRecord(recordId: string) {
+  try {
     const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
       method: 'DELETE'
     });
   
-    if (!response.ok) {
-      throw new Error('Failed to delete a record');
-    }
+    // if (!response.ok) {
+    //   throw new Error('Failed to delete a record');
+    // }
     revalidatePath('/projects');
+  } catch (error) {
+    console.log(error)
+  }
   }

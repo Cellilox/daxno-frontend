@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 import ModalHeader from './ModalHeader';
+import { messageType } from '@/types';
 
 type FormModalProps = {
   visible: boolean;
   title: string;
-  message?: string;
+  message?: messageType;
   onSubmit?: (e: React.FormEvent) => void;
   onCancel: () => void;
   children: React.ReactNode;
@@ -52,7 +53,7 @@ export default function FormModal({
           ${position === 'center' ? 'm-4' : 'h-full right-0'}
         `}
       >
-        <ModalHeader title={title} onClose={onCancel} message={message} />
+        <ModalHeader title={title} onClose={onCancel} message={message}/>
         <div className="p-6 flex-1">
           <div className="flex flex-col h-full">
             <div 

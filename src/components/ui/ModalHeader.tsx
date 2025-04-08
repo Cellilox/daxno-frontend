@@ -1,11 +1,13 @@
 'use client'
 
+import { messageType, messageTypeEnum } from '@/types';
 import Image from 'next/image'
+import MessageAlert from './messageAlert';
 
 type ModalHeaderProps = {
   title: string;
   onClose: () => void;
-  message?: string;
+  message?: messageType;
 }
 
 export default function ModalHeader({ title, onClose, message }: ModalHeaderProps) {
@@ -21,11 +23,11 @@ export default function ModalHeader({ title, onClose, message }: ModalHeaderProp
           <Image src="/close.svg" alt="Close" width={24} height={24} />
         </button>
       </div>
+    
       {message && (
-        <div className="bg-blue-700 px-4 py-2 text-sm">
-          {message}
-        </div>
+        <MessageAlert message={message}/>
       )}
+     
     </div>
   );
 } 

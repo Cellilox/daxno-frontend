@@ -7,8 +7,7 @@ import { Field, Record, ApiRecord } from './types';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
-import { useRouter } from 'next/navigation';
-import { Pencil, Trash } from 'lucide-react';
+import { deleteFileUrl } from '@/actions/aws-url-actions';
 
 type SpreadSheetProps = {
   columns: Field[];
@@ -31,7 +30,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const router = useRouter();
+
 
   useEffect(() => {
     setLocalColumns(columns);
@@ -86,8 +85,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       await deleteColumn(columnId);
       setIsLoading(false);
       setIsAlertVisible(false);
+      setSelectedColumnToDelete(null);
     } catch (error) {
       alert('Error deleting column');
+      setIsLoading(false);
     }
   };
 
@@ -102,14 +103,23 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordToDelete(null);
   };
 
-  const handleDeleteRecord = async (recordId: string) => {
+  const handleDeleteRecord = async (recordId: string, file_key: string) => {
+    setIsLoading(true);
     try {
       await deleteRecord(recordId);
-      setIsAlertVisible(false);
-      setLocalRecords((prev) => prev.filter(row => row.id !== recordId));
+      await handleDeleteFileUrl(file_key);
     } catch (error) {
       alert('Error deleting a record');
+    } finally {
+      setIsLoading(false);
+      setIsAlertVisible(false);
+      setSelectedRecordToDelete(null);
     }
+  };
+
+  const handleDeleteFileUrl = async(file_key: string) => {
+    const key = file_key.split('/')[1];
+    await deleteFileUrl(key);
   };
 
   const handleEditRow = (rowIndex: number) => {
@@ -117,27 +127,29 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
-    const record = localRecords[rowIndex];
-    const updatedRecord = {
-      ...record,
-      answers: {
-        ...record.answers,
-        [columnId]: value,
-      },
-    };
-
-    setEditedRecords({
-      ...editedRecords,
-      [rowIndex]: updatedRecord,
+    setEditedRecords((prev) => {
+      const currentRecord = prev[rowIndex] || localRecords[rowIndex];
+      return {
+        ...prev,
+        [rowIndex]: {
+          ...currentRecord,
+          answers: {
+            ...currentRecord.answers,
+            [columnId]: value,
+          },
+        },
+      };
     });
   };
 
   const handleSaveRow = async (rowIndex: number) => {
     const editedRecord = editedRecords[rowIndex];
+    console.log('EditedRec', editedRecord)
     if (!editedRecord) return;
 
     try {
-      await updateRecord(editedRecord.id, editedRecord);
+      const result = await updateRecord(editedRecord.id, editedRecord);
+      console.log('TLEWKQE', result)
       setEditingRow(null);
       setEditedRecords((prev) => {
         const newState = { ...prev };
@@ -175,7 +187,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       setIsLoading(true);
       await deleteRecord(selectedRecordToDelete.id);
       setIsAlertVisible(false);
-      setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
+      // setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
     } catch (error) {
       alert('Error deleting a record');
     } finally {

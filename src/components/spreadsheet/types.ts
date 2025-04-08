@@ -15,12 +15,16 @@ export type ApiRecord = {
   updated_at: string;
   created_at: string;
   filename: string;
+  orginal_file_name: string;
+  file_key: string;
   project_id: string;
 };
 
 export type Record = {
   id: string;
   filename: string;
+  orginal_file_name: string;
+  file_key: string;
   project_id: string;
   answers: {
     [key: string]: string;

@@ -3,15 +3,18 @@
 import MyDropzone from "@/components/Dropzone";
 import { useState } from "react";
 import FormModal from "@/components/ui/Popup"; // Import the FormModal component
+import { messageType } from "@/types";
 
 type DropzoneWrapperProps = {
   projectId: string;
   linkOwner: string
 };
 
+
 export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<messageType>({
+    type: '', text: ''});
 
   return (
     <>
@@ -26,21 +29,16 @@ export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrappe
         visible={isVisible} 
         title="Upload Your File" 
         onCancel={() => setIsVisible(false)}
+        // message={message}
       >
 
         <MyDropzone
           projectId={projectId} 
           linkOwner={linkOwner}
           setIsVisible={setIsVisible} 
-          onMessageChange={setMessage} 
+          onMessageChange={setMessage}
         />
 
-
-        {message && (
-          <div className="mt-4 p-4 bg-blue-100 border border-blue-300 rounded-md">
-            <p className="text-blue-600">{message}</p>
-          </div>
-        )}
       </FormModal>
     </>
   );

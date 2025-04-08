@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { CopyIcon, Link } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
+import MessageAlert from './messageAlert';
+import { messageTypeEnum, messageType } from '@/types';
 
 type AlertDialogProps = {
   visible: boolean;
@@ -16,6 +18,7 @@ type AlertDialogProps = {
   disabled?: boolean;
   isLoading?: boolean;
   centerContent?: boolean;
+  notification?: messageType;
 };
 
 export default function AlertDialog({
@@ -30,7 +33,8 @@ export default function AlertDialog({
   disabled,
   isLoading,
   showLinkIcon,
-  centerContent
+  centerContent,
+  notification
 }: AlertDialogProps) {
   const alertRef = useRef<HTMLDivElement>(null);
   const isCopyAction = confirmText === 'Copy';
@@ -58,14 +62,23 @@ export default function AlertDialog({
         className="bg-white w-full max-w-2xl p-6 flex flex-col justify-center items-center rounded-lg shadow-lg"
       >
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
+        {notification &&
+            <MessageAlert message={notification} />
+          }
         <div className={`w-full max-w-full break-all ${centerContent ? 'flex justify-center' : ''}`}>
           {showLinkIcon ? (
             <div className={`flex items-start gap-2 bg-gray-50 p-3 rounded-md ${centerContent ? 'max-w-[90%]' : 'w-full'}`}>
               <Link className="w-4 h-4 mt-1 flex-shrink-0 text-blue-600" />
-              <p className="text-sm text-gray-700 break-all">{message}</p>
+              {notification ? <p>not-shown</p> : (
+              <p className="text-center">
+                {message}
+              </p>
+            )}
             </div>
           ) : (
-            <p className="text-center">{message}</p>
+            <p className="text-center">
+              {message}
+            </p>
           )}
         </div>
         {copiedMessage && (
@@ -73,6 +86,8 @@ export default function AlertDialog({
             <span className="text-green-500 text-sm">{copiedMessage}</span>
           </div>
         )}
+
+       {!notification &&
         <div className="flex justify-end gap-2 mt-6 w-full">
           <button
             type="button"
@@ -101,6 +116,7 @@ export default function AlertDialog({
             )}
           </button>
         </div>
+}
       </div>
     </div>
   );
