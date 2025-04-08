@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import FormModal from './ui/Popup'
+import FormModal from '../ui/Popup'
 import MyDropzone from './Dropzone'
+import { messageType, messageTypeEnum } from '@/types'
 
 type ScanFilesModalProps = {
   projectId: string
@@ -11,12 +12,17 @@ type ScanFilesModalProps = {
 
 export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalProps) {
   const [isVisible, setIsVisible] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<messageType>({
+    type: messageTypeEnum.NONE,
+    text: ''
+  })
 
   const handleClose = () => {
     setIsVisible(false);
-    setMessage('');
-
+    setMessage({
+      type: messageTypeEnum.NONE,
+      text: ''
+    });
   };
 
   return (
