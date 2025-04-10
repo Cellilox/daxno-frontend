@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import LoadingSpinner from "./ui/LoadingSpinner";
+import LoadingSpinner from "../ui/LoadingSpinner";
 import { download } from "@/actions/download-actions";
 import { Download } from 'lucide-react';
 
@@ -23,7 +23,6 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
     return (
         <div className="w-full">
             <div className="flex flex-col items-center gap-3">
-                <p className="text-sm font-medium text-gray-700">Download your data</p>
                 <div className="w-full">
                     {isLoading ? (
                         <div className="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
@@ -36,7 +35,7 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
                             onClick={downloadCSV}
                         >
                             <Download className="w-4 h-4" />
-                            <span className="text-sm">Download CSV</span>
+                            <span className="text-sm">Download</span>
                         </button>
                     )}
                 </div>

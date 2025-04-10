@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, FileText, Share2, Trash2 } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import GenerateLinkOverlay from './GenerateLinkOverlay';
 import ScanView from './files/ScanView';
-import Options from './Options';
+import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import RecordChat from './RecordChat';
 
@@ -42,10 +42,10 @@ export default function CollapsibleActions({ projectId, linkOwner }: Collapsible
           {/* Action Group */}
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-between w-full">
             <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-              <button className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex-shrink-0">
+              {/* <button className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex-shrink-0">
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                 Undo
-              </button>
+              </button> */}
               <ScanFilesModal
                 linkOwner={linkOwner}
                 projectId={projectId}
@@ -55,18 +55,18 @@ export default function CollapsibleActions({ projectId, linkOwner }: Collapsible
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-            <button 
+            {/* <button 
                 onClick={() => setIsChatOpen(true)}
                 className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex-shrink-0"
               >
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                 Chat with documents
-              </button>
+              </button> */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <ScanView />
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Options projectId={projectId}/>
+                <Integrations projectId={projectId}/>
               </div>
             </div>
           </div>

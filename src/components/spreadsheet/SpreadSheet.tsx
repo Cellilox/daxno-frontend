@@ -8,6 +8,7 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
+import GoogleDriveExport from '../integrations/google-drive/GoogleDriveExport';
 
 type SpreadSheetProps = {
   columns: Field[];
