@@ -3,7 +3,7 @@
 import { useState } from "react";
 import LoadingSpinner from "../ui/LoadingSpinner";
 import { download } from "@/actions/download-actions";
-import { Download } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 
 type ExportCSVProps = {
     projectId: string
@@ -13,29 +13,34 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
      const [isLoading, setIsLoading] = useState(false)
      async function downloadCSV () {
         setIsLoading(true)
-        const blob = await download(projectId)
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'data.csv';
-        setIsLoading(false)
-        link.click();
+        try {
+            const blob = await download(projectId)
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'data.csv';
+            link.click();
+        } catch (error) {
+            console.error('Error downloading CSV:', error);
+        } finally {
+            setIsLoading(false)
+        }
     }
     return (
         <div className="w-full">
             <div className="flex flex-col items-center gap-3">
                 <div className="w-full">
                     {isLoading ? (
-                        <div className="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
+                        <div className="w-full flex justify-center items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
                             <LoadingSpinner />
-                            <span className="text-sm">Downloading...</span>
+                            <span className="text-sm">Preparing CSV...</span>
                         </div>
                     ) : (
                         <button
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
                             onClick={downloadCSV}
                         >
-                            <Download className="w-4 h-4" />
-                            <span className="text-sm">Download</span>
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span className="text-sm">Export as CSV</span>
                         </button>
                     )}
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
+import { Plug2 } from 'lucide-react';
 
 type OptionsProps = {
     projectId: string
@@ -36,6 +37,7 @@ export default function Integrations({projectId}: OptionsProps) {
                 className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 onClick={() => setIsOptionVisible(true)}
             >
+                <Plug2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                 Integrations
             </button>
             {isOptionVisible &&

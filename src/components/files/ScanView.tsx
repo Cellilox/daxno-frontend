@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ProductQRCode from "../QRcode";
 import Image from "next/image";
+import { Smartphone } from 'lucide-react';
 
 export default function ScanView() {
     const [isOuterExpanded, setIsOuterExpanded] = useState(false);
@@ -26,10 +27,11 @@ export default function ScanView() {
             <div className="flex flex-col items-center">
                 <div>
                     <button
-                        className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                         onClick={toggleExpand}
+                        className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                     >
-                        Use your smart phone
+                        <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                        Scan with Phone
                     </button>
                 </div>
             </div>

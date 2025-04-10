@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, FileText, Share2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileText, Share2, Trash2, Download, Upload, Database, MessageSquare } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import GenerateLinkOverlay from './GenerateLinkOverlay';
 import ScanView from './files/ScanView';
