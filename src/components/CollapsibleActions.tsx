@@ -9,12 +9,28 @@ import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import RecordChat from './RecordChat';
 
-type CollapsibleActionsProps = {
+interface CollapsibleActionsProps {
   projectId: string;
   linkOwner: string;
-};
+  fields: {
+    id: string;
+    name: string;
+    type: string;
+  }[];
+  records: {
+    id: string;
+    answers: {
+      [key: string]: string;
+    };
+    filename: string;
+    file_key: string;
+    project_id: string;
+    created_at: string;
+    updated_at: string;
+  }[];
+}
 
-export default function CollapsibleActions({ projectId, linkOwner }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, linkOwner, fields, records }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -66,7 +82,11 @@ export default function CollapsibleActions({ projectId, linkOwner }: Collapsible
                 <ScanView />
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Integrations projectId={projectId}/>
+                <Integrations 
+                  projectId={projectId} 
+                  fields={fields} 
+                  records={records}
+                />
               </div>
             </div>
           </div>

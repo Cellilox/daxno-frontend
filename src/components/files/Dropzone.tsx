@@ -18,7 +18,7 @@ type MyDropzoneProps = {
   isAllowed?: boolean;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, isAllowed = true }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, isAllowed = false }: MyDropzoneProps) {
   // Single file upload states
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);

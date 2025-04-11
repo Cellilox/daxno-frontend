@@ -22,7 +22,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
-
+  console.log('FFFF', fields)
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -45,7 +45,12 @@ export default async function ProjectView({ params }: ProjectViewProps) {
             
             {/* Action Buttons */}
             {fields.length >= 1 && (
-              <CollapsibleActions projectId={id} linkOwner={linkOwner} />
+              <CollapsibleActions 
+                projectId={id} 
+                linkOwner={linkOwner} 
+                fields={fields}
+                records={records}
+              />
             )}
           </div>
         </div>

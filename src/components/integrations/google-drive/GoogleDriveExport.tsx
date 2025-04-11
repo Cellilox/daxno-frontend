@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleDriveIcon, GoogleSheetsIcon } from './GoogleDriveIcons';
-import { ExportRecord, ExportStatus } from './types';
+import { ExportRecord, ExportStatus } from '../types';
 
 interface GoogleDriveExportProps {
   projectId: string;
