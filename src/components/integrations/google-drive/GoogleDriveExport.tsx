@@ -4,9 +4,9 @@ import { ExportHistory } from './components/ExportHistory';
 import { ErrorMessage } from './components/ErrorMessage';
 import { HelpText } from './components/HelpText';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { GoogleDriveExportProps, ExportStatus, ExportRecord } from './types';
+import { GoogleDriveExportProps, ExportStatus } from './types';
 import { dummyExportHistory } from './constants';
-import { saveFileUrl, fetchCurrentFileUrl } from './utils/api';
+import { saveFileUrl, fetchCurrentFileUrl } from '@/actions/google-drive-actions';
 
 const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({ 
   projectId, 
@@ -79,12 +79,13 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
-    
+  
     window.open(
-      `${process.env.NEXT_PUBLIC_API_URL}/download-csv/${projectId}/google-drive`,
+      `${process.env.NEXT_PUBLIC_API_URL}/google-drive/auth?project_id=${projectId}`,
       'Google Drive Export',
       `width=${width},height=${height},left=${left},top=${top}`
     );
+
   };
 
   const handleOpenInDrive = () => {

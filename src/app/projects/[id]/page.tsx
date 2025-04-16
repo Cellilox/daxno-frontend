@@ -23,6 +23,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
   console.log('FFFF', fields)
+  console.log('RECS', records)
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">

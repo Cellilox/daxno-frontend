@@ -11,7 +11,7 @@ import { CriticalProperties } from './components/CriticalProperties';
 import { HubSpotExportProps, HubSpotExportType, PropertyMapping, ExportStatus } from './types';
 import { STANDARD_PROPERTIES, REQUIRED_PROPERTIES } from './constants';
 import { validateAndTransformRecords } from './utils/validation';
-import { checkConnection, handleConnect, exportToHubSpot } from './utils/api';
+import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties,  } from '@/actions/hubspot-actions';
 
 const HubSpotExport: React.FC<HubSpotExportProps> = ({ 
   projectId, 
@@ -22,6 +22,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
   const [selectedType, setSelectedType] = useState<HubSpotExportType | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+
+  console.log('REEECS', records);
   const [status, setStatus] = useState<ExportStatus>({
     isLoading: false,
     isConnected: false,
@@ -64,18 +66,20 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     setPropertyMappings([...appFields, ...hubspotFields]);
   };
 
-  const handleTypeChange = (newType: HubSpotExportType) => {
+  const handleTypeChange = async (newType: HubSpotExportType) => {
     setSelectedType(newType);
-    setShowOptions(false);
-    setValidationError(null);
-    setShowValidationErrors(false);
-    setStatus(prev => ({
-      ...prev,
-      error: null,
-      success: false
-    }));
+    const result = await handleGetProperties(newType);
+    console.log('AVAIL_PROPERTIES', result)
+    // setShowOptions(false);
+    // setValidationError(null);
+    // setShowValidationErrors(false);
+    // setStatus(prev => ({
+    //   ...prev,
+    //   error: null,
+    //   success: false
+    // }));
     
-    updatePropertyMappingsForType(newType);
+    // updatePropertyMappingsForType(newType);
   };
 
   useEffect(() => {
@@ -121,10 +125,29 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     return mappedFields;
   };
 
-  const handleExport = async () => {
+  const handleHubSportConnection = async () => {
     if (!status.isConnected) {
       try {
-        await handleConnect();
+        const data = await handleConnect();
+        const width = 600;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        const popup = window.open(
+          //@ts-ignore
+          data.auth_url,
+          'Connect to HubSpot',
+          `width=${width},height=${height},left=${left},top=${top}`
+        );
+        
+        if (popup) {
+          const checkPopup = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkPopup);
+            }
+          }, 1000);
+        }
         return;
       } catch (error) {
         setStatus(prev => ({ 
@@ -134,12 +157,9 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         return;
       }
     }
+  };
 
-    if (!selectedType) {
-      setValidationError('Please select an export type first');
-      return;
-    }
-
+  const handleExport = async () => {
     setStatus(prev => ({ ...prev, isLoading: true, error: null }));
     setValidationError(null);
     setShowValidationErrors(true);
@@ -157,19 +177,27 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     }
 
     try {
-      const transformedRecords = validateAndTransformRecords(records, selectedType, propertyMappings);
-      const { successCount, failureCount } = await exportToHubSpot(selectedType, projectId, transformedRecords);
-
-      setStatus(prev => ({
-        ...prev,
-        isLoading: false,
-        success: true,
-        lastExportDate: new Date().toISOString()
-      }));
-
-      if (failureCount > 0) {
-        setValidationError(`Export completed with ${successCount} successful and ${failureCount} failed records`);
+      if (!selectedType) {
+        setValidationError('Export type is not selected.');
+        setStatus(prev => ({ ...prev, isLoading: false }));
+        return;
       }
+      // const transformedRecords = validateAndTransformRecords(records, selectedType, propertyMappings);
+      // const { successCount, failureCount } = await exportToHubSpot(selectedType, projectId, transformedRecords);
+
+      // setStatus(prev => ({
+      //   ...prev,
+      //   isLoading: false,
+      //   success: true,
+      //   lastExportDate: new Date().toISOString()
+      // }));
+
+      // if (failureCount > 0) {
+      //   setValidationError(`Export completed with ${successCount} successful and ${failureCount} failed records`);
+      // }
+
+      const result = await exportToHubSpot(selectedType);
+      console.log('RRRRES', result)
 
     } catch (error) {
       console.error('Error exporting to HubSpot:', error);
@@ -180,7 +208,21 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         error: 'Failed to export to HubSpot'
       }));
     }
-  };
+  }
+
+  const handleGetProperties = async (selectedType: string) => {
+    if (selectedType) {
+      try {
+        const response = await getHubSpotProperties(selectedType);
+        if(!response) {
+          setValidationError(`Failed to get ${selectedType} properties for your account`);
+          setStatus(prev => ({...prev, isLoading: false}));
+        }
+      } catch (error) {
+        setValidationError(`Error: ${error}`);
+      }
+    }
+  }
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -224,7 +266,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       <div className="space-y-2">
         <div className="relative">
           <button
-            onClick={() => status.isConnected ? setShowOptions(true) : handleExport()}
+            onClick={() => status.isConnected ? setShowOptions(true) : handleHubSportConnection()}
             disabled={status.isLoading}
             className={`
               w-full flex items-center justify-between px-4 py-2 rounded-lg
