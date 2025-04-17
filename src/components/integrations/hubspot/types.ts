@@ -35,4 +35,4 @@ export interface ExportStatus {
   lastExportDate: string | null;
 }
 
-export type HubSpotExportType = 'contacts' | 'companies' | 'deals' | 'tickets'; 
+export type HubSpotExportType = 'contacts' | 'companies' | 'deals'; 

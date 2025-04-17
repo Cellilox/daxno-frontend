@@ -1,6 +1,6 @@
 "use server"
 import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-export type HubSpotExportType = 'contacts' | 'companies' | 'deals' | 'tickets'; 
+export type HubSpotExportType = 'contacts' | 'companies' | 'deals'; 
 
 export const checkConnection = async (): Promise<boolean> => {
   try {
