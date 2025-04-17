@@ -31,50 +31,70 @@ export const handleConnect = async (): Promise<void> => {
   }
 };
 
+interface HubSpotProperty {
+  name: string;
+  label: string;
+  fieldType: string;
+}
 
-export const getHubSpotProperties = async (object_type: string): Promise<boolean> => {
-    try {
-      const response = await fetchAuthed(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/properties?object_type=${object_type}`);
-      if (!response.ok) {
-        throw new Error(`Failed to get ${object_type} properties for your account`);
-      }
-      const data = await response.json();
-      console.log('AVAILABLE_PROPERTIES', data);
-      return data
-    } catch (error) {
-      console.error('Error checking HubSpot connection:', error);
-      throw new Error('Failed to check HubSpot connection status');
+interface HubSpotPropertiesResponse {
+  export_type: HubSpotExportType;
+  properties: HubSpotProperty[];
+}
+
+export const getHubSpotProperties = async (object_type: string): Promise<HubSpotPropertiesResponse> => {
+  try {
+    const response = await fetchAuthed(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/properties?object_type=${object_type}`);
+    if (!response.ok) {
+      throw new Error(`Failed to get ${object_type} properties for your account`);
     }
-  };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching HubSpot properties:', error);
+    throw new Error('Failed to fetch HubSpot properties');
+  }
+};
 
 export const exportToHubSpot = async (
   type: HubSpotExportType,
+  mappedData: Record<string, any>[]
 ) => {
   const payload = {
-    "contacts": [
-      {
-        "id": "kazadi@gmail.com",
-        "id_property": "email",
-        "properties": {
-          "email": "kazadi@gmail.com",
-          "firstname": "KazadiUUUow",
-          "lastname": "mongot"
-        }
-      }
-    ]
-  }
+    [type]: mappedData.map(record => ({
+      id: record.id,
+      id_property: record.id_property,
+      properties: { ...record.properties }
+    }))
+  };
+
   try {
-    const response = await fetchAuthedJson(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/contacts/batch-upsert`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    console.log('Response:', response);
+    console.log('SENDING PAYLOAD:', JSON.stringify(payload, null, 2));
+    
+    const response = await fetchAuthedJson(
+      `${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/${type}/batch-upsert`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`Failed to create ${type}`);
+      const errorData = await response.json().catch(() => null);
+      console.error('HubSpot API Error Response:', errorData);
+      
+      const errorMessage = errorData?.message || errorData?.error || `Failed to create ${type}`;
+      throw new Error(errorMessage);
     }
-    } catch (error) {
-        console.error(`Error creating ${type}:`, error);
-        throw error;
+
+    const result = await response.json();
+    console.log('HubSpot API Success Response:', result);
+    return result;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
     }
+    console.error(`Error creating ${type}:`, error);
+    throw new Error(`Failed to export to HubSpot: ${error}`);
+  }
 }; 

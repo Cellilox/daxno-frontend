@@ -2,16 +2,30 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, AlertCircle } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { HubSpotIcon } from './components/HubSpotIcon';
-import { LoadingSpinner } from './components/LoadingSpinner';
 import { SuccessIcon } from './components/SuccessIcon';
 import { ErrorIcon } from './components/ErrorIcon';
-import { CriticalProperties } from './components/CriticalProperties';
-import { HubSpotExportProps, HubSpotExportType, PropertyMapping, ExportStatus } from './types';
-import { STANDARD_PROPERTIES, REQUIRED_PROPERTIES } from './constants';
-import { validateAndTransformRecords } from './utils/validation';
-import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties,  } from '@/actions/hubspot-actions';
+import { HubSpotExportProps, HubSpotExportType, ExportStatus } from './types';
+import { EXPORT_TYPES } from './constants';
+import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties } from '@/actions/hubspot-actions';
+
+interface HubSpotProperty {
+  name: string;
+  label: string;
+  fieldType: string;
+}
+
+interface LoadingSpinnerProps {
+  className?: string;
+}
+
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ className = '' }) => (
+  <svg className={`animate-spin ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  </svg>
+);
 
 const HubSpotExport: React.FC<HubSpotExportProps> = ({ 
   projectId, 
@@ -21,9 +35,14 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
 }) => {
   const [selectedType, setSelectedType] = useState<HubSpotExportType | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [availableProperties, setAvailableProperties] = useState<HubSpotProperty[]>([]);
+  const [propertyMappings, setPropertyMappings] = useState<Map<string, string>>(new Map());
+  const [showOptions, setShowOptions] = useState(false);
+  const [showHubSpotProperties, setShowHubSpotProperties] = useState(false);
+  const [selectedOurField, setSelectedOurField] = useState<string | null>(null);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  console.log('REEECS', records);
   const [status, setStatus] = useState<ExportStatus>({
     isLoading: false,
     isConnected: false,
@@ -31,59 +50,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     error: null,
     lastExportDate: null
   });
-  const [showOptions, setShowOptions] = useState(false);
-
-  // Initialize property mappings with both our fields and required HubSpot fields
-  const [propertyMappings, setPropertyMappings] = useState<PropertyMapping[]>(() => {
-    return fields.map(field => ({
-      ourProperty: field.name,
-      hubspotProperty: '',
-      isRequired: false,
-      isHubspotField: false
-    }));
-  });
-
-  // Function to update property mappings when type changes
-  const updatePropertyMappingsForType = (type: HubSpotExportType) => {
-    const appFields = propertyMappings.filter(mapping => !mapping.isHubspotField);
-    
-    const hubspotFields = REQUIRED_PROPERTIES[type].map(prop => {
-      const existingMapping = propertyMappings.find(
-        m => m.isHubspotField && m.hubspotProperty === prop.name
-      );
-
-      const ourProperty = existingMapping?.ourProperty || `hs_${prop.name}`;
-
-      return {
-        ourProperty,
-        hubspotProperty: prop.name,
-        isRequired: true,
-        isHubspotField: true,
-        defaultValue: prop.defaultValue
-      };
-    });
-
-    setPropertyMappings([...appFields, ...hubspotFields]);
-  };
-
-  const handleTypeChange = async (newType: HubSpotExportType) => {
-    setSelectedType(newType);
-    const result = await handleGetProperties(newType);
-    console.log('AVAIL_PROPERTIES', result)
-    // setShowOptions(false);
-    // setValidationError(null);
-    // setShowValidationErrors(false);
-    // setStatus(prev => ({
-    //   ...prev,
-    //   error: null,
-    //   success: false
-    // }));
-    
-    // updatePropertyMappingsForType(newType);
-  };
 
   useEffect(() => {
-    // Check if user has connected their HubSpot account
     const initConnection = async () => {
       try {
         const isConnected = await checkConnection();
@@ -94,7 +62,6 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     };
     initConnection();
 
-    // Add event listener for messages from the OAuth popup
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'HUBSPOT_AUTH_SUCCESS') {
         setStatus(prev => ({ 
@@ -115,14 +82,143 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const getMappedFields = () => {
-    const mappedFields = new Set<string>();
-    propertyMappings.forEach(mapping => {
-      if (mapping.isHubspotField && mapping.ourProperty !== `hs_${mapping.hubspotProperty}`) {
-        mappedFields.add(mapping.ourProperty);
+  const handleTypeChange = async (newType: HubSpotExportType) => {
+    setSelectedType(newType);
+    setShowOptions(false);
+    setIsLoadingProperties(true);
+    try {
+      const result = await getHubSpotProperties(newType);
+      setAvailableProperties(result.properties);
+      setPropertyMappings(new Map());
+    } catch (error) {
+      setValidationError(error instanceof Error ? error.message : 'Failed to fetch properties');
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  };
+
+  const handleMappingChange = (hubspotProperty: string, answerField: string) => {
+    setPropertyMappings(new Map(propertyMappings.set(answerField, hubspotProperty)));
+  };
+
+  const handleExport = async () => {
+    if (!selectedType || !records.length) {
+      setValidationError('No records to export or type not selected');
+      return;
+    }
+
+    setStatus(prev => ({ ...prev, isLoading: true, error: null }));
+    setValidationError(null);
+    
+    try {
+      const mappedRecords = records.map(record => {
+        if (!record.id) {
+          throw new Error('Record ID is required for export');
+        }
+
+        // Initialize properties as a plain object
+        const properties: Record<string, string> = {};
+        
+        // Process each mapping - our field is the key, HubSpot property is the value
+        propertyMappings.forEach((hubspotProperty, ourField) => {
+          // Get the value from our record
+          const value = record.answers[ourField];
+          
+          // Special handling for email property
+          if (hubspotProperty === 'email' && value) {
+            const emailPart = value.split(' ')[0].trim();
+            // Basic email validation
+            if (emailPart.includes('@') && emailPart.includes('.')) {
+              properties[hubspotProperty] = emailPart;
+            } else {
+              properties[hubspotProperty] = ''; // Invalid email, set empty string
+            }
+          } 
+          // For all other properties, use the value as is or empty string if undefined
+          else {
+            // Use the HubSpot property name as the key
+            properties[hubspotProperty] = value !== undefined && value !== null ? String(value) : '';
+          }
+        });
+
+        // For contacts, ensure we have an email in properties
+        if (selectedType === 'contacts') {
+          // Find the field that is mapped to the 'email' HubSpot property
+          const emailField = Array.from(propertyMappings.entries())
+            .find(([_, hubspotProp]) => hubspotProp === 'email')?.[0] || 'Email';
+          
+          let email = record.answers[emailField] || '';
+          email = email.split(' ')[0].trim();
+          
+          if (!email.includes('@') || !email.includes('.')) {
+            throw new Error('Valid email is required for contact properties');
+          }
+          
+          // For contacts, use email as the unique identifier
+          return {
+            id: email,
+            id_property: 'email',
+            properties: { 
+              ...properties,
+              email: email
+            }
+          };
+        }
+
+        // For non-contact objects, use recordid as before
+        return {
+          id: record.id,
+          id_property: 'recordid',
+          properties: { 
+            ...properties,
+            recordid: record.id
+          }
+        };
+      });
+
+      // Create the final payload
+      const payload = {
+        [selectedType]: mappedRecords
+      };
+
+      console.log('Sending payload:', JSON.stringify(payload, null, 2));
+      
+      // Send the payload
+      await exportToHubSpot(selectedType, mappedRecords);
+
+      setStatus(prev => ({
+        ...prev,
+        isLoading: false,
+        success: true,
+        lastExportDate: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error exporting to HubSpot:', error);
+      
+      // Extract the HubSpot error message
+      let errorMessage = 'Failed to export to HubSpot';
+      
+      if (error instanceof Error) {
+        try {
+          // Try to parse the HubSpot error from the error message
+          if (error.message.includes('HubSpot API Error:')) {
+            const hubspotError = JSON.parse(error.message.split('HubSpot API Error:')[1]);
+            errorMessage = hubspotError.message || error.message;
+          } else {
+            errorMessage = error.message;
+          }
+        } catch {
+          errorMessage = error.message;
+        }
       }
-    });
-    return mappedFields;
+
+      setValidationError(errorMessage);
+      setStatus(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
+      }));
+    }
   };
 
   const handleHubSportConnection = async () => {
@@ -148,91 +244,33 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
             }
           }, 1000);
         }
-        return;
       } catch (error) {
         setStatus(prev => ({ 
           ...prev, 
           error: error instanceof Error ? error.message : 'Failed to connect to HubSpot'
         }));
-        return;
       }
     }
   };
 
-  const handleExport = async () => {
-    setStatus(prev => ({ ...prev, isLoading: true, error: null }));
-    setValidationError(null);
-    setShowValidationErrors(true);
-
-    // Add validation for unmapped fields
-    const unmappedFields = propertyMappings
-      .filter(mapping => !mapping.isHubspotField && !getMappedFields().has(mapping.ourProperty))
-      .filter(mapping => !mapping.hubspotProperty);
-
-    if (unmappedFields.length > 0) {
-      const fieldNames = unmappedFields.map(mapping => mapping.ourProperty).join(', ');
-      setValidationError(`Please specify HubSpot property names for: ${fieldNames}`);
-      setStatus(prev => ({ ...prev, isLoading: false }));
-      return;
-    }
-
-    try {
-      if (!selectedType) {
-        setValidationError('Export type is not selected.');
-        setStatus(prev => ({ ...prev, isLoading: false }));
-        return;
-      }
-      // const transformedRecords = validateAndTransformRecords(records, selectedType, propertyMappings);
-      // const { successCount, failureCount } = await exportToHubSpot(selectedType, projectId, transformedRecords);
-
-      // setStatus(prev => ({
-      //   ...prev,
-      //   isLoading: false,
-      //   success: true,
-      //   lastExportDate: new Date().toISOString()
-      // }));
-
-      // if (failureCount > 0) {
-      //   setValidationError(`Export completed with ${successCount} successful and ${failureCount} failed records`);
-      // }
-
-      const result = await exportToHubSpot(selectedType);
-      console.log('RRRRES', result)
-
-    } catch (error) {
-      console.error('Error exporting to HubSpot:', error);
-      setValidationError(error instanceof Error ? error.message : 'Unknown error occurred');
-      setStatus(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'Failed to export to HubSpot'
-      }));
-    }
-  }
-
-  const handleGetProperties = async (selectedType: string) => {
-    if (selectedType) {
-      try {
-        const response = await getHubSpotProperties(selectedType);
-        if(!response) {
-          setValidationError(`Failed to get ${selectedType} properties for your account`);
-          setStatus(prev => ({...prev, isLoading: false}));
-        }
-      } catch (error) {
-        setValidationError(`Error: ${error}`);
-      }
-    }
-  }
+  // Filter HubSpot properties based on search query
+  const filteredProperties = availableProperties.filter(property => 
+    property.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    property.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {status.error && (
+      {(status.error || validationError) && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
           <ErrorIcon />
           <div className="flex-1">
-            <p className="text-sm text-red-800">{status.error}</p>
+            <p className="text-sm text-red-800">{status.error || validationError}</p>
             <button
-              onClick={() => setStatus(prev => ({ ...prev, error: null }))}
+              onClick={() => {
+                setStatus(prev => ({ ...prev, error: null }));
+                setValidationError(null);
+              }}
               className="mt-2 text-sm text-red-600 hover:text-red-800"
             >
               Dismiss
@@ -254,12 +292,6 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
               </p>
             )}
           </div>
-        </div>
-      )}
-
-      {validationError && (
-        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-          {validationError}
         </div>
       )}
 
@@ -296,7 +328,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
               <div className="p-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Choose export type:</h3>
                 <div className="space-y-2">
-                  {(Object.keys(STANDARD_PROPERTIES) as HubSpotExportType[]).map((type) => (
+                  {EXPORT_TYPES.map((type) => (
                     <button
                       key={type}
                       onClick={() => handleTypeChange(type)}
@@ -315,105 +347,165 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         </div>
       </div>
 
-      {status.isConnected && !showOptions && selectedType && (
-        <>
-          <div className="mt-4 space-y-3">
-            {selectedType && (
-              <CriticalProperties type={selectedType} />
-            )}
-            
-            <div className="flex justify-between items-center">
-              <h4 className="text-sm font-medium text-gray-700">Map your fields to HubSpot properties:</h4>
-              <span className="text-xs text-red-500">* Required HubSpot fields</span>
+      {status.isConnected && selectedType && (
+        <div className="mt-6 relative">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Map Your Fields to HubSpot</h3>
+          
+          {isLoadingProperties || !records.length ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <LoadingSpinner className="w-8 h-8 text-[#FF7A59]" />
+              <p className="mt-4 text-sm text-gray-500">
+                {isLoadingProperties 
+                  ? "Loading HubSpot properties..." 
+                  : "Loading your data..."}
+              </p>
             </div>
-            <div className="space-y-3">
-              {propertyMappings.map((mapping, index) => {
-                if (!mapping.isHubspotField && getMappedFields().has(mapping.ourProperty)) {
-                  return null;
-                }
-
-                const isUnmapped = !mapping.isHubspotField && !getMappedFields().has(mapping.ourProperty);
-                const hasError = showValidationErrors && isUnmapped && !mapping.hubspotProperty;
-
-                return (
-                  <div key={mapping.ourProperty} 
-                    className={`flex items-center space-x-2 ${mapping.isHubspotField ? 'bg-orange-50 p-2 rounded' : ''} ${hasError ? 'border border-red-200 rounded p-2' : ''}`}
-                  >
-                    <span className="text-sm text-gray-600 w-1/3 truncate">
-                      {mapping.isHubspotField ? `hs_${mapping.hubspotProperty}` : mapping.ourProperty}
-                      {mapping.isRequired && <span className="text-red-500 ml-1">*</span>}
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <div className="flex-1 relative">
-                      {mapping.isHubspotField ? (
-                        <select
-                          value={mapping.ourProperty !== `hs_${mapping.hubspotProperty}` ? mapping.ourProperty : `hs_${mapping.hubspotProperty}`}
-                          onChange={(e) => {
-                            const newMappings = propertyMappings.map((m, i) => {
-                              if (i === index) {
-                                return {
-                                  ...m,
-                                  ourProperty: e.target.value
-                                };
-                              }
-                              return m;
-                            });
-                            setPropertyMappings(newMappings);
+          ) : availableProperties.length > 0 ? (
+            <>
+              {/* Scrollable container for our properties */}
+              <div className="max-h-[400px] overflow-y-auto mb-4 pr-2">
+                <div className="space-y-4">
+                  {Object.keys(records[0]?.answers || {}).map((ourField) => (
+                    <div key={ourField} className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-gray-200">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {ourField}
+                        </label>
+                      </div>
+                      <div className="w-1/2">
+                        <button
+                          onClick={() => {
+                            setSelectedOurField(ourField);
+                            setShowHubSpotProperties(true);
                           }}
-                          className="w-full text-sm px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF7A59]"
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59]"
                         >
-                          <option value={`hs_${mapping.hubspotProperty}`}>Use default value</option>
-                          {fields
-                            .filter(field => {
-                              return field.name === mapping.ourProperty || !getMappedFields().has(field.name);
-                            })
-                            .map(field => (
-                              <option key={field.id} value={field.name}>
-                                {field.name}
-                              </option>
-                            ))}
-                        </select>
-                      ) : (
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={mapping.hubspotProperty}
-                            onChange={(e) => {
-                              const newMappings = propertyMappings.map((m, i) => {
-                                if (i === index) {
-                                  return {
-                                    ...m,
-                                    hubspotProperty: e.target.value
-                                  };
+                          {propertyMappings.get(ourField) 
+                            ? availableProperties.find(p => p.name === propertyMappings.get(ourField))?.label 
+                            : 'Select HubSpot field'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* HubSpot Properties Modal */}
+              {showHubSpotProperties && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+                    <div className="p-4 border-b border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Map to HubSpot Property
+                        </h3>
+                        <button
+                          onClick={() => {
+                            setShowHubSpotProperties(false);
+                            setSelectedOurField(null);
+                            setSearchQuery(''); // Clear search when closing
+                          }}
+                          className="text-gray-400 hover:text-gray-500"
+                        >
+                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Select a HubSpot property to map "{selectedOurField}" to
+                      </p>
+                      
+                      {/* Search input */}
+                      <div className="mt-4 relative">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search properties..."
+                          className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59]"
+                        />
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-500"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 flex-1 overflow-y-auto">
+                      <div className="space-y-2">
+                        {filteredProperties.length > 0 ? (
+                          filteredProperties.map((property) => (
+                            <div
+                              key={property.name}
+                              onClick={() => {
+                                if (selectedOurField) {
+                                  handleMappingChange(property.name, selectedOurField);
+                                  setShowHubSpotProperties(false);
+                                  setSelectedOurField(null);
+                                  setSearchQuery(''); // Clear search after selection
                                 }
-                                return m;
-                              });
-                              setPropertyMappings(newMappings);
-                            }}
-                            placeholder="HubSpot property name"
-                            className={`w-full text-sm px-3 py-1 border ${hasError ? 'border-red-300' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF7A59]`}
-                          />
-                          {hasError && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <AlertCircle className="h-4 w-4 text-red-500" />
+                              }}
+                              className={`p-3 rounded-md cursor-pointer hover:bg-gray-50 ${
+                                propertyMappings.get(selectedOurField || '') === property.name
+                                  ? 'bg-[#FF7A59] bg-opacity-10 border border-[#FF7A59]'
+                                  : 'border border-gray-200'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{property.label}</p>
+                                  <p className="text-xs text-gray-500">{property.name}</p>
+                                </div>
+                                {propertyMappings.get(selectedOurField || '') === property.name && (
+                                  <span className="text-[#FF7A59]">✓</span>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      )}
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <p className="text-sm text-gray-500">
+                              No properties match your search
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              )}
+
+              {/* Fixed export button */}
+              <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleExport}
+                  disabled={status.isLoading || propertyMappings.size === 0}
+                  className="w-full bg-[#FF7A59] text-white py-2 px-4 rounded-md hover:bg-[#FF8A69] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {status.isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinner className="w-5 h-5 mr-2" />
+                      <span>Exporting...</span>
+                    </div>
+                  ) : (
+                    'Export to HubSpot'
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No HubSpot properties available</p>
             </div>
-            <button
-              onClick={handleExport}
-              disabled={status.isLoading}
-              className="mt-4 w-full bg-[#FF7A59] text-white py-2 px-4 rounded-md hover:bg-[#FF8A69] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {status.isLoading ? 'Exporting...' : 'Export'}
-            </button>
-          </div>
-        </>
+          )}
+        </div>
       )}
     </div>
   );
