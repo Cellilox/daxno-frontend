@@ -6,7 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import { HubSpotIcon } from './components/HubSpotIcon';
 import { SuccessIcon } from './components/SuccessIcon';
 import { ErrorIcon } from './components/ErrorIcon';
-import { HubSpotExportProps, HubSpotExportType, ExportStatus } from './types';
+import { HubSpotExportProps, HubSpotExportType } from './types';
 import { EXPORT_TYPES } from './constants';
 import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties } from '@/actions/hubspot-actions';
 
@@ -18,6 +18,15 @@ interface HubSpotProperty {
 
 interface LoadingSpinnerProps {
   className?: string;
+}
+
+interface ExportStatus {
+  isLoading: boolean;
+  isConnected: boolean;
+  success: boolean;
+  error: string | null;
+  lastExportDate: string | null;
+  isCheckingConnection: boolean;
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ className = '' }) => (
@@ -48,16 +57,19 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     isConnected: false,
     success: false,
     error: null,
-    lastExportDate: null
+    lastExportDate: null,
+    isCheckingConnection: true
   });
 
   useEffect(() => {
     const initConnection = async () => {
       try {
+        setStatus(prev => ({ ...prev, isCheckingConnection: true }));
         const isConnected = await checkConnection();
-        setStatus(prev => ({ ...prev, isConnected }));
+        setStatus(prev => ({ ...prev, isConnected, isCheckingConnection: false }));
       } catch (error) {
         console.error('Error checking connection:', error);
+        setStatus(prev => ({ ...prev, isCheckingConnection: false }));
       }
     };
     initConnection();
@@ -67,13 +79,15 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         setStatus(prev => ({ 
           ...prev, 
           isConnected: true,
-          error: null 
+          error: null,
+          isCheckingConnection: false
         }));
       } else if (event.data.type === 'HUBSPOT_AUTH_ERROR') {
         setStatus(prev => ({ 
           ...prev, 
           error: event.data.data.error || 'Failed to connect to HubSpot',
-          isConnected: false
+          isConnected: false,
+          isCheckingConnection: false
         }));
       }
     };
@@ -265,7 +279,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         <div className="relative">
           <button
             onClick={() => status.isConnected ? setShowOptions(true) : handleHubSportConnection()}
-            disabled={status.isLoading}
+            disabled={status.isLoading || status.isCheckingConnection}
             className={`
               w-full flex items-center justify-between px-4 py-2 rounded-lg
               ${status.isConnected 
@@ -278,15 +292,22 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
           >
             <div className="flex items-center space-x-2">
               <HubSpotIcon />
-              <span>
-                {status.isConnected 
-                  ? selectedType 
-                    ? `Export as ${selectedType}` 
-                    : 'Select export type'
-                  : 'Connect HubSpot'}
-              </span>
+              {status.isCheckingConnection ? (
+                <div className="flex items-center space-x-2">
+                  <LoadingSpinner className="w-4 h-4" />
+                  <span>Checking connection...</span>
+                </div>
+              ) : (
+                <span>
+                  {status.isConnected 
+                    ? selectedType 
+                      ? `Export as ${selectedType}` 
+                      : 'Select export type'
+                    : 'Connect HubSpot'}
+                </span>
+              )}
             </div>
-            {status.isConnected && <ChevronDown className="w-4 h-4" />}
+            {status.isConnected && !status.isCheckingConnection && <ChevronDown className="w-4 h-4" />}
           </button>
 
           {showOptions && status.isConnected && (
