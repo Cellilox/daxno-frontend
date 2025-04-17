@@ -80,21 +80,21 @@ export const exportToHubSpot = async (
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      const errorData = await response.json();
       console.error('HubSpot API Error Response:', errorData);
       
-      const errorMessage = errorData?.message || errorData?.error || `Failed to create ${type}`;
-      throw new Error(errorMessage);
+      // Throw error with the full error data
+      throw new Error(`HubSpot API Error: ${JSON.stringify(errorData)}`);
     }
 
     const result = await response.json();
     console.log('HubSpot API Success Response:', result);
     return result;
   } catch (error) {
+    console.error(`Error creating ${type}:`, error);
     if (error instanceof Error) {
       throw error;
     }
-    console.error(`Error creating ${type}:`, error);
     throw new Error(`Failed to export to HubSpot: ${error}`);
   }
 }; 

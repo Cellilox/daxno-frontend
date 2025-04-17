@@ -124,55 +124,18 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
           // Get the value from our record
           const value = record.answers[ourField];
           
-          // Special handling for email property
-          if (hubspotProperty === 'email' && value) {
-            const emailPart = value.split(' ')[0].trim();
-            // Basic email validation
-            if (emailPart.includes('@') && emailPart.includes('.')) {
-              properties[hubspotProperty] = emailPart;
-            } else {
-              properties[hubspotProperty] = ''; // Invalid email, set empty string
-            }
-          } 
-          // For all other properties, use the value as is or empty string if undefined
-          else {
-            // Use the HubSpot property name as the key
-            properties[hubspotProperty] = value !== undefined && value !== null ? String(value) : '';
-          }
+          // For all properties, use the value as is or empty string if undefined
+          properties[hubspotProperty] = value !== undefined && value !== null ? String(value) : '';
         });
 
-        // For contacts, ensure we have an email in properties
-        if (selectedType === 'contacts') {
-          // Find the field that is mapped to the 'email' HubSpot property
-          const emailField = Array.from(propertyMappings.entries())
-            .find(([_, hubspotProp]) => hubspotProp === 'email')?.[0] || 'Email';
-          
-          let email = record.answers[emailField] || '';
-          email = email.split(' ')[0].trim();
-          
-          if (!email.includes('@') || !email.includes('.')) {
-            throw new Error('Valid email is required for contact properties');
-          }
-          
-          // For contacts, use email as the unique identifier
-          return {
-            id: email,
-            id_property: 'email',
-            properties: { 
-              ...properties,
-              email: email
-            }
-          };
-        }
+        // Always add recordidd to properties
+        properties['recordidd'] = record.id;
 
-        // For non-contact objects, use recordid as before
+        // Return the record with recordidd as the unique identifier
         return {
           id: record.id,
-          id_property: 'recordid',
-          properties: { 
-            ...properties,
-            recordid: record.id
-          }
+          id_property: 'recordidd',
+          properties: properties
         };
       });
 
@@ -195,19 +158,20 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     } catch (error) {
       console.error('Error exporting to HubSpot:', error);
       
-      // Extract the HubSpot error message
       let errorMessage = 'Failed to export to HubSpot';
       
       if (error instanceof Error) {
         try {
-          // Try to parse the HubSpot error from the error message
           if (error.message.includes('HubSpot API Error:')) {
-            const hubspotError = JSON.parse(error.message.split('HubSpot API Error:')[1]);
-            errorMessage = hubspotError.message || error.message;
+            const hubspotError = JSON.parse(error.message.split('HubSpot API Error:')[1].trim());
+            if (hubspotError.detail) {
+              errorMessage = hubspotError.detail;
+            }
           } else {
             errorMessage = error.message;
           }
-        } catch {
+        } catch (parseError) {
+          console.error('Error parsing HubSpot error:', parseError);
           errorMessage = error.message;
         }
       }
@@ -265,7 +229,9 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
           <ErrorIcon />
           <div className="flex-1">
-            <p className="text-sm text-red-800">{status.error || validationError}</p>
+            <p className="text-sm text-red-800 whitespace-pre-line">
+              {status.error || validationError}
+            </p>
             <button
               onClick={() => {
                 setStatus(prev => ({ ...prev, error: null }));
