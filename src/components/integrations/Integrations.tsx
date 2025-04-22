@@ -5,6 +5,7 @@ import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import { Plug2 } from 'lucide-react';
 import HubSpotExport from './hubspot/HubSpotExport';
+import { HubSpotIcon } from './hubspot/components/HubSpotIcon';
 
 type OptionsProps = {
     projectId: string;
@@ -91,7 +92,10 @@ export default function Integrations({projectId, fields, records}: OptionsProps)
 
                                 {/* HubSpot Section */}
                                 <div className="space-y-3">
-                                    <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+                                    <div className="flex items-center space-x-2">
+                                        <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
+                                        <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+                                    </div>
                                     <HubSpotExport 
                                         projectId={projectId}
                                         fields={fields}
