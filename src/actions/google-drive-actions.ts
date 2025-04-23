@@ -1,5 +1,6 @@
 "use server"
 
+import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 interface SaveFileUrlError extends Error {
     status?: number;
     details?: string;
@@ -92,26 +93,14 @@ interface SaveFileUrlError extends Error {
       }
     }
   }; 
-  
-  import { auth } from "@clerk/nextjs/server";
+
+
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getGoogleDriveAuthUrl(projectId: string) {
   try {
-    // Get auth token and session ID
-    const { getToken, sessionId } = await auth();
-    if (!sessionId) {
-      throw new Error('No active session');
-    }
-
-    const headers = new Headers();
-    headers.append('Authorization', `Bearer ${await getToken()}`);
-    headers.append('sessionId', sessionId);
-    headers.append('Content-Type', 'application/json');
-
-    const response = await fetch(`${apiUrl}/google-drive/auth?project_id=${projectId}`, {
-      headers,
+    const response = await fetchAuthed(`${apiUrl}/google-drive/auth?project_id=${projectId}`, {
       method: 'GET',
       // Don't follow redirects
       redirect: 'manual'
@@ -126,5 +115,26 @@ export async function getGoogleDriveAuthUrl(projectId: string) {
   } catch (error) {
     console.error('Error getting Google Drive auth URL:', error);
     throw error;
+  }
+}
+
+export async function checkDriveStatus(): Promise<{ authenticated: boolean }> {
+  const res = await fetchAuthed(`${apiUrl}/google-drive/status`, {
+    method: 'GET',
+  });
+  return res.json();
+}
+
+export async function directUploadToDrive(projectId: string){
+  try {
+    const res = await fetchAuthedJson(`${apiUrl}/google-drive/upload`, {
+      method: 'POST',
+      body: JSON.stringify({ project_id: projectId })
+    });
+    console.log('RRR', await res.json());
+    // if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  } catch (error) {
+    console.log('Error uploading to Google Drive:', error);
   }
 }
