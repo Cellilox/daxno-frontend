@@ -92,3 +92,39 @@ interface SaveFileUrlError extends Error {
       }
     }
   }; 
+  
+  import { auth } from "@clerk/nextjs/server";
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+export async function getGoogleDriveAuthUrl(projectId: string) {
+  try {
+    // Get auth token and session ID
+    const { getToken, sessionId } = await auth();
+    if (!sessionId) {
+      throw new Error('No active session');
+    }
+
+    const headers = new Headers();
+    headers.append('Authorization', `Bearer ${await getToken()}`);
+    headers.append('sessionId', sessionId);
+    headers.append('Content-Type', 'application/json');
+
+    const response = await fetch(`${apiUrl}/google-drive/auth?project_id=${projectId}`, {
+      headers,
+      method: 'GET',
+      // Don't follow redirects
+      redirect: 'manual'
+    });
+
+    // If we get a redirect response, that's our auth URL
+    if (response.status === 307 || response.status === 302) {
+      return { auth_url: response.headers.get('location') };
+    }
+
+    throw new Error('Unexpected response from server');
+  } catch (error) {
+    console.error('Error getting Google Drive auth URL:', error);
+    throw error;
+  }
+}

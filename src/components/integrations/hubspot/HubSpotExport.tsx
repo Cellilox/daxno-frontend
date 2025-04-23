@@ -350,7 +350,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
           ) : availableProperties.length > 0 ? (
             <>
               {/* Scrollable container for our properties */}
-              <div className="max-h-[400px] overflow-y-auto mb-4 pr-2">
+              <div className="bg-red-300 max-h-[400px] overflow-y-auto mb-4 pr-2">
                 <div className="space-y-4">
                   {Object.keys(records[0]?.answers || {}).map((ourField) => (
                     <div key={ourField} className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-gray-200">

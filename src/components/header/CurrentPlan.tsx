@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSubscription } from '../hooks/useSubscription';
+import { Crown } from 'lucide-react';
 
 interface Transaction {
   payment_type: 'mobilemoneyrw' | 'card';
@@ -25,9 +26,13 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
   if (currentTransaction == undefined) {
     return (
       <div>
-        <button onClick={() => router.push('/pricing')} className="px-3 py-1 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition-colors">
-        Upgrade
-      </button>
+        <div 
+          onClick={() => router.push('/pricing')} 
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
+        >
+          <Crown className="w-4 h-4" />
+          <span>Upgrade</span>
+        </div>
       </div>
     )
   }
@@ -37,8 +42,13 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
   return (
     <div className='md:flex md:mr-3 items-center text-right'>
       <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan}</span></p>
-      <p onClick={() => router.push('/pricing')} className="underline hover:cursor-pointer text-sm">Upgrade</p>
+      <div 
+        onClick={() => router.push('/pricing')} 
+        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
+      >
+        <Crown className="w-4 h-4" />
+        <span>Upgrade</span>
+      </div>
     </div>
   );
 }
-
