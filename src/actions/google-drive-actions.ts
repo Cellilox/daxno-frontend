@@ -125,16 +125,20 @@ export async function checkDriveStatus(): Promise<{ authenticated: boolean }> {
   return res.json();
 }
 
-export async function directUploadToDrive(projectId: string){
-  try {
-    const res = await fetchAuthedJson(`${apiUrl}/google-drive/upload`, {
-      method: 'POST',
-      body: JSON.stringify({ project_id: projectId })
-    });
-    console.log('RRR', await res.json());
-    // if (!res.ok) throw new Error('Upload failed');
-    return res.json();
-  } catch (error) {
-    console.log('Error uploading to Google Drive:', error);
+export async function directUploadToDrive(projectId: string) {
+  const res = await fetchAuthedJson(`${apiUrl}/google-drive/upload`, {
+    method: "POST",
+    body: JSON.stringify({ project_id: projectId }),
+  });
+
+  const payload = await res.json();  // only once!
+
+  if (!res.ok) {
+    // FastAPI will put our message in `detail`
+    const message = payload.detail || "Upload failed";
+    throw new Error(message);
   }
+
+  // on success, payload has the shape { file_id, file_link }
+  return payload;
 }

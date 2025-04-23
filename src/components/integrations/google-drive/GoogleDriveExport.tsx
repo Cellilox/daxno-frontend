@@ -16,8 +16,9 @@ import {
   getGoogleDriveAuthUrl,
   checkDriveStatus,
   directUploadToDrive,
+  saveFileUrl,
+  fetchCurrentFileUrl,
 } from '@/actions/google-drive-actions';
-import { saveFileUrl, fetchCurrentFileUrl } from '@/actions/google-drive-actions';
 
 const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
   projectId,
@@ -29,8 +30,8 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
   const [currentFileLink, setCurrentFileLink] = useState<string | null>(null);
   const [exportHistory, setExportHistory] = useState<ExportRecord[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  console.log('STATUS', isAuthenticated);
-  // 1) On mount, check if we already have valid tokens
+
+  // 1) Check authentication status on mount
   useEffect(() => {
     (async () => {
       try {
@@ -42,7 +43,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     })();
   }, []);
 
-  // 2) Fetch existing file link & history
+  // 2) Fetch existing file link & (dummy) history
   useEffect(() => {
     (async () => {
       try {
@@ -55,7 +56,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     })();
   }, [projectId]);
 
-  // 3) Unified handler for both popup and direct‐upload responses
+  // 3) Unified response handler
   const handleResponse = useCallback(
     async (payload: { file_id?: string; file_link?: string; error?: string }) => {
       const { file_id, file_link, error: errPayload } = payload;
@@ -71,7 +72,6 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
         setIsLoading(false);
 
         const fileName = `Project Export - ${new Date().toLocaleDateString()}`;
-        // persist on your backend
         await saveFileUrl(projectId, { fileLink: file_link, fileName });
 
         setCurrentFileLink(file_link);
@@ -81,19 +81,17 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
           fileName,
           exportDate: new Date().toISOString(),
         };
-        setExportHistory((prev) => [newExport, ...prev]);
+        setExportHistory(prev => [newExport, ...prev]);
 
-        // mark as authenticated for future clicks
         setIsAuthenticated(true);
       }
     },
     [projectId]
   );
 
-  // 4) Listen for messages from the OAuth popup
+  // 4) Listen for popup messages
   useEffect(() => {
     const listener = (event: MessageEvent) => {
-      // you can tighten origin check here if desired
       if (!event.data) return;
       handleResponse(event.data);
     };
@@ -101,7 +99,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     return () => window.removeEventListener('message', listener);
   }, [handleResponse]);
 
-  // 5) Button click: either direct‐upload or popup‐flow
+  // 5) Export button click
   const handleExport = async () => {
     setIsLoading(true);
     setExportStatus('loading');
@@ -109,18 +107,22 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
 
     try {
       if (isAuthenticated) {
-        // **direct upload** path
-        const { file_id, file_link } = await directUploadToDrive(projectId);
-        console.log({file_id, file_link});
+        // Direct‐upload flow
+        const result = await directUploadToDrive(projectId);
+        if (!result || !result.file_id || !result.file_link) {
+          throw new Error('Upload failed');
+        }
+        const { file_id, file_link } = result;
+        console.log('Direct upload result:', { file_id, file_link });
+        // Feed into the same handler
         await handleResponse({ file_id, file_link });
+
       } else {
-        // **first‐time auth** path
+        // OAuth popup flow
         const { auth_url } = await getGoogleDriveAuthUrl(projectId);
-        const width = 600,
-          height = 600;
+        const width = 600, height = 600;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-
         window.open(
           auth_url!,
           'Google Drive Export',
@@ -134,7 +136,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     }
   };
 
-  // 6) “Open in Sheets” handler
+  // 6) Open in Sheets
   const handleOpenInDrive = () => {
     const link = currentFileLink || exportHistory[0]?.fileLink;
     if (link) window.open(link, '_blank');
