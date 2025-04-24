@@ -2,7 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 import { HubSpotIcon } from './components/HubSpotIcon';
 import { SuccessIcon } from './components/SuccessIcon';
 import { ErrorIcon } from './components/ErrorIcon';
@@ -103,7 +103,6 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     try {
       const result = await getHubSpotProperties(newType);
       setAvailableProperties(result.properties);
-      setPropertyMappings(new Map());
     } catch (error) {
       setValidationError(error instanceof Error ? error.message : 'Failed to fetch properties');
     } finally {
@@ -335,7 +334,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       </div>
 
       {status.isConnected && selectedType && (
-        <div className="mt-6 relative">
+        <div className="mt-6 relative flex flex-col h-[calc(100vh-16rem)]">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Map Your Fields to HubSpot</h3>
           
           {isLoadingProperties || !records.length ? (
@@ -348,24 +347,27 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
               </p>
             </div>
           ) : availableProperties.length > 0 ? (
-            <>
+            <div className="flex flex-col flex-1">
               {/* Scrollable container for our properties */}
-              <div className="bg-red-300 max-h-[400px] overflow-y-auto mb-4 pr-2">
-                <div className="space-y-4">
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-4 p-2">
                   {Object.keys(records[0]?.answers || {}).map((ourField) => (
                     <div key={ourField} className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-gray-200">
-                      <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700">
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-medium text-gray-700 truncate">
                           {ourField}
                         </label>
                       </div>
-                      <div className="w-1/2">
+                      <div className="flex items-center">
+                        <ArrowRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      </div>
+                      <div className="w-1/2 min-w-0">
                         <button
                           onClick={() => {
                             setSelectedOurField(ourField);
                             setShowHubSpotProperties(true);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59]"
+                          className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59] truncate"
                         >
                           {propertyMappings.get(ourField) 
                             ? availableProperties.find(p => p.name === propertyMappings.get(ourField))?.label 
@@ -486,7 +488,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                   )}
                 </button>
               </div>
-            </>
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-gray-500">No HubSpot properties available</p>
