@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { ExportRecord } from '../types';
-import { formatDate } from '../utils/formatting';
 import { GoogleDriveIcon, GoogleSheetsIcon } from '../GoogleDriveIcons';
-
+import { formatDate } from '../utils/formatting';
 interface ExportHistoryProps {
   exportHistory: ExportRecord[];
   onOpenFile: (fileLink: string) => void;
@@ -11,7 +10,6 @@ interface ExportHistoryProps {
 export const ExportHistory: React.FC<ExportHistoryProps> = ({ exportHistory, onOpenFile }) => {
   const [showHistory, setShowHistory] = useState(false);
   const hasMultipleExports = exportHistory.length >= 2;
-
   if (!hasMultipleExports) return null;
 
   return (
@@ -46,14 +44,14 @@ export const ExportHistory: React.FC<ExportHistoryProps> = ({ exportHistory, onO
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {export_record.fileName}
+                      {export_record.id}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {formatDate(export_record.exportDate)}
+                      {formatDate(export_record.created_at)}
                     </p>
                   </div>
                   <button
-                    onClick={() => onOpenFile(export_record.fileLink)}
+                    onClick={() => onOpenFile(export_record.file_link)}
                     className="ml-4 inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded bg-white hover:bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0F9D58]"
                   >
                     <GoogleSheetsIcon />

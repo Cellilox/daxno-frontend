@@ -5,18 +5,17 @@ interface SaveFileUrlError extends Error {
     status?: number;
     details?: string;
   }
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   
-  export const saveFileUrl = async (projectId: string, fileData: { fileLink: string; fileName: string }): Promise<void> => {
+  export const saveGoogleExportHistory = async (projectId: string, fileLink: string): Promise<void> => {
+    console.log(fileLink,projectId)
     try {
-      const response = await fetch(`/api/projects/${projectId}/drive-export`, {
+      const response = await fetchAuthedJson(`${apiUrl}/google-drive/save-export-history`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          fileLink: fileData.fileLink,
-          fileName: fileData.fileName,
-          exportDate: new Date().toISOString(),
+          file_link: fileLink,
+          project_id: projectId,
         }),
       });
   
@@ -27,26 +26,16 @@ interface SaveFileUrlError extends Error {
         error.details = errorData.details;
         throw error;
       }
-  
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to save file URL');
-      }
+      return response.json();
     } catch (err) {
       console.error('Error saving file URL:', err);
       const error = err as SaveFileUrlError;
-      
-      // Handle specific error cases
       if (error.status === 401) {
         throw new Error('Authentication failed. Please log in again.');
       } else if (error.status === 403) {
         throw new Error('You do not have permission to save this file.');
       } else if (error.status === 404) {
         throw new Error('Project not found.');
-      } else if (error.status === 409) {
-        throw new Error('A file with this name already exists.');
-      } else if (error.status === 413) {
-        throw new Error('File name is too long. Please use a shorter name.');
       } else if (error.status === 429) {
         throw new Error('Too many requests. Please try again later.');
       } else if (error.status === 500) {
@@ -59,50 +48,25 @@ interface SaveFileUrlError extends Error {
     }
   };
   
-  export const fetchCurrentFileUrl = async (projectId: string): Promise<string | null> => {
+  export const fetchGoogleExportsHistory = async (projectId: string) => {
     try {
-      const response = await fetch(`/api/projects/${projectId}/drive-export`);
-      
+      const response = await fetchAuthed(`${apiUrl}/google-drive/exports-history?project_id=${projectId}`,{
+        method: 'GET',
+      });
+    
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error: SaveFileUrlError = new Error(errorData.message || 'Failed to fetch file URL');
-        error.status = response.status;
-        error.details = errorData.details;
-        throw error;
+        throw new Error('Failed to fetch exports history');
       }
-  
-      const data = await response.json();
-      return data.fileLink || null;
+      return response.json();
     } catch (err) {
       console.error('Error fetching file URL:', err);
-      const error = err as SaveFileUrlError;
-      
-      // Handle specific error cases
-      if (error.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      } else if (error.status === 403) {
-        throw new Error('You do not have permission to view this file.');
-      } else if (error.status === 404) {
-        return null; // No file exists yet, which is fine
-      } else if (error.status === 429) {
-        throw new Error('Too many requests. Please try again later.');
-      } else if (error.status === 500) {
-        throw new Error('Server error. Please try again later.');
-      } else {
-        throw new Error('Failed to fetch file information. Please try again.');
-      }
     }
   }; 
-
-
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getGoogleDriveAuthUrl(projectId: string) {
   try {
     const response = await fetchAuthed(`${apiUrl}/google-drive/auth?project_id=${projectId}`, {
       method: 'GET',
-      // Don't follow redirects
       redirect: 'manual'
     });
 
@@ -131,14 +95,12 @@ export async function directUploadToDrive(projectId: string) {
     body: JSON.stringify({ project_id: projectId }),
   });
 
-  const payload = await res.json();  // only once!
+  const payload = await res.json();
 
   if (!res.ok) {
-    // FastAPI will put our message in `detail`
     const message = payload.detail || "Upload failed";
     throw new Error(message);
   }
 
-  // on success, payload has the shape { file_id, file_link }
   return payload;
 }

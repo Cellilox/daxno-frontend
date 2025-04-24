@@ -4,10 +4,10 @@ export interface GoogleDriveExportProps {
 }
 
 export interface ExportRecord {
-  id: string;
-  fileLink: string;
-  exportDate: string;
-  fileName: string;
+  created_at: string;
+  id: string
+  file_link: string
+  project_id: string
 }
 
 export type ExportStatus = 'idle' | 'loading' | 'success' | 'error'; 
