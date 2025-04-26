@@ -61,6 +61,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     isCheckingConnection: true
   });
 
+  console.log('AVAILABLE records')
+
   useEffect(() => {
     const initConnection = async () => {
       try {
@@ -351,11 +353,11 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
               {/* Scrollable container for our properties */}
               <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="space-y-4 p-2">
-                  {Object.keys(records[0]?.answers || {}).map((ourField) => (
-                    <div key={ourField} className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-gray-200">
+                  {fields.map((field) => (
+                    <div key={field.id} className="flex items-center space-x-4 p-3 bg-white rounded-lg border border-gray-200">
                       <div className="flex-1 min-w-0">
                         <label className="block text-sm font-medium text-gray-700 truncate">
-                          {ourField}
+                          {field.name}
                         </label>
                       </div>
                       <div className="flex items-center">
@@ -364,13 +366,13 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                       <div className="w-1/2 min-w-0">
                         <button
                           onClick={() => {
-                            setSelectedOurField(ourField);
+                            setSelectedOurField(field.name);
                             setShowHubSpotProperties(true);
                           }}
                           className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59] truncate"
                         >
-                          {propertyMappings.get(ourField) 
-                            ? availableProperties.find(p => p.name === propertyMappings.get(ourField))?.label 
+                          {propertyMappings.get(field.name) 
+                            ? availableProperties.find(p => p.name === propertyMappings.get(field.name))?.label 
                             : 'Select HubSpot field'}
                         </button>
                       </div>
@@ -399,7 +401,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                        </button>
+                        </button>           
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
                         Select a HubSpot property to map "{selectedOurField}" to
