@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import axios from "axios";
-import type {Field} from "../spreadsheet/types"
+
+import React, { useState, useEffect, useRef } from "react";
+import { useDrag, useDrop, DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import type { Field } from "../spreadsheet/types";
+
 interface Props {
   columns: Field[];
   isOpen: boolean;
@@ -9,35 +11,161 @@ interface Props {
   onReorder: (newColumns: Field[]) => void;
 }
 
-const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReorder }) => {
-  const [localColumns, setLocalColumns] = useState(columns);
+// Item type for drag and drop
+const ItemTypes = {
+  COLUMN: 'column'
+};
 
-  React.useEffect(() => {
-    setLocalColumns(columns);
+interface DragItem {
+  index: number;
+  id: string;
+  type: string;
+}
+
+const ColumnItem = ({ 
+  column, 
+  index, 
+  moveColumn 
+}: { 
+  column: Field; 
+  index: number; 
+  moveColumn: (dragIndex: number, hoverIndex: number) => void 
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemTypes.COLUMN,
+    item: { type: ItemTypes.COLUMN, id: column.hidden_id, index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: ItemTypes.COLUMN,
+    hover: (item: DragItem, monitor) => {
+      if (!ref.current) {
+        return;
+      }
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+
+      // Determine rectangle on screen
+      const hoverBoundingRect = ref.current?.getBoundingClientRect();
+
+      // Get vertical middle
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+
+      // Determine mouse position
+      const clientOffset = monitor.getClientOffset();
+
+      // Get pixels to the top
+      const hoverClientY = clientOffset ? clientOffset.y - hoverBoundingRect.top : 0;
+
+      // Only perform the move when the mouse has crossed half of the items height
+      // When dragging downwards, only move when the cursor is below 50%
+      // When dragging upwards, only move when the cursor is above 50%
+      
+      // Dragging downwards
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+        return;
+      }
+
+      // Dragging upwards
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+        return;
+      }
+
+      // Time to actually perform the action
+      moveColumn(dragIndex, hoverIndex);
+
+      // Note: we're mutating the monitor item here!
+      // Generally it's better to avoid mutations,
+      // but it's good here for the sake of performance
+      // to avoid expensive index searches.
+      item.index = hoverIndex;
+    },
+  });
+
+  drag(drop(ref));
+
+  return (
+    <div
+      ref={ref}
+      className={`p-3 mb-2 border rounded flex items-center justify-between ${
+        isDragging ? "bg-blue-100 opacity-50" : "bg-white"
+      }`}
+      style={{ cursor: "move" }}
+    >
+      <span className="font-medium">{column.name}</span>
+      <div className="w-6 h-6 flex items-center justify-center text-gray-500">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="8" cy="6" r="1"/>
+          <circle cx="8" cy="12" r="1"/>
+          <circle cx="8" cy="18" r="1"/>
+          <circle cx="16" cy="6" r="1"/>
+          <circle cx="16" cy="12" r="1"/>
+          <circle cx="16" cy="18" r="1"/>
+        </svg>
+      </div>
+    </div>
+  );
+};
+
+const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReorder }) => {
+  const [localColumns, setLocalColumns] = useState<Field[]>([]);
+
+  useEffect(() => {
+    setLocalColumns([...columns]);
   }, [columns]);
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
-    const reordered = Array.from(localColumns);
-    const [removed] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, removed);
+  const moveColumn = (dragIndex: number, hoverIndex: number) => {
+    const newColumns = [...localColumns];
+    const draggedColumn = newColumns[dragIndex];
+    
+    // Remove the dragged item
+    newColumns.splice(dragIndex, 1);
+    // Insert it at the new position
+    newColumns.splice(hoverIndex, 0, draggedColumn);
+    
+    setLocalColumns(newColumns);
+  };
 
-    setLocalColumns(reordered);
-    onReorder(reordered);
-
-    // Prepare payload
-    const movedField = reordered[result.destination.index];
-    const prevOrder = reordered[result.destination.index - 1]?.order_number ?? null;
-    const nextOrder = reordered[result.destination.index + 1]?.order_number ?? null;
-
-    // Send request
-    await axios.post(
-      `http://localhost:8001/fields/fields/${movedField.hidden_id}/reorder`,
-      {
-        previous_order: prevOrder,
-        next_order: nextOrder,
+  const handleSave = async () => {
+    onReorder(localColumns);
+    
+    // Process each moved column
+    for (let i = 0; i < localColumns.length; i++) {
+      const column = localColumns[i];
+      const prevOrder = i > 0 ? localColumns[i - 1]?.order_number : null;
+      const nextOrder = i < localColumns.length - 1 ? localColumns[i + 1]?.order_number : null;
+      
+      try {
+        await fetch(
+          `http://localhost:8001/fields/fields/${column.hidden_id}/reorder`,
+          {
+            method: 'PUT',
+            headers: {
+              'accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              previous_order: prevOrder,
+              next_order: nextOrder,
+            }),
+          }
+        );
+      } catch (error) {
+        console.error(`Error reordering column ${column.name}:`, error);
       }
-    );
+    }
+    
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -46,32 +174,30 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
     <div className="fixed top-0 right-0 w-96 h-full bg-white shadow-lg z-50 flex flex-col p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Reorder Columns</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-800">✕</button>
+        <button onClick={onClose} className="text-gray-500 hover:text-gray-800">×</button>
       </div>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="columns">
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              {localColumns.map((col, idx) => (
-                <Draggable key={col.hidden_id} draggableId={col.hidden_id} index={idx}>
-                  {(provided) => (
-                    <div
-                      className="mb-3 p-4 bg-blue-50 rounded flex items-center justify-between"
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      <span className="font-medium">{col.name}</span>
-                      <span className="text-gray-400 cursor-move">⠿</span>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      
+      <DndProvider backend={HTML5Backend}>
+        <div className="flex-1 overflow-y-auto mb-4">
+          {localColumns.map((column, index) => (
+            <ColumnItem
+              key={column.hidden_id}
+              column={column}
+              index={index}
+              moveColumn={moveColumn}
+            />
+          ))}
+        </div>
+      </DndProvider>
+      
+      <div className="mt-auto flex justify-end">
+        <button 
+          onClick={handleSave}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Save Order
+        </button>
+      </div>
     </div>
   );
 };
