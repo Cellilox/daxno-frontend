@@ -8,8 +8,8 @@ import { SuccessIcon } from './components/SuccessIcon';
 import { ErrorIcon } from './components/ErrorIcon';
 import { HubSpotExportProps, HubSpotExportType } from './types';
 import { EXPORT_TYPES } from './constants';
-import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties } from '@/actions/hubspot-actions';
-
+import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties, DisconnectHubspot } from '@/actions/hubspot-actions';
+import { LoadingSpinner as DisconnectingSpinner } from '../google-drive/components/LoadingSpinner';
 interface HubSpotProperty {
   name: string;
   label: string;
@@ -51,7 +51,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
   const [selectedOurField, setSelectedOurField] = useState<string | null>(null);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [status, setStatus] = useState<ExportStatus>({
     isLoading: false,
     isConnected: false,
@@ -238,8 +238,42 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     property.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const disconnectHubspot = async () => {
+  try {
+    setIsDisconnecting(true)
+    await DisconnectHubspot();
+    setStatus(prev => ({
+      ...prev,
+      isConnected: false,
+    }))
+    setIsDisconnecting(false)
+  } catch (error) {
+    alert('Error disconnecting from HubSpot');
+  }
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
+       <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+            <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
+            <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+        </div>
+        {status.isConnected &&(
+          <>
+            {isDisconnecting ?
+              <div className="flex items-center justify-end">
+              <DisconnectingSpinner />
+              <span className="text-sm font-medium text-gray-900">
+                Disconnecting...
+              </span>
+            </div>:
+            <h3 onClick ={disconnectHubspot} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
+            }
+            </>
+        )}
+        </div>
+
       {(status.error || validationError) && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
           <ErrorIcon />

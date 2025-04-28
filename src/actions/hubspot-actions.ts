@@ -98,3 +98,17 @@ export const exportToHubSpot = async (
     throw new Error(`Failed to export to HubSpot: ${error}`);
   }
 }; 
+
+export async function DisconnectHubspot() {
+  try {
+    const response = await fetchAuthedJson(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/disconnect`, {
+      method: 'DELETE'
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to disconnect HubSpot');
+    }
+  } catch (error) {
+    console.log(error)
+  }
+  }
