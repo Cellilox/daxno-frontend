@@ -9,7 +9,7 @@ import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
 import GoogleDriveExport from '../integrations/google-drive/GoogleDriveExport';
-
+import ColumnReorderPopup from '../forms/ColumnReorderPopup';
 type SpreadSheetProps = {
   columns: Field[];
   records: ApiRecord[];
@@ -31,7 +31,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
 
   useEffect(() => {
     setLocalColumns(columns);
@@ -45,7 +45,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   
-
   const handleCloseColumnUpdatePopup = () => {
     setIsPopupVisible(false);
     setSelectedColumnToUpdate(null);
@@ -208,6 +207,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   return (
     <div className="relative overflow-x-auto min-h-[calc(100vh-20rem)]">
+     <p
+  className="text-md mb-4 underline text-right cursor-pointer"
+  onClick={() => setIsReorderPopupVisible(true)}
+>
+  Edit columns
+</p>
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
@@ -261,6 +266,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
       />
+      <ColumnReorderPopup
+  columns={localColumns}
+  isOpen={isReorderPopupVisible}
+  onClose={() => setIsReorderPopupVisible(false)}
+  onReorder={setLocalColumns}
+/>
     </div>
   );
 } 

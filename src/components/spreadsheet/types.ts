@@ -3,6 +3,7 @@ export type Field = {
   hidden_id: string;
   name: string;
   description?: string;
+  order_number: number;
   type: string;
   project_id: string;
 };
