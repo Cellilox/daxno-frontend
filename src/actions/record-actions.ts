@@ -107,9 +107,9 @@ export async function deleteRecord(recordId: string) {
       method: 'DELETE'
     });
   
-    // if (!response.ok) {
-    //   throw new Error('Failed to delete a record');
-    // }
+    if (!response.ok) {
+      throw new Error('Failed to delete a record');
+    }
     revalidatePath('/projects');
   } catch (error) {
     console.log(error)

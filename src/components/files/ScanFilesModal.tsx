@@ -4,6 +4,7 @@ import { useState } from 'react'
 import FormModal from '../ui/Popup'
 import MyDropzone from './Dropzone'
 import { messageType, messageTypeEnum } from '@/types'
+import { Upload } from 'lucide-react'
 
 type ScanFilesModalProps = {
   projectId: string
@@ -31,6 +32,7 @@ export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalP
         onClick={() => setIsVisible(true)}
         className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
       >
+        <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
         Scan Files
       </button>
 

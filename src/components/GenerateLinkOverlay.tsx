@@ -49,12 +49,12 @@ export default function GenerateLinkOverlay() {
 
   return (
     <>
-      <button 
-        onClick={toggleDialog} 
+      <button
+        onClick={toggleDialog}
         className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
       >
-        <Share2 className="w-4 h-4 mr-2" />
-        Share Link
+        <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+        Generate Link
       </button>
 
       <AlertDialog
@@ -69,7 +69,7 @@ export default function GenerateLinkOverlay() {
         isLoading={isLoading}
         showLinkIcon
         centerContent
-        // notification={notification}
+        //notification={notification}
       />
     </>
   );
