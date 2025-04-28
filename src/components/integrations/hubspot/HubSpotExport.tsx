@@ -3,13 +3,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ArrowRight } from 'lucide-react';
-import { HubSpotIcon } from './components/HubSpotIcon';
-import { SuccessIcon } from './components/SuccessIcon';
-import { ErrorIcon } from './components/ErrorIcon';
+import { HubSpotIcon } from './ui/HubSpotIcon';
+import { SuccessIcon } from './ui/SuccessIcon';
+import { ErrorIcon } from './ui/ErrorIcon';
 import { HubSpotExportProps, HubSpotExportType } from './types';
 import { EXPORT_TYPES } from './constants';
 import { checkConnection, handleConnect, exportToHubSpot, getHubSpotProperties, DisconnectHubspot } from '@/actions/hubspot-actions';
-import { LoadingSpinner as DisconnectingSpinner } from '../google-drive/components/LoadingSpinner';
+import { LoadingSpinner as DisconnectingSpinner } from '../google-drive/ui/LoadingSpinner';
 interface HubSpotProperty {
   name: string;
   label: string;

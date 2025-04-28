@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleDriveIcon, GoogleSheetsIcon } from './GoogleDriveIcons';
-import { ExportHistory } from './components/ExportHistory';
-import { ErrorMessage } from './components/ErrorMessage';
-import { HelpText } from './components/HelpText';
-import { LoadingSpinner } from './components/LoadingSpinner';
+import { ExportHistory } from './ui/ExportHistory';
+import { ErrorMessage } from './ui/ErrorMessage';
+import { HelpText } from './ui/HelpText';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 import {
   GoogleDriveExportProps,
   ExportStatus,
