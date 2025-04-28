@@ -104,3 +104,17 @@ export async function directUploadToDrive(projectId: string) {
 
   return payload;
 }
+
+export async function DisconnectDrive() {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/google-drive/disconnect`, {
+      method: 'DELETE'
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to disconnect Google Drive');
+    }
+  } catch (error) {
+    console.log(error)
+  }
+  }

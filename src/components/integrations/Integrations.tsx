@@ -6,6 +6,7 @@ import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import { Plug2 } from 'lucide-react';
 import HubSpotExport from './hubspot/HubSpotExport';
 import { HubSpotIcon } from './hubspot/components/HubSpotIcon';
+import { checkDriveStatus, DisconnectDrive } from '@/actions/google-drive-actions';
 
 type OptionsProps = {
     projectId: string;
@@ -86,15 +87,17 @@ export default function Integrations({projectId, fields, records}: OptionsProps)
 
                                 {/* Google Drive Section */}
                                 <div className="space-y-3">
-                                    <h3 className="text-sm font-medium text-gray-900">Export to Google Drive</h3>
                                     <GoogleDriveExport projectId={projectId} />
                                 </div>
 
                                 {/* HubSpot Section */}
                                 <div className="space-y-3">
+                                <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
                                         <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
                                         <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+                                    </div>
+                                    <h3 className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
                                     </div>
                                     <HubSpotExport 
                                         projectId={projectId}

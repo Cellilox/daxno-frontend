@@ -18,6 +18,7 @@ import {
   directUploadToDrive,
   saveGoogleExportHistory,
   fetchGoogleExportsHistory,
+  DisconnectDrive,
 } from '@/actions/google-drive-actions';
 
 const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
@@ -29,7 +30,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [exports, setExports] = useState<ExportRecord[]>([]);
-  console.log({exports})
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   // 1) Check authentication status on mount
   useEffect(() => {
     (async () => {
@@ -110,6 +111,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
           'Google Drive Export',
           `width=${width},height=${height},left=${left},top=${top}`
         );
+        setIsAuthenticated(true);
       }
     } catch (err) {
       setExportStatus('error');
@@ -124,10 +126,36 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     if (link) window.open(link, '_blank');
   };
 
+  const handleDisconnect = async () => {
+    try {
+      setIsDisconnecting(true);
+      await DisconnectDrive();
+      setIsAuthenticated(false);
+      setIsDisconnecting(false);
+    } catch (error) {
+      alert('Error disconnecting Google Drive');
+    }
+  }
+
   return (
     <div className="space-y-4 w-full">
       {error && <ErrorMessage message={error} />}
-
+      <div className="flex items-center justify-between">
+      <h3 className="text-sm font-medium text-gray-900">Export to Google Drive</h3>
+      {isAuthenticated && ( 
+        <>
+        {isDisconnecting ?
+          <div className="flex items-center justify-end">
+          <LoadingSpinner />
+          <span className="text-sm font-medium text-gray-900">
+            Disconnecting...
+          </span>
+        </div>:
+        <h3 onClick= {handleDisconnect} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
+        }
+        </>
+      )}
+      </div>
       <div className="flex items-center justify-between space-x-2">
         <button
           onClick={handleExport}
