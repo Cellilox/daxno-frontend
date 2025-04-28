@@ -60,3 +60,18 @@ export async function deleteColumn(fieldId: string) {
     }
     revalidatePath('/projects');
   }
+
+  export async function reorderColumns(prevOrder: number | null , nextOrder: number | null, columnHiddenId: string) {
+  const response = await fetchAuthedJson(`${apiUrl}/fields/fields/${columnHiddenId}/reorder`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      previous_order: prevOrder,
+      next_order: nextOrder,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to reorder columns');
+  }
+  revalidatePath('/projects');
+}

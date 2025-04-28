@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import type { Field } from "../spreadsheet/types";
-
+import FormModal from "../ui/Popup";
+import { reorderColumns } from "@/actions/column-actions";
 interface Props {
   columns: Field[];
   isOpen: boolean;
@@ -146,36 +147,23 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
       const nextOrder = i < localColumns.length - 1 ? localColumns[i + 1]?.order_number : null;
       
       try {
-        await fetch(
-          `http://localhost:8001/fields/fields/${column.hidden_id}/reorder`,
-          {
-            method: 'PUT',
-            headers: {
-              'accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              previous_order: prevOrder,
-              next_order: nextOrder,
-            }),
-          }
-        );
+        await reorderColumns(prevOrder, nextOrder, column.hidden_id);
+        onClose();
       } catch (error) {
         console.error(`Error reordering column ${column.name}:`, error);
       }
     }
-    
-    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-0 right-0 w-96 h-full bg-white shadow-lg z-50 flex flex-col p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Reorder Columns</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-800">×</button>
-      </div>
+    <FormModal
+    visible={isOpen}
+    title="Reorder Columns"
+    onCancel={onClose}
+    position="center"
+     >
       
       <DndProvider backend={HTML5Backend}>
         <div className="flex-1 overflow-y-auto mb-4">
@@ -198,7 +186,7 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
           Save Order
         </button>
       </div>
-    </div>
+      </FormModal>
   );
 };
 

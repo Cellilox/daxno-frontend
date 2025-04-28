@@ -207,12 +207,14 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   return (
     <div className="relative overflow-x-auto min-h-[calc(100vh-20rem)]">
-     <p
-  className="text-md mb-4 underline text-right cursor-pointer"
+     <div
+  className="text-right"
   onClick={() => setIsReorderPopupVisible(true)}
 >
+  <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline">
   Edit columns
-</p>
+  </button>
+</div>
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
@@ -267,10 +269,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
       />
       <ColumnReorderPopup
-  columns={localColumns}
-  isOpen={isReorderPopupVisible}
-  onClose={() => setIsReorderPopupVisible(false)}
-  onReorder={setLocalColumns}
+      columns={localColumns}
+      isOpen={isReorderPopupVisible}
+      onClose={() => setIsReorderPopupVisible(false)}
+      onReorder={setLocalColumns}
 />
     </div>
   );
