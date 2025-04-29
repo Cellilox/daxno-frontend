@@ -59,6 +59,7 @@ export default function SpreadsheetModals({
           visible={isPopupVisible}
           title="Update Column"
           onCancel={onCloseColumnUpdatePopup}
+          position='center'
         >
           <form onSubmit={onUpdateColumnSubmit}>
             <div className="mb-4">
@@ -72,24 +73,6 @@ export default function SpreadsheetModals({
                   setSelectedColumnToUpdate({
                     ...selectedColumnToUpdate,
                     name: e.target.value,
-                  })
-                }
-                className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Description (optional)
-              </label>
-              <label className="block text-xs font-medium text-gray-700">
-                (Tell the AI how you would discribe this sentiment for proper detection and accuracy)
-              </label>
-              <textarea
-                value={selectedColumnToUpdate.description || ''}
-                onChange={(e) =>
-                  setSelectedColumnToUpdate({
-                    ...selectedColumnToUpdate,
-                    description: e.target.value,
                   })
                 }
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"

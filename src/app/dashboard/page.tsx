@@ -1,5 +1,6 @@
 import { getDocs } from "@/actions/documents-action";
 import { getProjects } from "@/actions/project-actions";
+import { currentUser } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import Link from "next/link";
 export const metadata: Metadata = {
@@ -16,7 +17,8 @@ type doc = {
 
 export default async function Dashboard() {
   const projects = await getProjects()
-  const docs = await getDocs()
+  const user = await currentUser()
+  const docs = await getDocs(user?.id)
   const pages = docs.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
 
   return (
