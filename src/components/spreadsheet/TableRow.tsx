@@ -73,12 +73,12 @@ export default function TableRow({
               >
                 <Trash className="w-4 h-4 text-red-600" />
               </button>
-              <button
+              {/* <button
                 onClick={() => onChatRow(row)}
                 className="p-1 hover:bg-gray-100 rounded"
               >
                 <MessageCircle className="w-4 h-4 text-gray-600" />
-              </button>
+              </button> */}
             </>
           )}
         </div>
@@ -119,12 +119,12 @@ export default function TableRow({
                   >
                     <Trash className="w-4 h-4 text-red-600" />
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => onChatRow(row)}
                     className="p-1 hover:bg-gray-100 rounded"
                   >
                     <MessageCircle className="w-4 h-4 text-gray-600" />
-                  </button>
+                  </button> */}
                 </>
               )}
             </div>
