@@ -2,16 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-
+import { currentUser } from "@clerk/nextjs/server";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+export const loggedInUser = async () => {
+  const loggedInUser = await currentUser();
+  if (!loggedInUser) {
+    throw new Error ('No logged in user found');
+  }
+  return loggedInUser.id;
+}
 
 export async function revalidate() {
   revalidatePath('/projects');
 }
 
-export async function uploadFile (formData:any)  {
+export async function uploadFile (formData:any, user_id: string | undefined)  {
     console.log('TLTTTTl', formData)
-      const response = await fetchAuthed(`${apiUrl}/records/upload`, {
+      const response = await fetchAuthed(`${apiUrl}/records/upload?user_id=${user_id}`, {
         method: 'POST',
         body: formData
       });
@@ -70,9 +78,9 @@ export async function uploadFile (formData:any)  {
     return await response.json();
   }
 
-  export async function saveRecord(formData: any) {
+  export async function saveRecord(formData: any, user_id: string ) {
     try {
-      const response = await fetchAuthedJson(`${apiUrl}/records/save`, {
+      const response = await fetchAuthedJson(`${apiUrl}/records/save?user_id=${user_id}`, {
         method: 'POST',
         body: JSON.stringify(formData)
       });
@@ -95,7 +103,6 @@ export async function updateRecord(recordId: string | undefined , formData: any)
     if (!response.ok) {
       throw new Error('Failed to update record');
     }
-    revalidatePath('/projects');
    } catch (error) {
      console.log(error)
    }
@@ -110,7 +117,6 @@ export async function deleteRecord(recordId: string) {
     if (!response.ok) {
       throw new Error('Failed to delete a record');
     }
-    revalidatePath('/projects');
   } catch (error) {
     console.log(error)
   }

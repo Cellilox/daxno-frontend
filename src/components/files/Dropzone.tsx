@@ -3,11 +3,10 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { checkFileType, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { checkFileType, queryDocument, saveRecord, uploadFile, loggedInUser} from '@/actions/record-actions';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
-import { revalidate } from '@/actions/record-actions';
 import { FileStatus } from './types';
 
 type MyDropzoneProps = {
@@ -64,8 +63,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
-      const result = await uploadFile(formData);
+      const result = await uploadFile(formData, user_id);
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
@@ -91,7 +91,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const saveData = async (data: any) => {
     try {
       onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',});
-      const response = await saveRecord(data);
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+      const response = await saveRecord(data, user_id);
       const doc_data = {
         filename: response.record.filename,
         page_number: response.record.pages
@@ -102,10 +103,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     }
   };
-
   const saveDocument = async (data: any) => {
+    const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
     try {
-      await createDocument(data);
+      await createDocument(data, user_id);
       setIsVisible(false);
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     } catch (error) {
@@ -142,12 +143,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
-      
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
       // Upload File
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      const uploadResult = await uploadFile(formData);
+      const uploadResult = await uploadFile(formData, user_id);
       
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
@@ -160,12 +161,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         orginal_file_name: uploadResult.original_filename,
         file_key: uploadResult.Key
       };
-      const savedResult = await saveRecord(recordPayload);
+      const savedResult = await saveRecord(recordPayload, user_id);
       const db_data = {
         filename: savedResult.record.filename,
         page_number: savedResult.record.pages
       }
-      await createDocument(db_data);
+      await createDocument(db_data, user_id);
       
       // Finalize
       updateFileStatus({
@@ -194,7 +195,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         // Close the dropzone after a short delay to allow users to see the completion
         setTimeout(() => {
           setIsVisible(false);
-          revalidate()
           onMessageChange({type: messageTypeEnum.NONE, text: '',});
         }, 1500);
       }
@@ -208,7 +208,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       for (const fileStatus of files.filter(f => f.status === 'pending')) {
         await processSingleFile(fileStatus);
       }
-      revalidate();
     } finally {
       setIsProcessing(false);
     }

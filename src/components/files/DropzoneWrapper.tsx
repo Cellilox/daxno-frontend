@@ -29,6 +29,7 @@ export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrappe
         visible={isVisible} 
         title="Upload Your File" 
         onCancel={() => setIsVisible(false)}
+        position="center"
         // message={message}
       >
 

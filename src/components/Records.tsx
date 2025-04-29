@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
 import { Field, ApiRecord } from './spreadsheet/types';
+import { revalidate } from '@/actions/record-actions';
 
 type RecordsProps = {
     projectId: string;
@@ -47,18 +48,32 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             console.warn('WebSocket connection timeout');
         };
 
-        const handleShowRecordsUpdates = (data: { records: ApiRecord[], fields: Field[] }) => {
-          console.log('Received records update:', data);
-          setRowData(data.records)
-          setColumns(data.fields)
-        }
+        const handleRecordCreated = (data: { record: ApiRecord; fields: Field[] }) => {
+            console.log('New record created:', data);
+            setRowData(prev => [...prev, data.record]);
+            setColumns(data.fields);
+        };
 
+        const handleRecordUpdated = (data: { record: ApiRecord; fields: Field[] }) => {
+            console.log('New record updated:', data);
+            setRowData(prev => prev.map(x => x.id === data.record.id ? data.record : x));
+            setColumns(data.fields);
+        };
+
+        const handleRecordDeleted = (data: { id: string; fields: Field[] }) => {
+            console.log('New record deleted:', data);
+            setRowData(prev => prev.filter(x => x.id !== data.id));
+            setColumns(data.fields);
+        };
+    
         // Add listeners
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
         socket.on('connect_error', handleError);
         socket.on('connect_timeout', handleTimeout);
-        socket.on('records_fetched', handleShowRecordsUpdates)
+        socket.on('record_created', handleRecordCreated);
+        socket.on('record_updated', handleRecordUpdated)
+        socket.on('record_deleted', handleRecordDeleted)
 
         // Cleanup on unmount
         return () => {
@@ -66,7 +81,9 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socket.off('disconnect', handleDisconnect);
             socket.off('connect_error', handleError);
             socket.off('connect_timeout', handleTimeout);
-            socket.off('records_fetched', handleShowRecordsUpdates)
+            socket.off('record_created', handleRecordCreated);
+            socket.off('record_updated', handleRecordUpdated)
+            socket.off('record_deleted', handleRecordDeleted)
             socket.disconnect();
             socketRef.current = null;
         };
