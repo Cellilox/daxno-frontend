@@ -132,15 +132,15 @@ export default function TableRow({
         </div>
       </td>
       {columns.map((column) => (
-        <td key={column.id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px] border-r">
+        <td key={column.hidden_id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px] border-r">
           {isEditing ? (
             <textarea
-              value={editedRow.answers[column.name] ?? ''}
-              onChange={(e) => onCellChange(rowIndex, column.name, e.target.value)}
+              value={editedRow.answers[column.id] ?? ''}
+              onChange={(e) => onCellChange(rowIndex, column.id, e.target.value)}
               className="w-full p-1 border rounded min-h-[200px]"
             />
           ) : (
-            <span>{editedRow.answers[column.name] ?? ''}</span>
+            <span>{editedRow.answers[column.id] ?? ''}</span>
           )}
         </td>
       ))}
