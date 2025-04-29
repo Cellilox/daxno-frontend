@@ -42,7 +42,7 @@ export default function TableRow({
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r">
+      <td className="z-10 px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r">
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
