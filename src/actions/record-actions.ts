@@ -17,7 +17,7 @@ export async function uploadFile (formData:any)  {
       });
 
     if (!response.ok) {
-    throw new Error('Failed to extract text ');
+    throw new Error('Failed to upload a file to aws ');
     }
     return await response.json()
   };
