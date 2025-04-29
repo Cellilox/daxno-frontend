@@ -16,8 +16,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     revalidatePath('/projects');
   }
 
-export async function getDocs() {
-  const response = await fetchAuthed(`${apiUrl}/docs/`)
+export async function getDocs(userId: string | undefined) {
+  const response = await fetchAuthed(`${apiUrl}/docs/${userId}`)
   if(!response.ok) {
     throw new Error ("Failed to fetch projects")
   }
