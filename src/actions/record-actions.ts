@@ -36,28 +36,28 @@ export async function uploadFile (formData:any)  {
   };
 
 
-export async function extractText(fileName: string) {
-    const response = await fetchAuthedJson(`${apiUrl}/records/extract?filename=${fileName}`, {
-      method: 'POST',
-    });
+// export async function extractText(fileName: string) {
+//     const response = await fetchAuthedJson(`${apiUrl}/records/extract?filename=${fileName}`, {
+//       method: 'POST',
+//     });
     
-    if (!response.ok) {
-      throw new Error('Failed to extract text on a file');
-    }
-    return await response.json();
-  }
+//     if (!response.ok) {
+//       throw new Error('Failed to extract text on a file');
+//     }
+//     return await response.json();
+//   }
 
-  export async function analyseText(projectId: string, fileName: string, formData: any) {
-    const response = await fetchAuthedJson(`${apiUrl}/records/${projectId}/identify-fields?filename=${fileName}`, {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    });
+//   export async function analyseText(projectId: string, fileName: string, formData: any) {
+//     const response = await fetchAuthedJson(`${apiUrl}/records/${projectId}/identify-fields?filename=${fileName}`, {
+//       method: 'POST',
+//       body: JSON.stringify(formData)
+//     });
   
-    if (!response.ok) {
-      throw new Error('Failed to analyze the text');
-    }
-    return await response.json();
-  }
+//     if (!response.ok) {
+//       throw new Error('Failed to analyze the text');
+//     }
+//     return await response.json();
+//   }
 
 
   export async function queryDocument(projectId: string, fileName: string) {
@@ -77,9 +77,9 @@ export async function extractText(fileName: string) {
         body: JSON.stringify(formData)
       });
     
-      // if (!response.ok) {
-      //   throw new Error('Failed to save a record');
-      // }
+      if (!response.ok) {
+        throw new Error('Failed to save a record');
+      }
       return await response.json();
     } catch (error) {
       console.log(error)
@@ -92,9 +92,9 @@ export async function updateRecord(recordId: string | undefined , formData: any)
       method: 'PUT',
       body: JSON.stringify(formData),
     });
-    // if (!response.ok) {
-    //   throw new Error('Failed to update record');
-    // }
+    if (!response.ok) {
+      throw new Error('Failed to update record');
+    }
     revalidatePath('/projects');
    } catch (error) {
      console.log(error)

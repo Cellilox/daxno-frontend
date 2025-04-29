@@ -13,7 +13,6 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!response.ok) {
       throw new Error('Failed to save record history');
     }
-    revalidatePath('/projects');
   }
 
 export async function getDocs(userId: string | undefined) {
