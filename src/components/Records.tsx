@@ -22,6 +22,12 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
                 path: '/ws/records/sockets',
                 auth: { projectId },
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000,
+                withCredentials: true
             });
         }
         const socket = socketRef.current;
