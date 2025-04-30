@@ -70,7 +70,7 @@ export default function TableHeader({
             <>
               <th
                 key="actions"
-                className={`px-4 ${hasRecords ? 'py-3' : 'py-0'} text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200`}
+                className={`px-4 ${hasRecords ? 'py-3' : 'py-0'} text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10`}
               >
                 Actions
               </th>

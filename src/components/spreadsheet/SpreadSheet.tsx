@@ -211,7 +211,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   className="text-right"
   onClick={() => setIsReorderPopupVisible(true)}
 >
-  <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline">
+  <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline sticky right-0 ">
   Edit columns
   </button>
 </div>

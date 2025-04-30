@@ -2,12 +2,11 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FileIcon, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { analyseText, checkFileType, extractText, queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { checkFileType, queryDocument, saveRecord, uploadFile, loggedInUser} from '@/actions/record-actions';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
-import { revalidate } from '@/actions/record-actions';
 import { FileStatus } from './types';
 
 type MyDropzoneProps = {
@@ -18,7 +17,7 @@ type MyDropzoneProps = {
   isAllowed?: boolean;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, isAllowed = false }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, isAllowed = true }: MyDropzoneProps) {
   // Single file upload states
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,64 +63,50 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
-      const result = await uploadFile(formData);
+      const result = await uploadFile(formData, user_id);
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
-      await handleExtract(filename, orginal_file_name, file_key);
+      await handlequeryDocument(filename, orginal_file_name, file_key);
     } catch (error) {
       alert('Error uploading a file');
     }
   };
 
-  const handleExtract = async (fileName: string, orginal_file_name: string, file_key: string) => {
-    try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Extracting...',});
-      const response = await extractText(fileName);
-      const extracted_response = response.textract_response;
-      await handleAnalyse(fileName, extracted_response, orginal_file_name, file_key);
-    } catch (error) {
-      console.error('Error in extract:', error);
-      setIsLoading(false);
-      onMessageChange({type: messageTypeEnum.NONE, text: '',});
-    }
-  };
-
-  const handleAnalyse = async (fileName: string, extractedResponse: any, orginal_file_name: string, file_key: string) => {
-    const requestBody = {...extractedResponse};
-    const pageNumber = requestBody.DocumentMetadata.Pages;
+  const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
       onMessageChange({type: messageTypeEnum.INFO, text: 'Analysing...',});
       const response = await queryDocument(projectId, fileName);
       const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key};
-      await saveData(recordPayload, pageNumber);
+      console.log('Record Payload:', recordPayload)
+      await saveData(recordPayload);
     } catch (error) {
-      console.error('Error in analysis:', error);
       setIsLoading(false);
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     }
   };
 
-  const saveData = async (data: any, pageNumber: number) => {
+  const saveData = async (data: any) => {
     try {
       onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',});
-      const response = await saveRecord(data);
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+      const response = await saveRecord(data, user_id);
       const doc_data = {
         filename: response.record.filename,
-        page_number: pageNumber
+        page_number: response.record.pages
       };
       await saveDocument(doc_data);
     } catch (error) {
-      console.error('Error in saving:', error);
       setIsLoading(false);
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     }
   };
-
   const saveDocument = async (data: any) => {
+    const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
     try {
-      await createDocument(data);
+      await createDocument(data, user_id);
       setIsVisible(false);
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     } catch (error) {
@@ -158,35 +143,36 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
-      
+      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
       // Upload File
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      const uploadResult = await uploadFile(formData);
-      
-      // Extract Text
-      updateFileStatus({ status: 'extracting', progress: 40 });
-      const extractResult = await extractText(uploadResult.filename);
+      const uploadResult = await uploadFile(formData, user_id);
       
       // Analyze Content
-      updateFileStatus({ status: 'analyzing', progress: 60 });
+      updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
       
       // Save Record
-      updateFileStatus({ status: 'saving', progress: 80 });
+      updateFileStatus({ status: 'saving', progress:  80});
       const recordPayload = {
         ...analysisResult,
         orginal_file_name: uploadResult.original_filename,
         file_key: uploadResult.Key
       };
-      const saveResult = await saveRecord(recordPayload);
+      const savedResult = await saveRecord(recordPayload, user_id);
+      const db_data = {
+        filename: savedResult.record.filename,
+        page_number: savedResult.record.pages
+      }
+      await createDocument(db_data, user_id);
       
       // Finalize
       updateFileStatus({
         status: 'complete',
         progress: 100,
-        result: saveResult
+        result: savedResult
       });
 
     } catch (error) {
@@ -209,7 +195,6 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         // Close the dropzone after a short delay to allow users to see the completion
         setTimeout(() => {
           setIsVisible(false);
-          revalidate()
           onMessageChange({type: messageTypeEnum.NONE, text: '',});
         }, 1500);
       }
