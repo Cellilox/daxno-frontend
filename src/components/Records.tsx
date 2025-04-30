@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
 import { Field, ApiRecord } from './spreadsheet/types';
+import ColumnReorderPopup from './forms/ColumnReorderPopup';
 
 
 type RecordsProps = {
@@ -16,6 +17,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
     const [isConnected, setIsConnected] = useState(false);
     const [rowData, setRowData] = useState<ApiRecord[]>(initialRecords)
     const [columns, setColumns] = useState<Field[]>(initialFields)
+    const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
 
     useEffect(() => {
         if (!socketRef.current) {
@@ -32,7 +34,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         }
         const socket = socketRef.current;
         socket.on('connect', () => {
-          console.log(`Joined room: ${projectId}`);
+            console.log(`Joined room: ${projectId}`);
         });
 
         const handleConnect = () => {
@@ -71,7 +73,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             setRowData(prev => prev.filter(x => x.id !== data.id));
             setColumns(data.fields);
         };
-    
+
         // Add listeners
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
@@ -97,8 +99,23 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
 
     return (
         <div>
-            <SpreadSheet records={rowData} columns={columns} projectId={projectId}/>
+            <div
+                className="text-right"
+                onClick={() => setIsReorderPopupVisible(true)}
+            >
+                <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline sticky right-0 ">
+                    Edit columns
+                </button>
+            </div>
+            <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
             <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+            <ColumnReorderPopup
+                columns={columns}
+                isOpen={isReorderPopupVisible}
+                onClose={() => setIsReorderPopupVisible(false)}
+                onReorder={setColumns}
+            />
+
         </div>
     );
 }
