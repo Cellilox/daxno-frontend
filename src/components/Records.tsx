@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
 import { Field, ApiRecord } from './spreadsheet/types';
-import { revalidate } from '@/actions/record-actions';
+
 
 type RecordsProps = {
     projectId: string;
@@ -16,7 +16,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
     const [isConnected, setIsConnected] = useState(false);
     const [rowData, setRowData] = useState<ApiRecord[]>(initialRecords)
     const [columns, setColumns] = useState<Field[]>(initialFields)
-    console.log('IINNI', rowData)
+
     useEffect(() => {
         if (!socketRef.current) {
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {

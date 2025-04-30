@@ -8,7 +8,6 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
-import GoogleDriveExport from '../integrations/google-drive/GoogleDriveExport';
 import ColumnReorderPopup from '../forms/ColumnReorderPopup';
 type SpreadSheetProps = {
   columns: Field[];
@@ -34,8 +33,15 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
 
   useEffect(() => {
-    setLocalColumns(columns);
-    setLocalRecords(records);
+    setLocalColumns(columns || []);
+    if (records) {
+      // Convert ApiRecord to Record (they now have matching answer structures)
+      const convertedRecords = records.map(apiRecord => ({
+        ...apiRecord,
+        answers: { ...apiRecord.answers }
+      }));
+      setLocalRecords(convertedRecords);
+    }
   }, [records, columns]);
 
   // Column handlers
@@ -129,13 +135,21 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
     setEditedRecords((prev) => {
       const currentRecord = prev[rowIndex] || localRecords[rowIndex];
+      const currentAnswer = currentRecord.answers[columnId] || { 
+        text: '', 
+        geometry: { left: 0, top: 0, width: 0, height: 0 } 
+      };
+      
       return {
         ...prev,
         [rowIndex]: {
           ...currentRecord,
           answers: {
             ...currentRecord.answers,
-            [columnId]: value,
+            [columnId]: {
+              ...currentAnswer,
+              text: value,
+            },
           },
         },
       };

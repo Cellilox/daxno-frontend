@@ -93,6 +93,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',});
       const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
       const response = await saveRecord(data, user_id);
+      console.log('Saved Record:', response)
       const doc_data = {
         filename: response.record.filename,
         page_number: response.record.pages
