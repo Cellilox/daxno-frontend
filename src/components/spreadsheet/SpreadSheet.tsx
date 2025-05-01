@@ -30,7 +30,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
+  const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
+
 
   useEffect(() => {
     setLocalColumns(columns || []);
@@ -215,6 +216,16 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordToDelete(null);
   };
 
+  const handleReviewRecord = (record: Record) => {
+    setIsPopupVisible(true)
+    setSelectedRecordForReview(record);
+  }
+
+  const handleCloseReviewRecordPopup = () => {
+    setIsPopupVisible(false);
+    setSelectedRecordForReview(null);
+  }
+
   if (!localColumns || !localRecords) {
     return <div>Loading...</div>;
   }
@@ -248,6 +259,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               onEditRow={handleEditRow}
               onDeleteRow={handleShowDeleteRecordAlert}
               onChatRow={handleChatRow}
+              handleReviewRecord={handleReviewRecord}
             />
           ))}
         </tbody>
@@ -273,6 +285,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         onConfirmDelete={handleConfirmDelete}
         onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
+        selectedRecordForReview={selectedRecordForReview}
+        handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
       />
     </div>
   );
