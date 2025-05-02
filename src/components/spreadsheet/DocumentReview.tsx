@@ -3,6 +3,25 @@
 import { getFileUrl } from "@/actions/aws-url-actions";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+
+// Helper function to proxy PDF URLs through Next.js API
+const getProxiedUrl = (url: string, isPdf: boolean) => {
+  if (!isPdf) return url; // Return original URL for non-PDF files
+  
+  // For PDFs, create a proxied URL through Next.js API route
+  const encodedUrl = encodeURIComponent(url);
+  return `/api/pdf-proxy?url=${encodedUrl}`;
+};
+
+// Dynamically import the PDF viewer component to avoid SSR issues
+const PdfViewer = dynamic(
+  () => import('./PdfView'),
+  { 
+    ssr: false, 
+    loading: () => <div className="flex justify-center items-center h-64 bg-gray-100">Loading PDF viewer...</div> 
+  }
+);
 
 interface AnswerItem {
   text: string;
@@ -26,24 +45,32 @@ interface DocumentReviewProps {
 
 export default function DocumentReview({ selectedRecordForReview }: DocumentReviewProps) {
   const [activeItem, setActiveItem] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageError, setImageError] = useState(false);
-
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [fileError, setFileError] = useState(false);
+  const [isPdf, setIsPdf] = useState(false);
   useEffect(() => {
     if (!selectedRecordForReview) return;
 
-    const loadImageUrl = async () => {
+    const loadFileUrl = async () => {
       try {
         const { file_url } = await getFileUrl(selectedRecordForReview.file_key);
-        setImageUrl(file_url);
-        setImageError(false);
+        console.log('File URL:', file_url);
+        
+        // Check if the file is a PDF based on the file_key
+        const isPdfFile = selectedRecordForReview.file_key.toLowerCase().endsWith('.pdf');
+        setIsPdf(isPdfFile);
+        
+        // Get potentially proxied URL for PDFs to handle CORS
+        const processedUrl = getProxiedUrl(file_url, isPdfFile);
+        setFileUrl(processedUrl);
+        setFileError(false);
       } catch (error) {
-        console.error('Error loading image:', error);
-        setImageError(true);
+        console.error('Error loading file:', error);
+        setFileError(true);
       }
     };
 
-    loadImageUrl();
+    loadFileUrl();
   }, [selectedRecordForReview]);
 
   if (!selectedRecordForReview) return null;
@@ -73,13 +100,13 @@ export default function DocumentReview({ selectedRecordForReview }: DocumentRevi
         </div>
       </div>
 
-      {/* Fixed Image Preview */}
+      {/* Fixed Document Preview */}
       <div className="md:w-1/2 md:sticky md:top-8 md:self-start">
         <div className="bg-white p-4 rounded-lg shadow-md relative">
-          {imageUrl && (
+          {fileUrl && !isPdf && (
             <div className="relative">
               <Image
-                src={imageUrl}
+                src={fileUrl}
                 alt="Document preview"
                 width={800}
                 height={600}
@@ -87,7 +114,7 @@ export default function DocumentReview({ selectedRecordForReview }: DocumentRevi
                 unoptimized
               />
 
-              {/* Geometry Overlays */}
+              {/* Geometry Overlays for Images */}
               {Object.entries(answers).map(([key, value]) => {
                 const isActive = activeItem === key;
                 return (
@@ -112,7 +139,18 @@ export default function DocumentReview({ selectedRecordForReview }: DocumentRevi
             </div>
           )}
 
-          {imageError && (
+          {fileUrl && isPdf && fileUrl && (
+            <div className="w-full">
+              {/* Use the separated PDF viewer component */}
+              <PdfViewer 
+                fileUrl={fileUrl} 
+                activeItem={activeItem} 
+                answers={answers} 
+              />
+            </div>
+          )}
+
+          {fileError && (
             <div className="text-red-500 p-4 bg-red-50 rounded-lg">
               Failed to load document preview
             </div>
