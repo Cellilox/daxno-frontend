@@ -3,6 +3,7 @@ import AlertDialog from '../ui/AlertDialog';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import RecordChat from '../RecordChat';
 import { Field, Record } from './types';
+import DocumentReview from './DocumentReview';
 
 type SpreadsheetModalsProps = {
   isPopupVisible: boolean;
@@ -24,6 +25,8 @@ type SpreadsheetModalsProps = {
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   setSelectedColumnToUpdate: (column: Field | null) => void;
+  selectedRecordForReview: Record | null;
+  handleCloseReviewRecordPopup: () => void;
 };
 
 export default function SpreadsheetModals({
@@ -44,6 +47,8 @@ export default function SpreadsheetModals({
   onDeleteRecord,
   onCloseChat,
   setSelectedColumnToUpdate,
+  selectedRecordForReview,
+  handleCloseReviewRecordPopup
 }: SpreadsheetModalsProps) {
   const handleDeleteRecord = () => {
     if (selectedRecordToDelete) {
@@ -60,6 +65,7 @@ export default function SpreadsheetModals({
           title="Update Column"
           onCancel={onCloseColumnUpdatePopup}
           position='center'
+          size='small'
         >
           <form onSubmit={onUpdateColumnSubmit}>
             <div className="mb-4">
@@ -141,11 +147,27 @@ export default function SpreadsheetModals({
           title={`Chat about ${selectedRecordForChat.filename}`}
           onCancel={onCloseChat}
           position="right"
+          size='small'
         >
           <RecordChat
             projectId={projectId}
             filename={selectedRecordForChat.filename}
           />
+        </FormModal>
+      )}
+
+      {/* Record Review Modal */}
+
+      {isPopupVisible && selectedRecordForReview && (
+        <FormModal
+          visible={isPopupVisible}
+          title={`Review ${selectedRecordForReview.orginal_file_name}`}
+          onCancel={handleCloseReviewRecordPopup}
+          size='large'
+          >
+         <div>
+         <DocumentReview selectedRecordForReview={selectedRecordForReview}/>
+         </div>
         </FormModal>
       )}
     </>

@@ -8,7 +8,6 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
-import GoogleDriveExport from '../integrations/google-drive/GoogleDriveExport';
 import ColumnReorderPopup from '../forms/ColumnReorderPopup';
 type SpreadSheetProps = {
   columns: Field[];
@@ -31,11 +30,19 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
+  const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
+
 
   useEffect(() => {
-    setLocalColumns(columns);
-    setLocalRecords(records);
+    setLocalColumns(columns || []);
+    if (records) {
+      // Convert ApiRecord to Record (they now have matching answer structures)
+      const convertedRecords = records.map(apiRecord => ({
+        ...apiRecord,
+        answers: { ...apiRecord.answers }
+      }));
+      setLocalRecords(convertedRecords);
+    }
   }, [records, columns]);
 
   // Column handlers
@@ -129,13 +136,21 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
     setEditedRecords((prev) => {
       const currentRecord = prev[rowIndex] || localRecords[rowIndex];
+      const currentAnswer = currentRecord.answers[columnId] || { 
+        text: '', 
+        geometry: { left: 0, top: 0, width: 0, height: 0 } 
+      };
+      
       return {
         ...prev,
         [rowIndex]: {
           ...currentRecord,
           answers: {
             ...currentRecord.answers,
-            [columnId]: value,
+            [columnId]: {
+              ...currentAnswer,
+              text: value,
+            },
           },
         },
       };
@@ -201,20 +216,22 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordToDelete(null);
   };
 
+  const handleReviewRecord = (record: Record) => {
+    setIsPopupVisible(true)
+    setSelectedRecordForReview(record);
+  }
+
+  const handleCloseReviewRecordPopup = () => {
+    setIsPopupVisible(false);
+    setSelectedRecordForReview(null);
+  }
+
   if (!localColumns || !localRecords) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="relative overflow-x-auto min-h-[calc(100vh-20rem)]">
-     <div
-  className="text-right"
-  onClick={() => setIsReorderPopupVisible(true)}
->
-  <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline sticky right-0 ">
-  Edit columns
-  </button>
-</div>
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
@@ -242,6 +259,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               onEditRow={handleEditRow}
               onDeleteRow={handleShowDeleteRecordAlert}
               onChatRow={handleChatRow}
+              handleReviewRecord={handleReviewRecord}
             />
           ))}
         </tbody>
@@ -267,13 +285,9 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         onConfirmDelete={handleConfirmDelete}
         onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
+        selectedRecordForReview={selectedRecordForReview}
+        handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
       />
-      <ColumnReorderPopup
-      columns={localColumns}
-      isOpen={isReorderPopupVisible}
-      onClose={() => setIsReorderPopupVisible(false)}
-      onReorder={setLocalColumns}
-/>
     </div>
   );
 } 

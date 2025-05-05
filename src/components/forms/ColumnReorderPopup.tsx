@@ -163,6 +163,7 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
     title="Reorder Columns"
     onCancel={onClose}
     position="center"
+    size="small"
      >
       
       <DndProvider backend={HTML5Backend}>

@@ -10,6 +10,8 @@ type FormModalProps = {
   onCancel: () => void;
   children: React.ReactNode;
   position?: 'center' | 'right';
+  size: 'small' | 'large';
+
 };
 
 export default function FormModal({
@@ -19,7 +21,8 @@ export default function FormModal({
   onSubmit,
   onCancel,
   children,
-  position = 'right'
+  position = 'right',
+  size= 'small'
 }: FormModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +54,7 @@ export default function FormModal({
           max-h-[90vh] rounded-lg shadow-xl 
           flex flex-col overflow-hidden
           ${position === 'center' ? 'm-4' : 'h-full right-0'}
+          ${size === 'large' ? "lg:w-5/6" : "lg:w-2/5"}
         `}
       >
         <ModalHeader title={title} onClose={onCancel} message={message}/>

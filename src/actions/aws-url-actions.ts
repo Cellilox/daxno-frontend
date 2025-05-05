@@ -5,11 +5,16 @@ import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getFileUrl(key: string) {
-  const response = await fetchAuthed(`${apiUrl}/records/file-url/?key=${key}`)
-  if(!response.ok) {
-    throw new Error ("Failed to fet url")
+  try {
+    const response = await fetchAuthed(`${apiUrl}/records/file-url/?key=${key}`)
+  // if(!response.ok) {
+  //   throw new Error ("Failed to fet url")
+  // }
+  console.log('RES', response)
+  return response.json();
+  } catch (error) {
+    console.log('Error', error)
   }
-  return await response.json();
 }
 
 

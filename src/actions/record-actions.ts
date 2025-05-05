@@ -69,13 +69,18 @@ export async function uploadFile (formData:any, user_id: string | undefined)  {
 
 
   export async function queryDocument(projectId: string, fileName: string) {
-    const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
-      method: 'POST',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to query document');
+    try {
+      const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
+        method: 'POST',
+      });
+      // if (!response.ok) {
+      //   throw new Error('Failed to query document');
+      // }
+  
+      return await response.json();
+    } catch (error) {
+      console.log('EROR', error)
     }
-    return await response.json();
   }
 
   export async function saveRecord(formData: any, user_id: string ) {
@@ -85,9 +90,9 @@ export async function uploadFile (formData:any, user_id: string | undefined)  {
         body: JSON.stringify(formData)
       });
     
-      if (!response.ok) {
-        throw new Error('Failed to save a record');
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to save a record');
+      // }
       return await response.json();
     } catch (error) {
       console.log(error)

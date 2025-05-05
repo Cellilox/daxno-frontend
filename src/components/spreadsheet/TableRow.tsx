@@ -15,6 +15,7 @@ type TableRowProps = {
   onEditRow: (rowIndex: number) => void;
   onDeleteRow: (row: Record) => void;
   onChatRow: (row: Record) => void;
+  handleReviewRecord: (row: Record) => void;
 };
 
 export default function TableRow({
@@ -31,6 +32,7 @@ export default function TableRow({
   onEditRow,
   onDeleteRow,
   onChatRow,
+  handleReviewRecord
 }: TableRowProps) {
   const isEditing = editingRow === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -79,6 +81,14 @@ export default function TableRow({
               >
                 <MessageCircle className="w-4 h-4 text-gray-600" />
               </button> */}
+
+              <button
+                onClick={() => handleReviewRecord(row)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                {/* <Eye className="w-4 h-4 text-gray-600" /> */}
+                Review
+              </button>
             </>
           )}
         </div>
@@ -125,6 +135,14 @@ export default function TableRow({
                   >
                     <MessageCircle className="w-4 h-4 text-gray-600" />
                   </button> */}
+
+                  <button
+                    onClick={() => handleReviewRecord(row)}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    {/* <Eye className="w-4 h-4 text-gray-600" /> */}
+                    Review
+                  </button>
                 </>
               )}
             </div>
@@ -135,12 +153,12 @@ export default function TableRow({
         <td key={column.hidden_id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px] border-r">
           {isEditing ? (
             <textarea
-              value={editedRow.answers[column.id] ?? ''}
+              value={editedRow.answers[column.id]?.text ?? ''}
               onChange={(e) => onCellChange(rowIndex, column.id, e.target.value)}
               className="w-full p-1 border rounded min-h-[200px]"
             />
           ) : (
-            <span>{editedRow.answers[column.id] ?? ''}</span>
+            <span>{editedRow.answers[column.id]?.text ?? ''}</span>
           )}
         </td>
       ))}
