@@ -30,7 +30,7 @@ interface PdfViewerProps {
 export default function PdfViewer({ fileUrl, activeItem, answers }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pdfScale, setPdfScale] = useState(1);
+  const [pdfScale, setPdfScale] = useState(0.8);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,14 +50,15 @@ export default function PdfViewer({ fileUrl, activeItem, answers }: PdfViewerPro
   return (
     <div className="flex flex-col">
       {/* PDF Controls */}
-      <div className="flex justify-between items-center mb-4 p-2 bg-gray-100 rounded-md">
+      {/* <div className="flex justify-between items-center mb-4 p-2 bg-gray-100 rounded-md">
         <div className="flex items-center space-x-2">
           <button 
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage <= 1 || isLoading}
             className="px-3 py-1 bg-blue-500 text-white rounded disabled:bg-gray-300"
           >
-            Previous
+            Previo\\\
+            ',k,,
           </button>
           <span className="text-sm">
             Page {currentPage} of {numPages || '?'}
@@ -87,7 +88,7 @@ export default function PdfViewer({ fileUrl, activeItem, answers }: PdfViewerPro
             +
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* PDF Viewer */}
       <div className="relative border border-gray-200 rounded-md overflow-hidden bg-gray-50 min-h-[500px] flex justify-center">
