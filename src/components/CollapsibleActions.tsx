@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, FileText, Share2, Trash2, Download, Upload, Database, MessageSquare } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileText, Share2, Trash2, Download, Upload, Database, MessageSquare, Users } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import GenerateLinkOverlay from './GenerateLinkOverlay';
 import ScanView from './files/ScanView';
 import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import RecordChat from './RecordChat';
+import CreateInvite from './forms/CreateInvite';
 
 interface CollapsibleActionsProps {
   projectId: string;
@@ -33,6 +34,11 @@ interface CollapsibleActionsProps {
 export default function CollapsibleActions({ projectId, linkOwner, fields, records }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
+
+  const handleShowInvitePopup = () => {
+     setIsInvitePopupVisible(true)
+  }
 
   return (
     <div className="w-full">
@@ -81,6 +87,12 @@ export default function CollapsibleActions({ projectId, linkOwner, fields, recor
               <div className="flex items-center gap-2 flex-shrink-0">
                 <ScanView />
               </div>
+              <div>
+                <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                  Invite
+                </button>
+              </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Integrations 
                   projectId={projectId} 
@@ -100,8 +112,24 @@ export default function CollapsibleActions({ projectId, linkOwner, fields, recor
           title="Chat with AI"
           onCancel={() => setIsChatOpen(false)}
           position="center"
+          size="small"
         >
           <RecordChat projectId={projectId} filename="" />
+        </FormModal>
+      )}
+
+       {/* Invite Popup */}
+       {isInvitePopupVisible && (
+        <FormModal
+          visible={isInvitePopupVisible}
+          title="Send Invite to this Project"
+          onCancel={() => setIsInvitePopupVisible(false)}
+          position="center"
+          size="small"
+        >
+          <div className='flex justify-between'>
+          <CreateInvite projectId={projectId} setIsInvitePopupVisible={setIsInvitePopupVisible}/>
+          </div>
         </FormModal>
       )}
     </div>

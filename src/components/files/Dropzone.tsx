@@ -3,7 +3,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { checkFileType, queryDocument, saveRecord, uploadFile, loggedInUser} from '@/actions/record-actions';
+import { checkFileType, queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
+import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
@@ -63,7 +64,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
       const result = await uploadFile(formData, user_id);
       const filename = result.filename;
@@ -91,7 +92,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const saveData = async (data: any) => {
     try {
       onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',});
-      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
       const response = await saveRecord(data, user_id);
       console.log('Saved Record:', response)
       const doc_data = {
@@ -105,7 +106,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   };
   const saveDocument = async (data: any) => {
-    const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+    const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
     try {
       await createDocument(data, user_id);
       setIsVisible(false);
@@ -144,7 +145,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
-      const user_id = `${linkOwner? linkOwner : await loggedInUser()}`
+      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
       // Upload File
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();

@@ -2,16 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-import { currentUser } from "@clerk/nextjs/server";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-export const loggedInUser = async () => {
-  const loggedInUser = await currentUser();
-  if (!loggedInUser) {
-    throw new Error ('No logged in user found');
-  }
-  return loggedInUser.id;
-}
 
 export async function revalidate() {
   revalidatePath('/projects');
