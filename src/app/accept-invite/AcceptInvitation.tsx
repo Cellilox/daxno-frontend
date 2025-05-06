@@ -4,12 +4,11 @@ import React from 'react'
 
 type AcceptInvitatioProps = {
     token: string | string[] | undefined
-    email: string | undefined
 } 
 
-export default function AcceptInvitation({token, email}: AcceptInvitatioProps) {
+export default function AcceptInvitation({token}: AcceptInvitatioProps) {
     const handleAcceptInvitation = async () => {
-        await accept_invite(token, email)
+        await accept_invite(token)
     }
     return (
         <div className="w-full">

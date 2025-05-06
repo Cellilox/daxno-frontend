@@ -22,9 +22,9 @@ export async function create_project_invite(invitee_user_email: string, project_
 }
 
 
-export async function accept_invite(token: string | string[] | undefined, email: string | undefined) {
+export async function accept_invite(token: string | string[] | undefined) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/invites/accept?token=${token}&email=${email}`, {
+        const response = await fetchAuthedJson(`${apiUrl}/invites/accept?token=${token}`, {
             method: 'POST',
         })
       // if(!response.ok) {

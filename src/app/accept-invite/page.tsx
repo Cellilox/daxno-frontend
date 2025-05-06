@@ -21,7 +21,7 @@ export default async function AcceptInvite({
       <p>Project ID: {project_id}</p>
       <p>Token: {token}</p>
       <p className="mt-3">You have been invited to collaborate on this project</p>
-      <AcceptInvitation token={token}  email={currentUserPrimaryEmail}/>
+      <AcceptInvitation token={token}/>
     </div>
   );
 }
