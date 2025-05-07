@@ -8,6 +8,7 @@ type Project = {
   name: string,
   description: string,
   owner: string
+  is_owner: string
 }
 
 export default async function Projects() {
