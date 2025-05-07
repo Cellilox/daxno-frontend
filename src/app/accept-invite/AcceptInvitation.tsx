@@ -15,7 +15,7 @@ type Error = {
         text: string
 }
 
-export default function AcceptInvitation({token, projectId}: AcceptInvitatioProps) {
+export default function AcceptInvitation({token}: AcceptInvitatioProps) {
     const [error, setError] = useState<Error | undefined>()
     const [loading, setLoading] = useState(false)
     const router = useRouter()
@@ -23,9 +23,10 @@ export default function AcceptInvitation({token, projectId}: AcceptInvitatioProp
         try {
             setLoading(true)
             const response = await accept_invite(token)
+            console.log('RRRR', response)
             if (response?.status === "accepted") {
                 setLoading(false)
-                router.push(`/projects/${projectId}`)
+                router.push(`/projects/${response.project_id}`)
             } else {
                 setLoading(false)
                 const error = {

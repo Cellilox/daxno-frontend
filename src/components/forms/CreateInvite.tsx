@@ -23,7 +23,8 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
     
         setIsLoading(true)
         try {
-            await create_project_invite(data.email, projectId)
+            const result = await create_project_invite(data.email, projectId)
+            console.log('CREATING_INVICE', result)
             setIsLoading(false)
             resetField("email")
             setIsInvitePopupVisible(false)
