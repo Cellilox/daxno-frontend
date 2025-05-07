@@ -1,22 +1,60 @@
 'use client'
 import { accept_invite } from '@/actions/invites-actions'
-import React from 'react'
-
+import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import MessageAlert from '@/components/ui/messageAlert'
+import { messageTypeEnum } from '@/types'
+import LoadingSpinner from '@/components/ui/LoadingSpinner'
 type AcceptInvitatioProps = {
-    token: string | string[] | undefined
+    token: string | string[] | undefined,
+    projectId: string | string[] | undefined
 } 
 
-export default function AcceptInvitation({token}: AcceptInvitatioProps) {
-    const handleAcceptInvitation = async () => {
-        await accept_invite(token)
+type Error = {
+        type: messageTypeEnum;
+        text: string
+}
+
+export default function AcceptInvitation({token, projectId}: AcceptInvitatioProps) {
+    const [error, setError] = useState<Error | undefined>()
+    const [loading, setLoading] = useState(false)
+    const router = useRouter()
+    const handleAccept = async () => {
+        try {
+            setLoading(true)
+            const response = await accept_invite(token)
+            if (response?.status === "accepted") {
+                setLoading(false)
+                router.push(`/projects/${projectId}`)
+            } else {
+                setLoading(false)
+                const error = {
+                    type: messageTypeEnum.ERROR,
+                    text: response.detail
+                  }
+                setError(error)
+            }
+        } catch (error) {
+            setLoading(false)
+            //@ts-ignore
+            router.push(`/invite-error?error=${encodeURIComponent(error?.message)}`)
+        }
+    }
+
+    const handleRemoveError = () => {
+        setError(undefined)
     }
     return (
         <div className="w-full">
-            <div className="w-full">
-            <button onClick={handleAcceptInvitation} className="w-full sm:w-auto p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300">
-               Accept
+           {error && <div className="z-50 fixed inset-0 top-0 flex justify-center h-20">
+                <div className="w-full lg:w-1/2">
+                <MessageAlert message={error} onClose={handleRemoveError}/>
+                </div>
+            </div>}
+            <button onClick={handleAccept} className="w-full sm:w-auto flex p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300">
+               {loading && <div className="mr-3"><LoadingSpinner/></div>}
+               {loading === true ? 'Checking': 'Accept'}
             </button>
-            </div>
         </div>
     )
 }

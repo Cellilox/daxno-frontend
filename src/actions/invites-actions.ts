@@ -30,7 +30,6 @@ export async function accept_invite(token: string | string[] | undefined) {
       // if(!response.ok) {
       //   throw new Error ("Failed to fet url")
       // }
-      console.log('RES', response)
       return await response.json();
       } catch (error) {
         console.log('Error', error)
