@@ -27,6 +27,7 @@ type SpreadsheetModalsProps = {
   setSelectedColumnToUpdate: (column: Field | null) => void;
   selectedRecordForReview: Record | null;
   handleCloseReviewRecordPopup: () => void;
+  columns: Field[]
 };
 
 export default function SpreadsheetModals({
@@ -48,7 +49,8 @@ export default function SpreadsheetModals({
   onCloseChat,
   setSelectedColumnToUpdate,
   selectedRecordForReview,
-  handleCloseReviewRecordPopup
+  handleCloseReviewRecordPopup,
+  columns
 }: SpreadsheetModalsProps) {
   const handleDeleteRecord = () => {
     if (selectedRecordToDelete) {
@@ -78,7 +80,8 @@ export default function SpreadsheetModals({
                 onChange={(e) =>
                   setSelectedColumnToUpdate({
                     ...selectedColumnToUpdate,
-                    name: e.target.value,
+                    id: e.target.value,
+                    name: e.target.value
                   })
                 }
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
@@ -166,7 +169,7 @@ export default function SpreadsheetModals({
           size='large'
           >
          <div>
-         <DocumentReview selectedRecordForReview={selectedRecordForReview}/>
+         <DocumentReview selectedRecordForReview={selectedRecordForReview} columns={columns}/>
          </div>
         </FormModal>
       )}

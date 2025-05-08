@@ -61,7 +61,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     isCheckingConnection: true
   });
 
-  console.log('AVAILABLE records')
+  console.log('AVAILABLE records', records)
 
   useEffect(() => {
     const initConnection = async () => {
@@ -121,49 +121,51 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       setValidationError('No records to export or type not selected');
       return;
     }
-
+  
     setStatus(prev => ({ ...prev, isLoading: true, error: null }));
     setValidationError(null);
     
     try {
+      // Create mapping from field name to hidden_id
+      const fieldNameToHiddenId = new Map(
+        fields.map(field => [field.name, field.hidden_id])
+      );
+  
       const mappedRecords = records.map(record => {
         if (!record.id) {
           throw new Error('Record ID is required for export');
         }
-
-        // Initialize properties as a plain object
+  
         const properties: Record<string, string> = {};
         
-        // Process each mapping - our field is the key, HubSpot property is the value
-        propertyMappings.forEach((hubspotProperty, ourField) => {
-          // Get the value from our record
-          const value = record.answers[ourField];
+        propertyMappings.forEach((hubspotProperty, ourFieldName) => {
+          // Get the hidden_id for this field name
+          const hiddenId = fieldNameToHiddenId.get(ourFieldName);
           
-          // For all properties, use the value as is or empty string if undefined
-          properties[hubspotProperty] = value !== undefined && value !== null ? String(value) : '';
+          if (hiddenId) {
+            // Access answers using hidden_id
+            const answer = record.answers[hiddenId];
+            properties[hubspotProperty] = answer?.text || '';
+          }
         });
-
-        // Always add recordidd to properties
+  
         properties['recordidd'] = record.id;
-
-        // Return the record with recordidd as the unique identifier
+  
         return {
           id: record.id,
           id_property: 'recordidd',
           properties: properties
         };
       });
-
-      // Create the final payload
+  
       const payload = {
         [selectedType]: mappedRecords
       };
-
+  
       console.log('Sending payload:', JSON.stringify(payload, null, 2));
       
-      // Send the payload
       await exportToHubSpot(selectedType, mappedRecords);
-
+  
       setStatus(prev => ({
         ...prev,
         isLoading: false,

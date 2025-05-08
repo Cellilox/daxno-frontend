@@ -287,6 +287,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
         selectedRecordForReview={selectedRecordForReview}
         handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
+        columns={columns}
       />
     </div>
   );

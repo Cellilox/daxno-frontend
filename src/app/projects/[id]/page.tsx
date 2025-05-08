@@ -18,10 +18,12 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const { id } = await params
   const project = await getProjectsById(id)
   const fields = await getColumns(project.id)
+  console.log('FFFF', fields)
   const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
+  console.log('RRRR', records)
   const is_project_owner = project.is_owner;
   return (
     <>
