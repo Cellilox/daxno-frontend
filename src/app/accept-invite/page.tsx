@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server";
 import AcceptInvitation from "./AcceptInvitation";
 
 export default async function AcceptInvite({
@@ -6,13 +5,9 @@ export default async function AcceptInvite({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const user = await currentUser();
-  const currentUserPrimaryEmail = user?.primaryEmailAddress?.emailAddress;
   
-  // Get query parameters
   const {token} = await searchParams
   const {project_id} = await searchParams;
-  console.log(token, project_id)
 
   return (
     <div className="mx-auto p-6 md:p-12 h-screen bg-gray-50">

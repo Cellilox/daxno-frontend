@@ -3,7 +3,8 @@ import React, { useState } from 'react'
 import LoadingSpinner from '../ui/LoadingSpinner'
 import { useForm } from 'react-hook-form'
 import { create_project_invite } from '@/actions/invites-actions'
-import { loggedInUserId } from '@/actions/loggedin-user'
+import { messageType, messageTypeEnum } from '@/types'
+import Alert from '@/components/ui/Alert'
 
 type CreateColumnProps = {
     projectId: string;
@@ -17,25 +18,55 @@ type InviteCreateData = {
 export default function CreateInvite({ projectId, setIsInvitePopupVisible}: CreateColumnProps) {
     const {register, handleSubmit, resetField, formState: {errors}} = useForm<InviteCreateData>()
     const [isLoading, setIsLoading] = useState(false)
-
+    const [message, setMessage] = useState<messageType | null>()
     async function createInvite(data: InviteCreateData) {
         data.email = data.email
     
         setIsLoading(true)
         try {
             const result = await create_project_invite(data.email, projectId)
-            console.log('CREATING_INVICE', result)
-            setIsLoading(false)
-            resetField("email")
-            setIsInvitePopupVisible(false)
+            if (result?.status === "pending") {
+                setIsLoading(false)
+                resetField("email")
+                const message = {
+                    type: messageTypeEnum.INFO,
+                    text: `Invitation was sent successfully (${result.status})`
+                }
+                setMessage(message)
+                setTimeout(()=>{
+                    setIsInvitePopupVisible(false)
+                }, 3000)
+            } else if (result?.detail) {
+                setIsLoading(false)
+                const message = {
+                    type: messageTypeEnum.ERROR,
+                    text: result.detail
+                }
+                setMessage(message)
+                setTimeout(()=>{
+                    setIsInvitePopupVisible(false)
+                }, 3000)
+            }
         } catch (error) {
-            alert('Error creating an Invite')
+            setIsLoading(false)
+                const message = {
+                    type: messageTypeEnum.ERROR,
+                    text: 'Server Error'
+                }
+                setMessage(message)
+                setTimeout(()=>{
+                    setIsInvitePopupVisible(false)
+                }, 3000)
         }
+    }
+
+    const onClose = () => {
+        setMessage(null)
     }
 
     return (
         <div className="w-full">
-        
+            {message && <Alert message={message} onClose={onClose}/>}
             <div className="w-full">
                 <form onSubmit={handleSubmit(createInvite)} className="mt-4 sm:mt-0 w-full">
                     <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-2">
@@ -63,6 +94,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                     {errors.email?.message && (
                         <p className="text-red-500 text-sm mt-2">{errors.email.message}</p>
                     )}
+                    {message && <h1>{message.text}</h1>}
                 </form>
             </div>
         </div>

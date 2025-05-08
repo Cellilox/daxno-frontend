@@ -68,7 +68,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     };
 
     try {
-      await updateColumn(selectedColumnToUpdate?.hidden_id, updateData);
+      await updateColumn(selectedColumnToUpdate?.hidden_id, projectId, updateData);
       setIsLoading(false);
       setIsPopupVisible(false);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const handleDeleteColumn = async (columnId: string) => {
     setIsLoading(true);
     try {
-      await deleteColumn(columnId);
+      await deleteColumn(columnId, projectId);
       setIsLoading(false);
       setIsAlertVisible(false);
       setSelectedColumnToDelete(null);

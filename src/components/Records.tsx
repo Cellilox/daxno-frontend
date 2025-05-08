@@ -74,14 +74,32 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             setColumns(data.fields);
         };
 
+        const handleColumnCreated = (data: { records: ApiRecord[]; field: Field }) => {
+            console.log('New Column created:', data);
+            setRowData(data.records);
+            setColumns(prev => [...prev, data.field]);
+        };
+        const handleColumnUpdated = (data: { field: Field }) => {
+            console.log('New Column updated:', data);
+            setColumns(prev => prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x));
+        };
+
+        const handleColumnDeleted = (data: { field_id: string }) => {
+            console.log('New record deleted:', data);
+            setColumns(prev => prev.filter(x => x.hidden_id !== data.field_id));
+        };
+
         // Add listeners
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
         socket.on('connect_error', handleError);
         socket.on('connect_timeout', handleTimeout);
         socket.on('record_created', handleRecordCreated);
-        socket.on('record_updated', handleRecordUpdated)
-        socket.on('record_deleted', handleRecordDeleted)
+        socket.on('record_updated', handleRecordUpdated);
+        socket.on('record_deleted', handleRecordDeleted);
+        socket.on('field_created', handleColumnCreated);
+        socket.on('field_updated', handleColumnUpdated);
+        socket.on('field_deleted', handleColumnDeleted)
 
         // Cleanup on unmount
         return () => {
@@ -92,10 +110,13 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socket.off('record_created', handleRecordCreated);
             socket.off('record_updated', handleRecordUpdated)
             socket.off('record_deleted', handleRecordDeleted)
+            socket.off('field_created', handleColumnCreated);
+            socket.off('field_updated', handleColumnUpdated);
+            socket.off('field_deleted', handleColumnDeleted)
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [projectId]); // Reconnect only if projectId changes
+    }, [projectId]); 
 
     return (
         <div>

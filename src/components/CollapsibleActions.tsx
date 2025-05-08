@@ -12,6 +12,7 @@ import CreateInvite from './forms/CreateInvite';
 
 interface CollapsibleActionsProps {
   projectId: string;
+  is_project_owner: boolean;
   linkOwner: string;
   fields: {
     id: string;
@@ -31,7 +32,7 @@ interface CollapsibleActionsProps {
   }[];
 }
 
-export default function CollapsibleActions({ projectId, linkOwner, fields, records }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
@@ -72,7 +73,8 @@ export default function CollapsibleActions({ projectId, linkOwner, fields, recor
                 linkOwner={linkOwner}
                 projectId={projectId}
               />
-              <GenerateLinkOverlay />
+
+              {is_project_owner && <GenerateLinkOverlay />}
             </div>
 
             {/* Right Action Group */}
@@ -84,15 +86,17 @@ export default function CollapsibleActions({ projectId, linkOwner, fields, recor
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
                 Chat with documents
               </button> */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              {/* <div className="flex items-center gap-2 flex-shrink-0">
                 <ScanView />
-              </div>
+              </div> */}
+              {is_project_owner && (
               <div>
-                <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                  Invite
-                </button>
-              </div>
+              <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                Invite
+              </button>
+            </div>)
+              }
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Integrations 
                   projectId={projectId} 

@@ -11,22 +11,36 @@ type MessageAlertProps = {
 
 export default function MessageAlert({ message, onClose }: MessageAlertProps) {
   return (
-    <div className="flex flex-col bg-blue-600 text-white rounded-t-lg">
+    <div className="flex flex-col text-white rounded-t-lg">
       {message?.type == messageTypeEnum.INFO && (
-        <div className="bg-blue-700 px-4 py-2 text-sm text-center">
+        <div className="bg-blue-500 px-4 py-2 flex justify-between items-center">
+          <p className="text-sm">{message.text}</p>
           <button
-          // onClick={onClose}
-          className="p-2 rounded hover:bg-blue-700 transition"
+          onClick={onClose}
+          className="p-2 rounded hover:bg-red-200 transition"
           aria-label="Close modal"
         >
           <Image src="/close.svg" alt="Close" width={24} height={24} />
         </button>
-          <p>{message.text}</p>
+        </div>
+      )}
+
+
+      {message?.type == messageTypeEnum.SUCCESS && (
+        <div className="bg-green-500 px-4 py-2 flex justify-between items-center">
+          <p className="text-sm">{message.text}</p>
+          <button
+          onClick={onClose}
+          className="p-2 rounded hover:bg-red-200 transition"
+          aria-label="Close modal"
+        >
+          <Image src="/close.svg" alt="Close" width={24} height={24} />
+        </button>
         </div>
       )}
 
       {message?.type == messageTypeEnum.ERROR && (
-        <div className="bg-red-700 px-4 py-2 flex justify-between items-center">
+        <div className="bg-red-500 px-4 py-2 flex justify-between items-center">
           <p className="text-sm">{message.text}</p>
           <button
           onClick={onClose}
