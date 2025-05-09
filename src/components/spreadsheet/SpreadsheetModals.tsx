@@ -1,7 +1,6 @@
 import FormModal from '../ui/Popup';
 import AlertDialog from '../ui/AlertDialog';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import RecordChat from '../RecordChat';
 import { Field, Record } from './types';
 import DocumentReview from './DocumentReview';
 
@@ -142,24 +141,6 @@ export default function SpreadsheetModals({
           onCancel={onCloseDeleteRecordAlert}
         />
       )}
-
-      {/* Record Chat Modal */}
-      {isChatVisible && selectedRecordForChat && (
-        <FormModal
-          visible={isChatVisible}
-          title={`Chat about ${selectedRecordForChat.filename}`}
-          onCancel={onCloseChat}
-          position="right"
-          size='small'
-        >
-          <RecordChat
-            projectId={projectId}
-            filename={selectedRecordForChat.filename}
-          />
-        </FormModal>
-      )}
-
-      {/* Record Review Modal */}
 
       {isPopupVisible && selectedRecordForReview && (
         <FormModal

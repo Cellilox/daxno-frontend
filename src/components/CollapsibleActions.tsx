@@ -7,7 +7,6 @@ import GenerateLinkOverlay from './GenerateLinkOverlay';
 import ScanView from './files/ScanView';
 import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
-import RecordChat from './RecordChat';
 import CreateInvite from './forms/CreateInvite';
 
 interface CollapsibleActionsProps {
@@ -65,10 +64,6 @@ export default function CollapsibleActions({ projectId, is_project_owner, linkOw
           {/* Action Group */}
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-between w-full">
             <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-              {/* <button className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex-shrink-0">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Undo
-              </button> */}
               <ScanFilesModal
                 linkOwner={linkOwner}
                 projectId={projectId}
@@ -79,16 +74,10 @@ export default function CollapsibleActions({ projectId, is_project_owner, linkOw
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-            {/* <button 
-                onClick={() => setIsChatOpen(true)}
-                className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 flex-shrink-0"
-              >
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Chat with documents
-              </button> */}
               {/* <div className="flex items-center gap-2 flex-shrink-0">
                 <ScanView />
-              </div> */}
+              </div>  */}
+        
               {is_project_owner && (
               <div>
               <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
@@ -109,18 +98,6 @@ export default function CollapsibleActions({ projectId, is_project_owner, linkOw
         </div>
       </div>
 
-      {/* Chat Popup */}
-      {isChatOpen && (
-        <FormModal
-          visible={isChatOpen}
-          title="Chat with AI"
-          onCancel={() => setIsChatOpen(false)}
-          position="center"
-          size="small"
-        >
-          <RecordChat projectId={projectId} filename="" />
-        </FormModal>
-      )}
 
        {/* Invite Popup */}
        {isInvitePopupVisible && (

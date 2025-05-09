@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSubscription } from '../hooks/useSubscription';
 import { Crown } from 'lucide-react';
+import PricingModal from '../pricing/PricingModal';
 
 interface Transaction {
   payment_type: 'mobilemoneyrw' | 'card';
@@ -26,13 +27,7 @@ export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
   if (currentTransaction == undefined) {
     return (
       <div>
-        <div 
-          onClick={() => router.push('/pricing')} 
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
-        >
-          <Crown className="w-4 h-4" />
-          <span>Upgrade</span>
-        </div>
+        <PricingModal/>
       </div>
     )
   }

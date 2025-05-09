@@ -108,7 +108,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const saveDocument = async (data: any) => {
     const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
     try {
-      await createDocument(data, user_id);
+      await createDocument(data, user_id, projectId);
       setIsVisible(false);
       onMessageChange({type: messageTypeEnum.NONE, text: '',});
     } catch (error) {
@@ -168,7 +168,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         filename: savedResult.record.filename,
         page_number: savedResult.record.pages
       }
-      await createDocument(db_data, user_id);
+      await createDocument(db_data, user_id, projectId);
       
       // Finalize
       updateFileStatus({
