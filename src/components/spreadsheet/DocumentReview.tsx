@@ -41,6 +41,7 @@ interface DocumentReviewProps {
     answers: Record<string, AnswerItem>;
     filename: string;
     file_key: string;
+    project_id: string;
   };
   columns: Field[]
 }
@@ -52,12 +53,13 @@ export default function DocumentReview({ selectedRecordForReview, columns}: Docu
   const [fileError, setFileError] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
   console.log('COLS', columns)
+  console.log({selectedRecordForReview})
   useEffect(() => {
     if (!selectedRecordForReview) return;
 
     const loadFileUrl = async () => {
       try {
-        const { file_url } = await getFileUrl(selectedRecordForReview.file_key);
+        const { file_url } = await getFileUrl(selectedRecordForReview.file_key, selectedRecordForReview.project_id);
         console.log('File URL:', file_url);
         
         // Check if the file is a PDF based on the file_key

@@ -2,11 +2,13 @@
 
 import { PricingCard } from "./PricingCard"
 
+
 interface PricingContentProps {
   billingInterval: 'monthly' | 'annual'
+  makePayment:(plan: string) => void
 }
 
-export function PricingContent({ billingInterval }: PricingContentProps) {
+export function PricingContent({ billingInterval, makePayment }: PricingContentProps) {
   const features = {
     starter: [
       <>500 documents/month</>,
@@ -39,6 +41,7 @@ export function PricingContent({ billingInterval }: PricingContentProps) {
         ctaText="Start Free Trial"
         billingInterval={billingInterval}
         isCurrentPlan={true}
+        makePayment={makePayment}
       />
 
       <PricingCard
@@ -49,6 +52,7 @@ export function PricingContent({ billingInterval }: PricingContentProps) {
         billingInterval={billingInterval}
         isPopular
         isCurrentPlan={false}
+        makePayment={makePayment}
       />
 
       <PricingCard
@@ -58,6 +62,7 @@ export function PricingContent({ billingInterval }: PricingContentProps) {
         ctaText="Start Free Trial"
         billingInterval={billingInterval}
         isCurrentPlan={false}
+        makePayment={makePayment}
       />
 
       <PricingCard
@@ -69,6 +74,7 @@ export function PricingContent({ billingInterval }: PricingContentProps) {
         billingInterval={billingInterval}
         isEnterprise
         isCurrentPlan={false}
+        makePayment={makePayment}
       />
     </div>
   )

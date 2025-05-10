@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 
+
 interface PricingCardProps {
   title: string
   monthlyPrice: number | string
@@ -12,6 +13,7 @@ interface PricingCardProps {
   ctaLink?: string
   billingInterval: 'monthly' | 'annual'
   isEnterprise?: boolean
+  makePayment: (plan: string) => void
 }
 
 export function PricingCard({
@@ -23,7 +25,8 @@ export function PricingCard({
   ctaText,
   ctaLink,
   billingInterval,
-  isEnterprise
+  isEnterprise,
+  makePayment
 }: PricingCardProps) {
   const calculateAnnualPrice = (price: number) => (price * 12 * 0.8).toFixed(2)
 
@@ -79,7 +82,7 @@ export function PricingCard({
 
       {ctaLink ? (
         <Link
-          href={ctaLink}
+          href="/contact"
           className={`mt-auto ${
             isEnterprise 
               ? 'text-blue-600 border border-blue-600 hover:bg-blue-50' 
@@ -89,7 +92,9 @@ export function PricingCard({
           {ctaText}
         </Link>
       ) : (
-        <button className="mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+        onClick={() => makePayment(title)}
+        className="mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
           {ctaText}
         </button>
       )}

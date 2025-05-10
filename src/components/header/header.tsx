@@ -3,17 +3,13 @@ import { currentUser } from "@clerk/nextjs/server"
 import Link from 'next/link'
 import React from 'react'
 import CurrentPlan from './CurrentPlan'
-import { fetchAuthed } from '@/lib/api-client'
+import { getTransactions } from '@/actions/transaction-actions'
 
 const Header = async () => {
   const user = await currentUser()
   const userId = user?.id
   console.log('USERIDDD', userId)
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions/?user_id=${userId}`
-  const response = await fetchAuthed(url)
-  const transactions = await response.json()
-  console.log('AllTransactions', transactions)
-  const currentSubscription = transactions[0]
+  const transactions = await getTransactions()
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
@@ -44,7 +40,7 @@ const Header = async () => {
       <div className='md:flex md:items-center'>
         <div className='md:mr-3'>
         <SignedIn>
-        <CurrentPlan currentTransaction={currentSubscription}/>
+        <CurrentPlan transactions={transactions}/>
         </SignedIn>
         </div>
         <div className='text-right mt-3 md:mt-0'>

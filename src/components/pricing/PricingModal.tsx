@@ -5,13 +5,22 @@ import Image from "next/image"
 import { Crown } from 'lucide-react'
 import { BillingToggle } from "./BillingToggle"
 import { PricingContent } from "./PricingContent"
+import { useRouter } from "next/navigation"
+import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
+import { usePaymentContext } from "../context/payment/Payment"
+import { loggedInUserId } from "@/actions/loggedin-user"
 
-export default function PricingModal() {
+type PricingModalProps = {
+   redirect_url: string
+}
+
+export default function PricingModal({redirect_url}: PricingModalProps) {
   const [isOuterExpanded, setIsOuterExpanded] = useState(false)
   const [isInnerVisible, setIsInnerVisible] = useState(false)
   const [areCardsVisible, setAreCardsVisible] = useState(false)
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly')
   const [timeoutIds, setTimeoutIds] = useState<number[]>([])
+  const router = useRouter()
 
   const toggleExpand = () => {
     if (isOuterExpanded) {
@@ -35,6 +44,47 @@ export default function PricingModal() {
     return () => timeoutIds.forEach(id => clearTimeout(id))
   }, [timeoutIds])
 
+
+  //Logic 
+
+    const {amount, paymentPlan, transactionReference, setAmount, setTransactionReference, setPaymentPlan} = usePaymentContext()
+    console.log(amount, paymentPlan, transactionReference)
+    const [plansList, setPlansList] = useState<any>()
+    console.log('Available Plans', plansList)
+    const crypto = require('crypto');
+    const randomBytes = crypto.randomBytes(16).toString('hex'); 
+
+    const setAvailablePlans = async () => {
+      const plans = await getAvailablePlans();
+       setPlansList(plans.data)
+    }
+  
+    useEffect(() => {
+       setAvailablePlans()
+    }, [])
+  
+  
+    const pickPlan = async (plan: string) => {
+      const pickedPlan = plansList.filter((x: any) => x.name === plan)
+      console.log('PICKED', pickedPlan)
+      setPaymentPlan(pickedPlan[0].id)
+      setAmount(pickedPlan[0].amount)
+      return pickedPlan;
+    }
+
+    const makePayment = async(plan: string) => {
+        await pickPlan(plan)
+        if(transactionReference && amount && paymentPlan) {
+            const result = await requestPayment ( amount, paymentPlan)
+            console.log('Payment', result)
+            if(result.data) {
+            router.push(result.data.link)
+            }
+          }
+    }
+
+
+
   return (
     <div>
       <div 
@@ -46,7 +96,7 @@ export default function PricingModal() {
       </div>
 
       <div
-        className={`fixed inset-0 bg-[#EFF6FF] z-50 transition-opacity duration-500 ${
+        className={`fixed inset-0 bg-white z-50 transition-opacity duration-500 ${
           isOuterExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
@@ -82,7 +132,7 @@ export default function PricingModal() {
                 <div className={`transition-opacity duration-300 ${
                   areCardsVisible ? 'opacity-100' : 'opacity-0'
                 }`}>
-                  <PricingContent billingInterval={billingInterval} />
+                  <PricingContent billingInterval={billingInterval} makePayment={makePayment}/>
                 </div>
               </div>
             </div>

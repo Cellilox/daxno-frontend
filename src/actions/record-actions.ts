@@ -8,9 +8,9 @@ export async function revalidate() {
   revalidatePath('/projects');
 }
 
-export async function uploadFile (formData:any, user_id: string | undefined)  {
+export async function uploadFile (formData:any, projectId: string | undefined)  {
     console.log('TLTTTTl', formData)
-      const response = await fetchAuthed(`${apiUrl}/records/upload?user_id=${user_id}`, {
+      const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
         method: 'POST',
         body: formData
       });

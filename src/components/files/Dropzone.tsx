@@ -64,9 +64,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
+      console.log('PPORL', projectId)
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
-      const result = await uploadFile(formData, user_id);
+      const result = await uploadFile(formData, projectId);
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
@@ -150,7 +150,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      const uploadResult = await uploadFile(formData, user_id);
+      
+      console.log('PPORL3', projectId)
+      const uploadResult = await uploadFile(formData, projectId);
       
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });

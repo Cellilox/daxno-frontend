@@ -76,7 +76,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                                 id="email"
                                 {...register('email', {required: 'Email is required'})}
                                 className="w-full p-3 rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                                placeholder="Add a column"
+                                placeholder="Add email"
                             />
                         </div>
                         <div className="flex-shrink-0">
@@ -86,7 +86,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                                 </div>
                             ) : (
                                 <button className="w-full sm:w-auto p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300">
-                                    Add
+                                    Send
                                 </button>
                             )}
                         </div>
