@@ -1,7 +1,17 @@
-import React from 'react'
+import React from 'react';
 
-export default function LoadingSpinner() {
+export interface LoadingSpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+}
+
+export default function LoadingSpinner({
+  className = '',
+  ...rest
+}: LoadingSpinnerProps) {
   return (
-    <div className="spinner"></div>
-  )
+    <div
+      className={`spinner ${className}`.trim()}
+      {...rest}
+    />
+  );
 }

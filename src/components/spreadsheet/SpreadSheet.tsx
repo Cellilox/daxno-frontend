@@ -8,7 +8,7 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
-import ColumnReorderPopup from '../forms/ColumnReorderPopup';
+
 type SpreadSheetProps = {
   columns: Field[];
   records: ApiRecord[];
@@ -28,7 +28,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
   const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
-  const [selectedRecordForChat, setSelectedRecordForChat] = useState<Record | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
 
@@ -185,15 +184,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setEditingRow(null);
   };
 
-  const handleChatRow = (record: Record) => {
-    setSelectedRecordForChat(record);
-    setIsChatVisible(true);
-  };
-
-  const handleCloseChat = () => {
-    setIsChatVisible(false);
-    setSelectedRecordForChat(null);
-  };
 
   const handleConfirmDelete = async () => {
     if (!selectedRecordToDelete) return;
@@ -202,7 +192,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       setIsLoading(true);
       await deleteRecord(selectedRecordToDelete.id);
       setIsAlertVisible(false);
-      // setLocalRecords((prev) => prev.filter(row => row.id !== selectedRecordToDelete.id));
     } catch (error) {
       alert('Error deleting a record');
     } finally {
@@ -258,7 +247,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               onCancelEdit={handleCancelEdit}
               onEditRow={handleEditRow}
               onDeleteRow={handleShowDeleteRecordAlert}
-              onChatRow={handleChatRow}
               handleReviewRecord={handleReviewRecord}
             />
           ))}
@@ -273,7 +261,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         selectedColumnToDelete={selectedColumnToDelete}
         selectedRecordToDelete={selectedRecordToDelete}
         isChatVisible={isChatVisible}
-        selectedRecordForChat={selectedRecordForChat}
         projectId={projectId}
         onCloseColumnUpdatePopup={handleCloseColumnUpdatePopup}
         onUpdateColumnSubmit={handleUpdateColumnSubmit}
@@ -281,7 +268,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         onDeleteColumn={handleDeleteColumn}
         onCloseDeleteRecordAlert={handleCloseDeleteRecordAlert}
         onDeleteRecord={handleDeleteRecord}
-        onCloseChat={handleCloseChat}
         onConfirmDelete={handleConfirmDelete}
         onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}

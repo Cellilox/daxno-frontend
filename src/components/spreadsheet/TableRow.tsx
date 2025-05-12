@@ -14,7 +14,6 @@ type TableRowProps = {
   onCancelEdit: (rowIndex: number) => void;
   onEditRow: (rowIndex: number) => void;
   onDeleteRow: (row: Record) => void;
-  onChatRow: (row: Record) => void;
   handleReviewRecord: (row: Record) => void;
 };
 
@@ -31,7 +30,6 @@ export default function TableRow({
   onCancelEdit,
   onEditRow,
   onDeleteRow,
-  onChatRow,
   handleReviewRecord
 }: TableRowProps) {
   const isEditing = editingRow === rowIndex;
@@ -75,18 +73,11 @@ export default function TableRow({
               >
                 <Trash className="w-4 h-4 text-red-600" />
               </button>
-              {/* <button
-                onClick={() => onChatRow(row)}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <MessageCircle className="w-4 h-4 text-gray-600" />
-              </button> */}
 
               <button
                 onClick={() => handleReviewRecord(row)}
                 className="p-1 hover:bg-gray-100 rounded"
               >
-                {/* <Eye className="w-4 h-4 text-gray-600" /> */}
                 Review
               </button>
             </>
