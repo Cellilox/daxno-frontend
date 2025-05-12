@@ -3,10 +3,8 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 interface PaymentContextProps {
   amount: number | undefined;
   paymentPlan: number | undefined;
-  transactionReference: string | undefined;
   setAmount: React.Dispatch<React.SetStateAction<number | undefined>>;
   setPaymentPlan: React.Dispatch<React.SetStateAction<number | undefined>>;
-  setTransactionReference: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 const PaymentContext = createContext<PaymentContextProps | undefined>(undefined);
@@ -29,13 +27,6 @@ export const PaymentProvider = ({ children }: { children: ReactNode }) => {
     return undefined;
   });
 
-  const [transactionReference, setTransactionReference] = useState<string | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('transactionReference') || '';
-    }
-    return '';
-  });
-
 
   // Persist state changes to localStorage
   useEffect(() => {
@@ -50,12 +41,6 @@ export const PaymentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [paymentPlan]);
 
-  useEffect(() => {
-    if (transactionReference !== undefined) {
-      localStorage.setItem('transactionReference', transactionReference || '');
-    }
-  }, [transactionReference]);
-
 
 
   return (
@@ -63,10 +48,8 @@ export const PaymentProvider = ({ children }: { children: ReactNode }) => {
       value={{
         amount,
         paymentPlan,
-        transactionReference,
         setAmount,
         setPaymentPlan,
-        setTransactionReference,
       }}
     >
       {children}

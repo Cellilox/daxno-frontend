@@ -18,7 +18,6 @@ export async function getAvailablePlans() {
 
 export async function requestPayment(amount: number, plan_id: number) {
   const payload = {
-    // "tx_ref": tx_ref,
     "amount": Number(amount),
     "currency": "RWF",
     "redirect_url": "http://localhost:3000/projects",
@@ -35,9 +34,9 @@ export async function requestPayment(amount: number, plan_id: number) {
     },
     "payment_plan": Number(plan_id),
     "payment_type": "recurrence",
-    "recurrence": {
-      "interval": "weekly"
-    }
+    // "recurrence": {
+    //   "interval": "weekly"
+    // }
   }
 
   console.log('PAYLOAD', payload)
@@ -47,9 +46,9 @@ export async function requestPayment(amount: number, plan_id: number) {
         method: 'POST',
         body: JSON.stringify(payload),
     })
-  // if(!response.ok) {
-  //   throw new Error ("Failed to fet url")
-  // }
+  if(!response.ok) {
+    throw new Error ("Failed to fet url")
+  }
   console.log('RES', response)
   return response.json();
   } catch (error) {
@@ -58,25 +57,17 @@ export async function requestPayment(amount: number, plan_id: number) {
 }
 
 
-export async function getSubscriptions (transsaction_id:number | undefined)  {
-  const response = await fetchAuthed(`${apiUrl}/payments/subscriptions?transsaction_id=${transsaction_id}`, {
+export async function getUserPlan (planId:number | undefined)  {
+try {
+  const response = await fetchAuthed(`${apiUrl}/payments/payment-plans/${planId}`, {
     method: 'GET',
   });
-
-if (!response.ok) {
-throw new Error('Failed to fetch subscriptions');
+  
+  if (!response.ok) {
+  throw new Error('Failed user plan');
+  }
+  return await response.json()
+} catch (error) {
+  console.log(error)
 }
-return await response.json()
-};
-
-
-export async function getUserPlan (planId:number | undefined)  {
-const response = await fetchAuthed(`${apiUrl}/payments/payment-plans/${planId}`, {
-  method: 'GET',
-});
-
-if (!response.ok) {
-throw new Error('Failed user plan');
-}
-return await response.json()
 };

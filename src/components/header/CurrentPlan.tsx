@@ -1,9 +1,7 @@
 "use client"
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { useSubscription } from '../hooks/useSubscription';
-import { Crown } from 'lucide-react';
 import PricingModal from '../pricing/PricingModal';
 
 interface Transaction {
@@ -11,7 +9,7 @@ interface Transaction {
   end_date?: string;
   amount?: number;
   t_id?: number;
-  // ...other properties
+  payment_plan: number
 }
 
 interface Transactions {
@@ -20,10 +18,8 @@ interface Transactions {
 
 
 export default function CurrentPlan({ transactions }: Transactions) {
-  const router = useRouter();
   const currentTransaction = transactions[0]
   const {  plan, loading, error } = useSubscription(currentTransaction);
-  console.log('CCCurent_Transaction', currentTransaction)
   if (currentTransaction == undefined) {
     return (
       <div>

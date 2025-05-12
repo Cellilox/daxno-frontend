@@ -10,6 +10,7 @@ const Header = async () => {
   const userId = user?.id
   console.log('USERIDDD', userId)
   const transactions = await getTransactions()
+  console.log('TTT', transactions)
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>

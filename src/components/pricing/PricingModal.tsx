@@ -8,7 +8,7 @@ import { PricingContent } from "./PricingContent"
 import { useRouter } from "next/navigation"
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
 import { usePaymentContext } from "../context/payment/Payment"
-import { loggedInUserId } from "@/actions/loggedin-user"
+
 
 type PricingModalProps = {
    redirect_url: string
@@ -47,12 +47,10 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
 
   //Logic 
 
-    const {amount, paymentPlan, transactionReference, setAmount, setTransactionReference, setPaymentPlan} = usePaymentContext()
-    console.log(amount, paymentPlan, transactionReference)
+    const {amount, paymentPlan, setAmount, setPaymentPlan} = usePaymentContext()
+    console.log(amount, paymentPlan)
     const [plansList, setPlansList] = useState<any>()
     console.log('Available Plans', plansList)
-    const crypto = require('crypto');
-    const randomBytes = crypto.randomBytes(16).toString('hex'); 
 
     const setAvailablePlans = async () => {
       const plans = await getAvailablePlans();
@@ -74,7 +72,7 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
 
     const makePayment = async(plan: string) => {
         await pickPlan(plan)
-        if(transactionReference && amount && paymentPlan) {
+        if(amount && paymentPlan) {
             const result = await requestPayment ( amount, paymentPlan)
             console.log('Payment', result)
             if(result.data) {
@@ -82,8 +80,6 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
             }
           }
     }
-
-
 
   return (
     <div>
