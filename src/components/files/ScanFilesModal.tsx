@@ -9,9 +9,10 @@ import { Upload } from 'lucide-react'
 type ScanFilesModalProps = {
   projectId: string
   linkOwner: string
+  plan: string
 }
 
-export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalProps) {
+export default function ScanFilesModal({ linkOwner, projectId, plan }: ScanFilesModalProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [message, setMessage] = useState<messageType>({
     type: messageTypeEnum.NONE,
@@ -45,6 +46,7 @@ export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalP
         }}
         onCancel={handleClose}
         position="center"
+        size='small'
       >
         <div className="flex flex-col">
           <MyDropzone
@@ -52,6 +54,7 @@ export default function ScanFilesModal({ linkOwner, projectId }: ScanFilesModalP
             projectId={projectId}
             setIsVisible={setIsVisible}
             onMessageChange={setMessage}
+            plan={plan}
           />
         </div>
       </FormModal>

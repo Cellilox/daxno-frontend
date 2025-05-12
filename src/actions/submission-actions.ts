@@ -6,8 +6,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const ocrRagApiUrl = process.env.NEXT_PUBLIC_OCR_RAG_API_URL;
 
 
-export async function generateLink (project_id: string)  {
-      const response = await fetchAuthedJson (`${apiUrl}/links/generate_link?project_id=${project_id}`, {
+export async function generateLink (project_id: string, plan: string)  {
+      const response = await fetchAuthedJson (`${apiUrl}/links/generate_link?project_id=${project_id}&plan=${plan}`, {
         method: 'POST',
       });
     console.log({response})

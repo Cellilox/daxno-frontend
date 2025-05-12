@@ -6,6 +6,8 @@ import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
+import { getTransactions } from "@/actions/transaction-actions"
+import { checkPlan } from "@/components/pricing/utils"
 
 type ProjectViewProps = {
   params: {
@@ -14,17 +16,20 @@ type ProjectViewProps = {
 }
 
 export default async function ProjectView({ params }: ProjectViewProps) {
-  const user = await currentUser()
   const { id } = await params
   const project = await getProjectsById(id)
   const fields = await getColumns(project.id)
-  console.log('FFFF', fields)
   const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
-  console.log('RRRR', records)
   const is_project_owner = project.is_owner;
+  const transactions = await getTransactions()
+  let plan = ''
+  console.log('PlaN', plan)
+  if(transactions[0]) {
+    plan =  await checkPlan(transactions[0])
+  }
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -53,6 +58,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
                 linkOwner={linkOwner} 
                 fields={fields}
                 records={records}
+                plan={plan}
               />
             )}
           </div>

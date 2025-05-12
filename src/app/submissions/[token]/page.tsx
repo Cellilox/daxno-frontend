@@ -24,9 +24,10 @@ export default async function Submission({ params }: SubmissionViewProps) {
           Please upload the relevant file for your submission. Supported formats are PDF, JPG, and PNG.
         </p>
         
-        <DropzoneWrapper 
+        <DropzoneWrapper
           projectId={link_data.project_id}
           linkOwner = {link_data.user_id}
+          plan = {link_data.plan}
         />
       </div>
     </div>

@@ -11,6 +11,7 @@ import CreateInvite from './forms/CreateInvite';
 
 interface CollapsibleActionsProps {
   projectId: string;
+  plan: string;
   is_project_owner: boolean;
   linkOwner: string;
   fields: {
@@ -31,9 +32,8 @@ interface CollapsibleActionsProps {
   }[];
 }
 
-export default function CollapsibleActions({ projectId, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, plan, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
 
   const handleShowInvitePopup = () => {
@@ -67,9 +67,10 @@ export default function CollapsibleActions({ projectId, is_project_owner, linkOw
               <ScanFilesModal
                 linkOwner={linkOwner}
                 projectId={projectId}
+                plan={plan}
               />
 
-              {is_project_owner && <GenerateLinkOverlay />}
+              {is_project_owner && <GenerateLinkOverlay plan={plan} />}
             </div>
 
             {/* Right Action Group */}

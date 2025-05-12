@@ -10,7 +10,7 @@ type FormModalProps = {
   onCancel: () => void;
   children: React.ReactNode;
   position?: 'center' | 'right';
-  size: 'small' | 'large';
+  size?: 'small' | 'large';
 
 };
 

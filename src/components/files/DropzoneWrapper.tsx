@@ -7,11 +7,12 @@ import { messageType } from "@/types";
 
 type DropzoneWrapperProps = {
   projectId: string;
-  linkOwner: string
+  linkOwner: string;
+  plan: string;
 };
 
 
-export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrapperProps) {
+export default function DropzoneWrapper({ projectId, linkOwner, plan }: DropzoneWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [message, setMessage] = useState<messageType>({
     type: '', text: ''});
@@ -39,6 +40,7 @@ export default function DropzoneWrapper({ projectId, linkOwner }: DropzoneWrappe
           linkOwner={linkOwner}
           setIsVisible={setIsVisible} 
           onMessageChange={setMessage}
+          plan={plan}
         />
 
       </FormModal>
