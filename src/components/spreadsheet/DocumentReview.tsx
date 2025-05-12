@@ -18,7 +18,11 @@ const PdfViewer = dynamic(
   () => import('./PdfView'),
   { 
     ssr: false, 
-    loading: () => <div className="flex justify-center items-center h-64 bg-gray-100">Loading PDF viewer...</div> 
+    loading: () => (
+      <div className="flex justify-center items-center h-64 bg-gray-100">
+        Loading PDF viewer...
+      </div>
+    ) 
   }
 );
 
@@ -54,8 +58,6 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
   const [isDirty, setIsDirty] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false)
-
-  // initialize when record changes
   useEffect(() => {
     if (selectedRecordForReview) {
       setEditedAnswers(selectedRecordForReview.answers);
@@ -64,7 +66,6 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
     }
   }, [selectedRecordForReview]);
 
-  // load file url
   useEffect(() => {
     if (!selectedRecordForReview) return;
     (async () => {
@@ -73,31 +74,24 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
           selectedRecordForReview.file_key,
           selectedRecordForReview.project_id
         );
-        
-        const isPdfFile = selectedRecordForReview.file_key.toLowerCase().endsWith('.pdf');
-        setIsPdf(isPdfFile);
-        setFileUrl(getProxiedUrl(file_url, isPdfFile));
+        const pdf = selectedRecordForReview.file_key.toLowerCase().endsWith('.pdf');
+        setIsPdf(pdf);
+        setFileUrl(getProxiedUrl(file_url, pdf));
         setFileError(false);
-      } catch (error) {
-        console.error('Error loading file:', error);
+      } catch {
         setFileError(true);
       }
     })();
   }, [selectedRecordForReview]);
 
-  // track individual field edits
   const handleAnswerChange = (fieldId: string, newText: string) => {
     setEditedAnswers(prev => ({
       ...prev,
-      [fieldId]: {
-        ...prev[fieldId],
-        text: newText
-      }
+      [fieldId]: { ...prev[fieldId], text: newText }
     }));
     setIsDirty(true);
   };
 
-  // save only answers
   const handleSave = async () => {
     if (!selectedRecordForReview || !isDirty) {
       setIsEditMode(false);
@@ -109,42 +103,41 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
       setIsLoading(false)
       setIsDirty(false);
       setIsEditMode(false);
-    } catch (error) {
-      console.error('Failed to save changes:', error);
+    } catch {
+       alert('Error updating')
     }
   };
 
-  // main toggle button handler
   const onPrimaryButtonClick = () => {
-    if (isEditMode) {
-      handleSave();
-    } else {
-      setIsEditMode(true);
-    }
+    if (isEditMode) handleSave();
+    else setIsEditMode(true);
   };
 
   if (!selectedRecordForReview) return null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 p-8 max-w-6xl mx-auto">
+    <div className="flex flex-col md:flex-row gap-6 p-4 md:p-8 max-w-6xl mx-auto">
       {/* Data Section */}
-      <div className="w-full md:w-1/2 overflow-y-auto md:max-h-[calc(100vh-4rem)]">
-        <div className="bg-white p-8 rounded-lg shadow-md space-y-4">
-          <div className="flex justify-between items-center mb-4">
+      <div className="w-full md:w-1/2">
+        <div className="bg-white p-4 md:p-8 rounded-lg shadow-md space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center mb-4 gap-2">
             <h2 className="text-lg font-semibold">Document Details</h2>
             <button
               onClick={onPrimaryButtonClick}
               disabled={isEditMode && !isDirty}
-              className={`px-4 py-2 rounded-md flex items-center${
-                isEditMode
-                  ? isDirty 
-                    ? ' bg-blue-600 text-white hover:bg-blue-700'
-                    : ' bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : ' bg-green-600 text-white hover:bg-green-700'
-              }`}
+              className={`
+                w-full sm:w-auto flex justify-center sm:justify-start items-center
+                px-4 py-2 rounded-md transition
+                ${isEditMode
+                  ? isDirty
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-700"
+                }
+              `}
             >
-              {isLoading && <LoadingSpinner className='mr-2'/>}
-              {isEditMode ? 'Save Changes' : 'Edit Results'}
+              {isLoading && <LoadingSpinner className="mr-2" />}
+              {isEditMode ? "Save Changes" : "Edit Results"}
             </button>
           </div>
 
@@ -153,7 +146,7 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
             return (
               <div
                 key={field.hidden_id}
-                className="p-4 bg-gray-50 rounded-md transition-colors hover:bg-gray-100 relative"
+                className="p-3 bg-gray-50 rounded-md transition-colors hover:bg-gray-100"
                 onMouseEnter={() => setActiveItem(field.hidden_id)}
                 onMouseLeave={() => setActiveItem(null)}
               >
@@ -164,12 +157,12 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
                   {isEditMode ? (
                     <input
                       type="text"
-                      value={answer?.text || ''}
+                      value={answer?.text || ""}
                       onChange={e => handleAnswerChange(field.hidden_id, e.target.value)}
                       className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   ) : (
-                    <span>{answer?.text || 'Not Found'}</span>
+                    <span>{answer?.text || "Not Found"}</span>
                   )}
                 </dd>
               </div>
@@ -179,8 +172,8 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
       </div>
 
       {/* Document Preview */}
-      <div className="md:w-1/2 md:sticky md:top-8 md:self-start">
-        <div className="bg-white p-4 rounded-lg shadow-md relative">
+      <div className="w-full md:w-1/2 mt-6 md:mt-0">
+        <div className="bg-white p-4 rounded-lg shadow-md relative max-h-[60vh] overflow-auto">
           {fileUrl && !isPdf && (
             <div className="relative">
               <Image
@@ -199,10 +192,10 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
                     key={key}
                     className="absolute border-2 transition-all duration-300"
                     style={{
-                      left: `${value.geometry.left * 100}%`,
-                      top: `${value.geometry.top * 100}%`,
-                      width: `${value.geometry.width * 100}%`,
-                      height: `${value.geometry.height * 100}%`,
+                      left: `${value.geometry?.left * 100}%`,
+                      top: `${value.geometry?.top * 100}%`,
+                      width: `${value.geometry?.width * 100}%`,
+                      height: `${value.geometry?.height * 100}%`,
                       borderColor: isActive ? '#ef4444' : '#6b7280',
                       opacity: isActive ? 1 : 0.7,
                       zIndex: isActive ? 20 : 10,
@@ -217,13 +210,7 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
           )}
 
           {fileUrl && isPdf && (
-            <div className="w-full">
-              <PdfViewer 
-                fileUrl={fileUrl} 
-                activeItem={activeItem} 
-                answers={editedAnswers} 
-              />
-            </div>
+            <PdfViewer fileUrl={fileUrl} activeItem={activeItem} answers={editedAnswers} />
           )}
 
           {fileError && (

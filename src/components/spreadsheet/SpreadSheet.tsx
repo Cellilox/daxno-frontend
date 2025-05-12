@@ -27,7 +27,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [selectedRecordToDelete, setSelectedRecordToDelete] = useState<Record | null>(null);
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
-  const [isChatVisible, setIsChatVisible] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
 
@@ -260,7 +259,6 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         isAlertVisible={isAlertVisible}
         selectedColumnToDelete={selectedColumnToDelete}
         selectedRecordToDelete={selectedRecordToDelete}
-        isChatVisible={isChatVisible}
         projectId={projectId}
         onCloseColumnUpdatePopup={handleCloseColumnUpdatePopup}
         onUpdateColumnSubmit={handleUpdateColumnSubmit}

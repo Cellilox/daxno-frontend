@@ -11,7 +11,6 @@ type SpreadsheetModalsProps = {
   isAlertVisible: boolean;
   selectedColumnToDelete: Field | null;
   selectedRecordToDelete: Record | null;
-  isChatVisible: boolean;
   projectId: string;
   onCloseColumnUpdatePopup: () => void;
   onUpdateColumnSubmit: (e: React.FormEvent) => void;

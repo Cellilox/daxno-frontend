@@ -145,7 +145,7 @@ export default function TableRow({
           {isEditing ? (
             <textarea
               value={editedRow.answers[column.hidden_id]?.text ?? ''}
-              onChange={(e) => onCellChange(rowIndex, column.id, e.target.value)}
+              onChange={(e) => onCellChange(rowIndex, column.hidden_id, e.target.value)}
               className="w-full p-1 border rounded min-h-[200px]"
             />
           ) : (
