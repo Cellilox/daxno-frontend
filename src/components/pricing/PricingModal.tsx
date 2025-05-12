@@ -5,23 +5,20 @@ import Image from "next/image"
 import { Crown } from 'lucide-react'
 import { BillingToggle } from "./BillingToggle"
 import { PricingContent } from "./PricingContent"
-import { useRouter } from "next/navigation"
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
-import { usePaymentContext } from "../context/payment/Payment"
+import { usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 
-
-type PricingModalProps = {
-   redirect_url: string
-}
-
-export default function PricingModal({redirect_url}: PricingModalProps) {
+export default function PricingModal() {
   const [isOuterExpanded, setIsOuterExpanded] = useState(false)
   const [isInnerVisible, setIsInnerVisible] = useState(false)
   const [areCardsVisible, setAreCardsVisible] = useState(false)
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly')
   const [timeoutIds, setTimeoutIds] = useState<number[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+  const [planName, setPlanName] = useState<string>('')
+  const pathname = usePathname()
   const router = useRouter()
-
   const toggleExpand = () => {
     if (isOuterExpanded) {
       setAreCardsVisible(false)
@@ -45,10 +42,6 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
   }, [timeoutIds])
 
 
-  //Logic 
-
-    const {amount, paymentPlan, setAmount, setPaymentPlan} = usePaymentContext()
-    console.log(amount, paymentPlan)
     const [plansList, setPlansList] = useState<any>()
     console.log('Available Plans', plansList)
 
@@ -62,23 +55,28 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
     }, [])
   
   
-    const pickPlan = async (plan: string) => {
-      const pickedPlan = plansList.filter((x: any) => x.name === plan)
-      console.log('PICKED', pickedPlan)
-      setPaymentPlan(pickedPlan[0].id)
-      setAmount(pickedPlan[0].amount)
-      return pickedPlan;
-    }
-
-    const makePayment = async(plan: string) => {
-        await pickPlan(plan)
-        if(amount && paymentPlan) {
-            const result = await requestPayment ( amount, paymentPlan)
-            console.log('Payment', result)
-            if(result.data) {
-            router.push(result.data.link)
-            }
-          }
+    const makePayment = async (plan: string) => {
+      try {
+        setLoading(true)
+        const pickedPlan = plansList.filter((x: any) => x.name === plan)
+        const paymentPlanId = pickedPlan[0].id
+        const amount = pickedPlan[0].amount
+        setPlanName(pickedPlan[0].name)
+        if(paymentPlanId && amount) {
+              const result = await requestPayment (pathname, amount, paymentPlanId)
+              console.log('Payment', result)
+              if(result?.data) {
+              setPlanName('')
+              setLoading(false)
+              router.push(result?.data?.link)
+              }
+        }
+      } catch (error) {
+        setPlanName('')
+        setLoading(false)
+        console.log('Error', error)
+        alert('Error requesting to pay')
+      }
     }
 
   return (
@@ -108,6 +106,7 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Simple, Transparent Pricing
             </h2>
+            <p>{pathname}</p>
             <p className="text-gray-600 max-w-xl mx-auto">
               Start free then upgrade as you grow. No hidden fees, cancel anytime.
             </p>
@@ -128,7 +127,7 @@ export default function PricingModal({redirect_url}: PricingModalProps) {
                 <div className={`transition-opacity duration-300 ${
                   areCardsVisible ? 'opacity-100' : 'opacity-0'
                 }`}>
-                  <PricingContent billingInterval={billingInterval} makePayment={makePayment}/>
+                  <PricingContent billingInterval={billingInterval} makePayment={makePayment} loading={loading} planName={planName} />
                 </div>
               </div>
             </div>

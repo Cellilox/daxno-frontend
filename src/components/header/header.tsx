@@ -8,9 +8,7 @@ import { getTransactions } from '@/actions/transaction-actions'
 const Header = async () => {
   const user = await currentUser()
   const userId = user?.id
-  console.log('USERIDDD', userId)
   const transactions = await getTransactions()
-  console.log('TTT', transactions)
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link"
+import LoadingSpinner from "../ui/LoadingSpinner"
 
 
 interface PricingCardProps {
@@ -14,6 +15,8 @@ interface PricingCardProps {
   billingInterval: 'monthly' | 'annual'
   isEnterprise?: boolean
   makePayment: (plan: string) => void
+  loading: boolean;
+  planName: string;
 }
 
 export function PricingCard({
@@ -26,7 +29,9 @@ export function PricingCard({
   ctaLink,
   billingInterval,
   isEnterprise,
-  makePayment
+  makePayment,
+  loading,
+  planName
 }: PricingCardProps) {
   const calculateAnnualPrice = (price: number) => (price * 12 * 0.8).toFixed(2)
 
@@ -94,7 +99,9 @@ export function PricingCard({
       ) : (
         <button 
         onClick={() => makePayment(title)}
-        className="mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        disabled={loading}
+        className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${loading && planName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
+          {loading && planName === title? <LoadingSpinner/>: null}
           {ctaText}
         </button>
       )}

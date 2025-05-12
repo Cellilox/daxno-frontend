@@ -6,9 +6,11 @@ import { PricingCard } from "./PricingCard"
 interface PricingContentProps {
   billingInterval: 'monthly' | 'annual'
   makePayment:(plan: string) => void
+  loading: boolean;
+  planName: string;
 }
 
-export function PricingContent({ billingInterval, makePayment }: PricingContentProps) {
+export function PricingContent({ billingInterval, makePayment, loading, planName }: PricingContentProps) {
   const features = {
     starter: [
       <>500 documents/month</>,
@@ -42,6 +44,8 @@ export function PricingContent({ billingInterval, makePayment }: PricingContentP
         billingInterval={billingInterval}
         isCurrentPlan={true}
         makePayment={makePayment}
+        loading={loading}
+        planName={planName}
       />
 
       <PricingCard
@@ -53,6 +57,8 @@ export function PricingContent({ billingInterval, makePayment }: PricingContentP
         isPopular
         isCurrentPlan={false}
         makePayment={makePayment}
+        loading={loading}
+        planName={planName}
       />
 
       <PricingCard
@@ -63,6 +69,8 @@ export function PricingContent({ billingInterval, makePayment }: PricingContentP
         billingInterval={billingInterval}
         isCurrentPlan={false}
         makePayment={makePayment}
+        loading={loading}
+        planName={planName}
       />
 
       <PricingCard
@@ -75,6 +83,8 @@ export function PricingContent({ billingInterval, makePayment }: PricingContentP
         isEnterprise
         isCurrentPlan={false}
         makePayment={makePayment}
+        loading={loading}
+        planName={planName}
       />
     </div>
   )

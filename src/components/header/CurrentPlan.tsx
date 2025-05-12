@@ -1,16 +1,9 @@
 "use client"
 
-import React from 'react';
-import { useSubscription } from '../hooks/useSubscription';
+import React, { useEffect, useState } from 'react';
 import PricingModal from '../pricing/PricingModal';
-
-interface Transaction {
-  payment_type: 'mobilemoneyrw' | 'card';
-  end_date?: string;
-  amount?: number;
-  t_id?: number;
-  payment_plan: number
-}
+import { checkPlan } from '../pricing/utils';
+import { Transaction } from '../pricing/types';
 
 interface Transactions {
   transactions: Transaction[];
@@ -18,24 +11,39 @@ interface Transactions {
 
 
 export default function CurrentPlan({ transactions }: Transactions) {
+  const [plan, setPlan] = useState<string>('')
   const currentTransaction = transactions[0]
-  const {  plan, loading, error } = useSubscription(currentTransaction);
+
+  useEffect(() => {
+    if (!currentTransaction) return
+    const fetchPlan = async () => {
+      try {
+        const planName = await checkPlan(currentTransaction)
+        setPlan(planName) 
+      } catch (e) {
+        console.error('Failed to load plan:', e)
+      }
+    }
+
+    fetchPlan()
+  }, [currentTransaction]) 
+
+
+
+
   if (currentTransaction == undefined) {
     return (
       <div>
-        <PricingModal redirect_url='/'/>
+        <PricingModal/>
       </div>
     )
   }
   
-  if (loading) return <p>loading...</p>;
-  if (error) return <p>Error: {error}</p>;
-
   return (
     <div className='md:flex md:mr-3 items-center text-right'>
-      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan}</span></p>
+      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan || 'loading...'}</span></p>
       <div>
-        <PricingModal redirect_url='/'/>
+        <PricingModal />
       </div>
     </div>
   );

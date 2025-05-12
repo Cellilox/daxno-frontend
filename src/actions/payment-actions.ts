@@ -16,27 +16,19 @@ export async function getAvailablePlans() {
 }
 
 
-export async function requestPayment(amount: number, plan_id: number) {
+export async function requestPayment(pathname: string, amount: number, plan_id: number) {
   const payload = {
     "amount": Number(amount),
     "currency": "RWF",
-    "redirect_url": "http://localhost:3000/projects",
+    "redirect_url": `${process.env.NEXT_PUBLIC_ClIENT_URL}/${pathname}`,
     "payment_options": "card",
-    "customer": {
-      "email": "ntirandth@gmail.com",
-      "phonenumber": "0787295921",
-      "name": "Thierry Ntirandekura"
-    },
+    "customer": {},
     "customization": {
       "title": "Daxno OCR service",
       "description": "This is for Daxno OCR service",
       "logo": "http://logo.png"
     },
     "payment_plan": Number(plan_id),
-    "payment_type": "recurrence",
-    // "recurrence": {
-    //   "interval": "weekly"
-    // }
   }
 
   console.log('PAYLOAD', payload)
