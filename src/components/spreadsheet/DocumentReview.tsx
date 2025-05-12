@@ -4,6 +4,7 @@ import { getFileUrl } from "@/actions/aws-url-actions";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { Field } from "./types";
 
 // Helper function to proxy PDF URLs through Next.js API
 const getProxiedUrl = (url: string, isPdf: boolean) => {
@@ -40,20 +41,25 @@ interface DocumentReviewProps {
     answers: Record<string, AnswerItem>;
     filename: string;
     file_key: string;
+    project_id: string;
   };
+  columns: Field[]
 }
 
-export default function DocumentReview({ selectedRecordForReview }: DocumentReviewProps) {
+
+export default function DocumentReview({ selectedRecordForReview, columns}: DocumentReviewProps) {
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
+  console.log('COLS', columns)
+  console.log({selectedRecordForReview})
   useEffect(() => {
     if (!selectedRecordForReview) return;
 
     const loadFileUrl = async () => {
       try {
-        const { file_url } = await getFileUrl(selectedRecordForReview.file_key);
+        const { file_url } = await getFileUrl(selectedRecordForReview.file_key, selectedRecordForReview.project_id);
         console.log('File URL:', file_url);
         
         // Check if the file is a PDF based on the file_key
@@ -81,24 +87,27 @@ export default function DocumentReview({ selectedRecordForReview }: DocumentRevi
     <div className="flex flex-col md:flex-row gap-8 p-8 max-w-6xl mx-auto">
       {/* Scrollable Data Section */}
       <div className="w-full md:w-1/2 overflow-y-auto md:max-h-[calc(100vh-4rem)]">
-        <div className="bg-white p-8 rounded-lg shadow-md space-y-4">
-          {Object.entries(answers).map(([key, value]) => (
-            <div 
-              key={key}
-              className="p-4 bg-gray-50 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
-              onMouseEnter={() => setActiveItem(key)}
-              onMouseLeave={() => setActiveItem(null)}
-            >
-              <dt className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                {key}
-              </dt>
-              <dd className="mt-1 text-sm font-medium text-gray-900">
-                {value.text}
-              </dd>
-            </div>
-          ))}
+  <div className="bg-white p-8 rounded-lg shadow-md space-y-4">
+    {columns.map((field) => {
+      const answer = answers[field.hidden_id];
+      return (
+        <div 
+          key={field.hidden_id}
+          className="p-4 bg-gray-50 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+          onMouseEnter={() => setActiveItem(field.hidden_id)}
+          onMouseLeave={() => setActiveItem(null)}
+        >
+          <dt className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            {field.name}  {/* Show field name instead of hidden_id */}
+          </dt>
+          <dd className="mt-1 text-sm font-medium text-gray-900">
+            {answer?.text || 'Not Found'}  {/* Safely access answer text */}
+          </dd>
         </div>
-      </div>
+      );
+    })}
+  </div>
+</div>
 
       {/* Fixed Document Preview */}
       <div className="md:w-1/2 md:sticky md:top-8 md:self-start">

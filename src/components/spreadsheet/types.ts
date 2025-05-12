@@ -22,7 +22,7 @@ export type AnswerData = {
 
 export type ApiRecord = {
   id: string;
-  answers: { [key: string]: AnswerData }; // Changed to object map
+  answers: { [key: string]: AnswerData };
   updated_at: string;
   created_at: string;
   filename: string;
@@ -37,7 +37,7 @@ export type Record = {
   orginal_file_name: string;
   file_key: string;
   project_id: string;
-  answers: { [key: string]: AnswerData }; // Matches ApiRecord structure
+  answers: { [key: string]: AnswerData };
   created_at: string;
   updated_at: string;
 };

@@ -6,19 +6,25 @@ export interface PropertyMapping {
   defaultValue?: string;
 }
 
+type Geometry = {
+  left: number,
+  top: number,
+  width: number,
+  height: number
+}
+
 export interface HubSpotExportProps {
   projectId: string;
   className?: string;
   fields: {
     id: string;
     name: string;
+    hidden_id: string;
     type: string;
   }[];
   records: {
     id: string;
-    answers: {
-      [key: string]: string;
-    };
+    answers: Record<string, { text: string; geometry: Geometry }>;
     filename: string;
     file_key: string;
     project_id: string;

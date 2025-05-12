@@ -1,53 +1,49 @@
 "use client"
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { useSubscription } from '../hooks/useSubscription';
-import { Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import PricingModal from '../pricing/PricingModal';
+import { checkPlan } from '../pricing/utils';
+import { Transaction } from '../pricing/types';
 
-interface Transaction {
-  payment_type: 'mobilemoneyrw' | 'card';
-  end_date?: string;
-  amount?: number;
-  t_id?: number;
-  // ...other properties
-}
-
-interface CurrentPlanProps {
-  currentTransaction: Transaction;
+interface Transactions {
+  transactions: Transaction[];
 }
 
 
-export default function CurrentPlan({ currentTransaction }: CurrentPlanProps) {
-  const router = useRouter();
+export default function CurrentPlan({ transactions }: Transactions) {
+  const [plan, setPlan] = useState<string>('')
+  const currentTransaction = transactions[0]
 
-  const { status, plan, paymentType, loading, error } = useSubscription(currentTransaction);
-  console.log('CCCurent_Transaction', currentTransaction)
+  useEffect(() => {
+    if (!currentTransaction) return
+    const fetchPlan = async () => {
+      try {
+        const planName = await checkPlan(currentTransaction)
+        setPlan(planName) 
+      } catch (e) {
+        console.error('Failed to load plan:', e)
+      }
+    }
+
+    fetchPlan()
+  }, [currentTransaction]) 
+
+
+
+
   if (currentTransaction == undefined) {
     return (
       <div>
-        <div 
-          onClick={() => router.push('/pricing')} 
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
-        >
-          <Crown className="w-4 h-4" />
-          <span>Upgrade</span>
-        </div>
+        <PricingModal/>
       </div>
     )
   }
-  if (loading) return <p>loading...</p>;
-  if (error) return <p>Error: {error}</p>;
-
+  
   return (
     <div className='md:flex md:mr-3 items-center text-right'>
-      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan}</span></p>
-      <div 
-        onClick={() => router.push('/pricing')} 
-        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
-      >
-        <Crown className="w-4 h-4" />
-        <span>Upgrade</span>
+      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan || 'loading...'}</span></p>
+      <div>
+        <PricingModal />
       </div>
     </div>
   );

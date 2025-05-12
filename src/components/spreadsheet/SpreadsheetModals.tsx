@@ -1,7 +1,6 @@
 import FormModal from '../ui/Popup';
 import AlertDialog from '../ui/AlertDialog';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import RecordChat from '../RecordChat';
 import { Field, Record } from './types';
 import DocumentReview from './DocumentReview';
 
@@ -27,6 +26,7 @@ type SpreadsheetModalsProps = {
   setSelectedColumnToUpdate: (column: Field | null) => void;
   selectedRecordForReview: Record | null;
   handleCloseReviewRecordPopup: () => void;
+  columns: Field[]
 };
 
 export default function SpreadsheetModals({
@@ -48,7 +48,8 @@ export default function SpreadsheetModals({
   onCloseChat,
   setSelectedColumnToUpdate,
   selectedRecordForReview,
-  handleCloseReviewRecordPopup
+  handleCloseReviewRecordPopup,
+  columns
 }: SpreadsheetModalsProps) {
   const handleDeleteRecord = () => {
     if (selectedRecordToDelete) {
@@ -78,7 +79,8 @@ export default function SpreadsheetModals({
                 onChange={(e) =>
                   setSelectedColumnToUpdate({
                     ...selectedColumnToUpdate,
-                    name: e.target.value,
+                    id: e.target.value,
+                    name: e.target.value
                   })
                 }
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
@@ -140,24 +142,6 @@ export default function SpreadsheetModals({
         />
       )}
 
-      {/* Record Chat Modal */}
-      {isChatVisible && selectedRecordForChat && (
-        <FormModal
-          visible={isChatVisible}
-          title={`Chat about ${selectedRecordForChat.filename}`}
-          onCancel={onCloseChat}
-          position="right"
-          size='small'
-        >
-          <RecordChat
-            projectId={projectId}
-            filename={selectedRecordForChat.filename}
-          />
-        </FormModal>
-      )}
-
-      {/* Record Review Modal */}
-
       {isPopupVisible && selectedRecordForReview && (
         <FormModal
           visible={isPopupVisible}
@@ -166,7 +150,7 @@ export default function SpreadsheetModals({
           size='large'
           >
          <div>
-         <DocumentReview selectedRecordForReview={selectedRecordForReview}/>
+         <DocumentReview selectedRecordForReview={selectedRecordForReview} columns={columns}/>
          </div>
         </FormModal>
       )}

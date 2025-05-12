@@ -36,10 +36,10 @@ export async function getColumns(projectId: string) {
 
 
 
-export async function updateColumn(fieldId: string | undefined , formData: any) {
+export async function updateColumn(fieldId: string | undefined , projectId: string, formData: any) {
     console.log('Updating data', formData)
     console.log('hiddenId', fieldId)
-  const response = await fetchAuthedJson(`${apiUrl}/fields/${fieldId}`, {
+  const response = await fetchAuthedJson(`${apiUrl}/fields/${fieldId}?project_id=${projectId}`, {
     method: 'PUT',
     body: JSON.stringify(formData),
   });
@@ -50,8 +50,8 @@ export async function updateColumn(fieldId: string | undefined , formData: any) 
   revalidatePath('/projects');
 }
 
-export async function deleteColumn(fieldId: string) {
-    const response = await fetchAuthedJson(`${apiUrl}/fields/${fieldId}`, {
+export async function deleteColumn(fieldId: string, projectId: string) {
+    const response = await fetchAuthedJson(`${apiUrl}/fields/${fieldId}?project_id=${projectId}`, {
       method: 'DELETE'
     });
   

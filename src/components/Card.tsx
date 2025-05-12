@@ -17,6 +17,7 @@ type Project = {
   name: string;
   description: string;
   owner: string;
+  is_owner: string;
 }
 
 export default function Card({project}: CardProps) {
@@ -43,6 +44,8 @@ export default function Card({project}: CardProps) {
       alert('Error deleting a project')
     }
   }
+
+  console.log('PPPPPP', project)
 
   const handleCancelDeleteProject = () => {
     setIsAlertVisible(false)
@@ -88,29 +91,32 @@ export default function Card({project}: CardProps) {
       <div className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden hover:cursor-pointer" onClick={handleNavigateToProjectPage}>
         <div className="p-4 hover:cursor-point">
           <div className='flex justify-between items-center'>
-            <h3 className="text-lg font-bold text-gray-800 mb-2 truncate">{project.name}</h3>
+            <h3 className="text-lg font-bold text-gray-800 truncate">{project.name}</h3>
+            <p className="text-sm text-green-400">({project.is_owner? 'Owner': 'Invitee'})</p>
+            {project.is_owner && 
             <div>
-              <button
-                className="text-blue-500 hover:text-blue-700 text-sm"
-                title="Edit column"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleShowProjectUpdateForm(project)
-                }}
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                className="ml-3 text-red-500 hover:text-red-700 text-sm"
-                title="Delete column"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleShowProjectDeleteAlert(project)
-                }}
-              >
-                <Trash size={14} />
-              </button>
-            </div>
+            <button
+              className="text-blue-500 hover:text-blue-700 text-sm"
+              title="Edit column"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleShowProjectUpdateForm(project)
+              }}
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              className="ml-3 text-red-500 hover:text-red-700 text-sm"
+              title="Delete column"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleShowProjectDeleteAlert(project)
+              }}
+            >
+              <Trash size={14} />
+            </button>
+          </div>
+            }
           </div>
           <div className="mt-2">
             <ExpandableDescription description={project.description} maxLength={100} />
@@ -139,6 +145,8 @@ export default function Card({project}: CardProps) {
           title="Edit Project"
           onSubmit={handleUpdateProject}
           onCancel={handleCloseUpdatePopup}
+          position='center'
+          size='small'
         >
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">

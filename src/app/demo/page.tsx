@@ -1,4 +1,3 @@
-import Pricing from "@/components/Pricing";
 import { auth, currentUser } from "@clerk/nextjs/server"
 export default async function Demo() {
   const authObj = await auth()
@@ -62,8 +61,6 @@ export default async function Demo() {
           </div>
         </div>
       </div>
-
-       <Pricing headers={headers} userId = {userId}/>
     </div>
   );
 }

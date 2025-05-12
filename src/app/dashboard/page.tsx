@@ -19,6 +19,7 @@ export default async function Dashboard() {
   const projects = await getProjects()
   const user = await currentUser()
   const docs = await getDocs(user?.id)
+  console.log('RRRRESDOCS', docs)
   const pages = docs.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
 
   return (
