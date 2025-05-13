@@ -9,29 +9,32 @@ import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { FileStatus } from './types';
+import { Transaction } from '../pricing/types';
+import { getTransactions } from '@/actions/transaction-actions';
+import { checkPlan } from '../pricing/utils';
 
 type MyDropzoneProps = {
   projectId: string;
   linkOwner: string;
   setIsVisible: (isVisible: boolean) => void;
   onMessageChange: (message: messageType) => void;
-  isAllowed?: boolean;
+  plan: string;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, isAllowed = true }: MyDropzoneProps) {
-  // Single file upload states
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan }: MyDropzoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
-  
-  // Bulk upload states
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Toggle between single and bulk upload
   const [isBulkMode, setIsBulkMode] = useState(false);
-  
+  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false)
   const router = useRouter();
+  useEffect(() => {
+    if(plan === "Professional" || plan === "Team") {
+      setIsBulkUploadAllowed(true)
+    }
+  }, [plan])
 
   // Single file upload handlers
   const handleSingleFileDrop = useCallback((acceptedFiles: File[]) => {
@@ -118,8 +121,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
   // Bulk upload handlers
   const handleBulkDrop = useCallback((acceptedFiles: File[]) => {
-    // If multiple files are dropped and isAllowed is false, show error
-    if (acceptedFiles.length > 1 && !isAllowed) {
+    // If multiple files are dropped and isBulkUploadAllowed is false, show error
+    if (acceptedFiles.length > 1 && !isBulkUploadAllowed) {
       onMessageChange({
         type: messageTypeEnum.ERROR,
         text: 'Bulk uploads are not allowed in your current plan. Please upgrade to upload multiple files.'
@@ -134,7 +137,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       status: 'pending' as const,
     }));
     setFiles(prev => [...prev, ...newFiles]);
-  }, [isAllowed, onMessageChange]);
+  }, [isBulkUploadAllowed, onMessageChange]);
 
   const processSingleFile = async (fileStatus: FileStatus) => {
     const updateFileStatus = (update: Partial<FileStatus>) => {
@@ -281,10 +284,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
               ? 'bg-blue-600 text-white' 
               : 'bg-white text-gray-700 hover:bg-gray-100'
           }`}
-          disabled={!isAllowed}
+          disabled={!isBulkUploadAllowed}
         >
           Bulk Upload
-          {!isAllowed && (
+          {!isBulkUploadAllowed && (
             <span className="ml-1 text-xs text-red-500">(Premium)</span>
           )}
         </button>
@@ -390,7 +393,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
                 </span>
               </div>
             </div>
-            {!isAllowed && (
+            {!isBulkUploadAllowed && (
               <p className="text-sm text-red-500 mt-2">
                 Bulk uploads are not allowed in your current plan. Please upgrade to upload multiple files.
               </p>

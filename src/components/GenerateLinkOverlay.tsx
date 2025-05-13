@@ -4,10 +4,13 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import AlertDialog from "./ui/AlertDialog"; 
 import { generateLink } from "@/actions/submission-actions";
-import { Link, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { messageTypeEnum } from "@/types";
 
-export default function GenerateLinkOverlay() {
+type GenerateLinkProps = {
+  plan: string
+}
+export default function GenerateLinkOverlay({plan}: GenerateLinkProps) {
   const pathname = usePathname();
   const projectId = pathname.split('/')[2];
   const [isDialogVisible, setDialogVisible] = useState(false);
@@ -25,10 +28,10 @@ export default function GenerateLinkOverlay() {
     }
   };
 
-  const handleGenerateLink = async (proj_id: string) => {
+  const handleGenerateLink = async (proj_id: string, plan: string) => {
     try {
       setIsLoading(true);
-      const response = await generateLink(proj_id);
+      const response = await generateLink(proj_id, plan);
       setLink(response.url);
     } catch (error) {
       console.error('Error generating link:', error);
@@ -39,7 +42,7 @@ export default function GenerateLinkOverlay() {
 
   const toggleDialog = () => {
     setDialogVisible(true);
-    handleGenerateLink(projectId);
+    handleGenerateLink(projectId, plan);
   }
 
   const notification = {

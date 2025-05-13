@@ -29,7 +29,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                 setIsLoading(false)
                 resetField("email")
                 const message = {
-                    type: messageTypeEnum.INFO,
+                    type: messageTypeEnum.SUCCESS,
                     text: `Invitation was sent successfully (${result.status})`
                 }
                 setMessage(message)

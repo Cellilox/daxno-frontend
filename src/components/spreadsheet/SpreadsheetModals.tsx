@@ -11,8 +11,6 @@ type SpreadsheetModalsProps = {
   isAlertVisible: boolean;
   selectedColumnToDelete: Field | null;
   selectedRecordToDelete: Record | null;
-  isChatVisible: boolean;
-  selectedRecordForChat: Record | null;
   projectId: string;
   onCloseColumnUpdatePopup: () => void;
   onUpdateColumnSubmit: (e: React.FormEvent) => void;
@@ -20,7 +18,6 @@ type SpreadsheetModalsProps = {
   onDeleteColumn: (columnId: string) => void;
   onCloseDeleteRecordAlert: () => void;
   onDeleteRecord: (recordId: string, file_key: string) => void;
-  onCloseChat: () => void;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   setSelectedColumnToUpdate: (column: Field | null) => void;
@@ -36,16 +33,12 @@ export default function SpreadsheetModals({
   isAlertVisible,
   selectedColumnToDelete,
   selectedRecordToDelete,
-  isChatVisible,
-  selectedRecordForChat,
-  projectId,
   onCloseColumnUpdatePopup,
   onUpdateColumnSubmit,
   onCloseDeleteColumnAlert,
   onDeleteColumn,
   onCloseDeleteRecordAlert,
   onDeleteRecord,
-  onCloseChat,
   setSelectedColumnToUpdate,
   selectedRecordForReview,
   handleCloseReviewRecordPopup,
