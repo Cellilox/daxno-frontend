@@ -1,10 +1,9 @@
 import AcceptInvitation from "./AcceptInvitation";
-
-export default async function AcceptInvite({
-  searchParams,
-}: {
+interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
-}) {
+}
+
+export default async function AcceptInvite({searchParams}: PageProps) {
   
   const {token} = await searchParams
   const {project_id} = await searchParams;
