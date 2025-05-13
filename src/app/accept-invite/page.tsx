@@ -1,11 +1,11 @@
+
 import AcceptInvitation from "./AcceptInvitation";
 
 export default async function AcceptInvite({
-  searchParams
+  searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>
+  searchParams: Promise<{token?: string, project_id: string}>
 }) {
-  
   const {token} = await searchParams
   const {project_id} = await searchParams;
 

@@ -1,4 +1,3 @@
-import { currentUser } from "@clerk/nextjs/server"
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
 import { fetchAuthed } from "@/lib/api-client"
@@ -6,16 +5,8 @@ import { getColumns } from "@/actions/column-actions"
 import { getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
-import { getTransactions } from "@/actions/transaction-actions"
-import { checkPlan } from "@/components/pricing/utils"
 
-type ProjectViewProps = {
-  params: {
-    id: string
-  }
-}
-
-export default async function ProjectView({ params }: ProjectViewProps) {
+export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
   const { id } = await params
   const project = await getProjectsById(id)
   const fields = await getColumns(project.id)
@@ -24,12 +15,7 @@ export default async function ProjectView({ params }: ProjectViewProps) {
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
-  const transactions = await getTransactions()
-  let plan = ''
-  console.log('PlaN', plan)
-  if(transactions[0]) {
-    plan =  await checkPlan(transactions[0])
-  }
+  const plan=""
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">

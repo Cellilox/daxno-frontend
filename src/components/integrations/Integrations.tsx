@@ -5,27 +5,12 @@ import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import { Plug2 } from 'lucide-react';
 import HubSpotExport from './hubspot/HubSpotExport';
-import { HubSpotIcon } from './hubspot/ui/HubSpotIcon';
-import { checkDriveStatus, DisconnectDrive } from '@/actions/google-drive-actions';
+import { Field, Record } from '../spreadsheet/types';
 
 type OptionsProps = {
     projectId: string;
-    fields: {
-        id: string;
-        name: string;
-        type: string;
-    }[];
-    records: {
-        id: string;
-        answers: {
-            [key: string]: string;
-        };
-        filename: string;
-        file_key: string;
-        project_id: string;
-        created_at: string;
-        updated_at: string;
-    }[];
+    fields: Field[]
+    records: Record[]
 }
 
 export default function Integrations({projectId, fields, records}: OptionsProps) {

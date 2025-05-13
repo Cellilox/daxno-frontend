@@ -3,7 +3,7 @@ import Link from "next/link";
 export default async function AcceptInvite({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{message?: string}>
 }) {
   
   // Get query parameters

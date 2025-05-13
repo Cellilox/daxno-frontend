@@ -1,14 +1,8 @@
 import { getLinkData } from "@/actions/submission-actions"
 import DropzoneWrapper from "@/components/files/DropzoneWrapper"
 
-type SubmissionViewProps = {
-  params: {
-    token: string
-  }
-}
-
-export default async function Submission({ params }: SubmissionViewProps) {
-  const { token } = params
+export default async function Submission({ params }: {params: Promise<{token: string}>}) {
+  const { token } = await params
   const link_data = await getLinkData(token)
   console.log(link_data)
   if (!link_data) {

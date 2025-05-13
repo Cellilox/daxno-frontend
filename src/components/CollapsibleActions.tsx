@@ -4,32 +4,18 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Share2, Trash2, Download, Upload, Database, MessageSquare, Users } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import GenerateLinkOverlay from './GenerateLinkOverlay';
-import ScanView from './files/ScanView';
 import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import CreateInvite from './forms/CreateInvite';
+import { Field, Record } from './spreadsheet/types';
 
 interface CollapsibleActionsProps {
   projectId: string;
   plan: string;
   is_project_owner: boolean;
   linkOwner: string;
-  fields: {
-    id: string;
-    name: string;
-    type: string;
-  }[];
-  records: {
-    id: string;
-    answers: {
-      [key: string]: string;
-    };
-    filename: string;
-    file_key: string;
-    project_id: string;
-    created_at: string;
-    updated_at: string;
-  }[];
+  fields: Field[]
+  records: Record[]
 }
 
 export default function CollapsibleActions({ projectId, plan, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
