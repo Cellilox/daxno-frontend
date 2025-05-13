@@ -1,9 +1,10 @@
 import AcceptInvitation from "./AcceptInvitation";
-interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
-}
 
-export default async function AcceptInvite({searchParams}: PageProps) {
+export default async function AcceptInvite({
+  searchParams
+}: {
+  searchParams: Record<string, string | string[] | undefined>
+}) {
   
   const {token} = await searchParams
   const {project_id} = await searchParams;
