@@ -1,134 +1,78 @@
-import Dialog from "@/components/Dialog"
-import { auth } from "@clerk/nextjs/server"
-import { revalidatePath } from "next/cache"
-import MyDropzone from "@/components/Dropzone"
-import Link from "next/link"
-import SpreadSheet from "@/components/SpreadSheet"
+import { currentUser } from "@clerk/nextjs/server"
+import Records from "@/components/Records"
+import CreateColumn from "@/components/forms/CreateColumn"
+import { fetchAuthed } from "@/lib/api-client"
+import { getColumns } from "@/actions/column-actions"
+import { getProjectsById } from "@/actions/project-actions"
+import ExpandableDescription from "@/components/ExpandableDescription"
+import CollapsibleActions from "@/components/CollapsibleActions"
+import { getTransactions } from "@/actions/transaction-actions"
+import { checkPlan } from "@/components/pricing/utils"
+
 type ProjectViewProps = {
-    params: {
-        id: string
-    }
-}
-
-type Field = {
+  params: {
     id: string
-    name: string
-    description: string
+  }
 }
-
 
 export default async function ProjectView({ params }: ProjectViewProps) {
-    const authObj = await auth()
-    const {id} = await params
-    const url = `http://localhost:8000/projects/${id}`
-    
-    let sessionId
-    const headers = new Headers()
-    headers.append('Authorization', `Bearer ${await authObj.getToken()}`)
-
-    if (authObj.sessionId) {
-        headers.append('sessionId', authObj.sessionId)
-        sessionId = authObj.sessionId
-    }
-
-    const postHeaders = new Headers();
-    postHeaders.append('Authorization', `Bearer ${await authObj.getToken()}`);
-    postHeaders.append('Content-Type', 'application/json')
-    if (authObj.sessionId) {
-        postHeaders.append('sessionId', authObj.sessionId);
-    }
-
-    const res = await fetch(url, {
-        method: 'GET',
-        headers: headers
-    })
-    const project = await res.json()
-    console.log(project)
-
-    const fieldsUrl = `http://localhost:8000/fields/${project.id}`
-
-    const response = await fetch(fieldsUrl, {
-        method: 'GET',
-        headers: headers
-    })
-
-    const fields = await response.json()
-    console.log(fields)
-
-
-    async function addField(formData: FormData) {
-        'use server'
-        const name = formData.get('name')
-        const res = await fetch(fieldsUrl,
-            {
-                method: 'POST',
-                headers: postHeaders,
-                body: JSON.stringify({ name })
-            })
-
-        if (!res.ok) {
-            console.error("Error creating project:", await res.text());
-            return;
-        }
-
-        const newField = await res.json();
-        revalidatePath(`/projects/${project.id}`);
-        console.log(newField);
-    }
-
-    async function onClose() {
-        "use server"
-        console.log("Modal has closed")
-    }
-
-    async function onOk() {
-        "use server"
-        console.log("Ok was clicked")
-    }
-
-
-    return (
-        <>
-            <Dialog title="Upload Your Image" onClose={onClose} onOk={onOk}>
-                <form className="h-full">
-                    <div className="h-full">
-                    <MyDropzone sessionId = {sessionId} projectId = {id} token={await authObj.getToken()}/>
-                    </div>
-                </form>
-            </Dialog>
-            <div className="p-4">
-                <div className="flex justify-between">
-                    <form action={addField}>
-                        <div><p>Add a field you need to extract</p></div>
-                        <div className="mt-3">
-                            <input type="text" name="name" className="p-3 rounded text-black border-2 border-blue-400" placeholder="Type a field name" />
-                            <button type='submit' className="p-3 bg-blue-600 rounded ml-3 text-white">Add</button>
-                        </div>
-                    </form>
-                    <div>
-                        <div className="flex justify-end">
-                            <p>Project: {project.name}</p>
-                        </div>
-                        <div className="mt-6">
-                        <Link href={`/projects/${id}?modal=visible`} className="p-3 bg-blue-600 rounded ml-3 text-white">Upload your document</Link>
-                        </div>
-                    </div>
-                </div>
-
-                {/* {
-                    fields.length >= 1 ?
-                        <div>
-                            {fields.map((field: Field) => (
-                                <div key={field.id}>
-                                    <p>{field.name}</p>
-                                </div>
-                            ))}
-                        </div> : null
-                } */}
+  const { id } = await params
+  const project = await getProjectsById(id)
+  const fields = await getColumns(project.id)
+  const linkOwner = ""
+  const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
+  const recordsResponse = await fetchAuthed(recordsUrl)
+  const records = await recordsResponse.json()
+  const is_project_owner = project.is_owner;
+  const transactions = await getTransactions()
+  let plan = ''
+  console.log('PlaN', plan)
+  if(transactions[0]) {
+    plan =  await checkPlan(transactions[0])
+  }
+  return (
+    <>
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg">
+          <div className="flex flex-col space-y-4 sm:space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start w-full">
+              <div className="flex flex-col gap-1 min-w-0 flex-shrink">
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 truncate">
+                  Project: {project.name}
+                </p>
+                <ExpandableDescription description={project.description} />
+              </div>
+              {fields.length >=1 &&
+              <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
+              <CreateColumn projectId={id} />
             </div>
-            <div className="p-4 flex justify-center">
-                <SpreadSheet/>
+              }
             </div>
-        </>
-    )
+            
+            {/* Action Buttons */}
+            {fields.length >= 1 && (
+              <CollapsibleActions 
+                projectId={id}
+                is_project_owner={is_project_owner}
+                linkOwner={linkOwner} 
+                fields={fields}
+                records={records}
+                plan={plan}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Records Section */}
+        <div className="mt-4 sm:mt-6 lg:mt-8">
+          <Records
+            projectId={id}
+            initialFields={fields}
+            initialRecords={records}
+          />
+        </div>
+      </div>
+    </>
+  );
 }
