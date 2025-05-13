@@ -19,8 +19,7 @@ export default async function Dashboard() {
   const projects = await getProjects()
   const user = await currentUser()
   const docs = await getDocs(user?.id)
-  console.log('RRRRESDOCS', docs)
-  const pages = docs.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
+  const pages = docs?.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
 
   return (
     <div className="mx-auto p-6 md:p-12 h-screen bg-gray-50">

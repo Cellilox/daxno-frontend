@@ -3,15 +3,12 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { checkFileType, queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
+import { queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
 import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { FileStatus } from './types';
-import { Transaction } from '../pricing/types';
-import { getTransactions } from '@/actions/transaction-actions';
-import { checkPlan } from '../pricing/utils';
 
 type MyDropzoneProps = {
   projectId: string;
@@ -44,16 +41,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setPreview(URL.createObjectURL(selectedFile));
       const formData = new FormData();
       formData.append('file', selectedFile);
-      handleCheckFileType(formData);
     }
   }, []);
 
-  const handleCheckFileType = async (formData: any) => {
-    const res = await checkFileType(formData);
-    if(res.document_type) {
-      onMessageChange({type: messageTypeEnum.SUGGEST_TO_UPGRADE, text: `This document is [${res.document_type}] pattern. Basic Plan extraction may miss critical data.`});
-    }
-  };
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();

@@ -12,7 +12,10 @@ interface Transactions {
 
 export default function CurrentPlan({ transactions }: Transactions) {
   const [plan, setPlan] = useState<string>('')
-  const currentTransaction = transactions[0]
+  const [currentTransaction, setCurrentTransaction] = useState<Transaction>();
+  if(transactions?.length) {
+     setCurrentTransaction(transactions[0])
+  }
 
   useEffect(() => {
     if (!currentTransaction) return
