@@ -29,11 +29,15 @@ export async function createProject(formData: projectCreateData) {
 }
 
 export async function getProjects() {
-  const response = await fetchAuthed(`${apiUrl}/projects/`)
-  if(!response.ok) {
-    throw new Error ("Failed to fetch projects")
+  try {
+    const response = await fetchAuthed(`${apiUrl}/projects/`)
+    // if(!response.ok) {
+    //   throw new Error ("Failed to fetch projects")
+    // }
+    return await response.json();
+  } catch (error) {
+    console.log('Error', error)
   }
-  return await response.json();
 }
 
 export async function getProjectsById(projectId: string) {

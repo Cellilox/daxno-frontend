@@ -47,7 +47,7 @@ export default function PricingModal() {
 
     const setAvailablePlans = async () => {
       const plans = await getAvailablePlans();
-       setPlansList(plans.data)
+       setPlansList(plans?.data)
     }
   
     useEffect(() => {
