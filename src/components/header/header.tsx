@@ -12,7 +12,7 @@ const Header = async () => {
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
-      <Link href="/">
+      {/* <Link href="/">
         <div className="flex flex-col items-center group">
           <div className="flex items-center space-x-2 md:space-x-3">
             <svg
@@ -31,7 +31,16 @@ const Header = async () => {
             ___---__---___
           </p>
         </div>
-      </Link>
+      </Link> */}
+<Link href="/">
+  <div className="flex flex-col items-center group cursor-pointer">
+    <div className="">
+      <h1 className="text-lg md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent group-hover:from-purple-800 group-hover:to-blue-800 transition-colors duration-300">
+        ||_cellilox.ai
+      </h1>
+    </div>
+  </div>
+</Link>
       {userId && <Link href='/dashboard' className='ml-7'>Dashboard</Link>}
       </div>
 

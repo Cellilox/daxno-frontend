@@ -1,102 +1,133 @@
-
-
 import Link from "next/link";
 import Testimonial from "@/components/Testimonial";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-          Hey, I am DaxNo, Your
-          <span className="text-blue-600 block mt-3">AI Agent</span>
+      {/* Hero Section - Blue Color Scheme */}
+      <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 text-center">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
+          Your AI-Powered Document
+          <span className="text-blue-600 block mt-2 md:mt-3">Query Agent</span>
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Simplify your data entry with AI-powered automation. Create projects, define key insights, and let our AI handle the rest. 
-          Extract data from images and PDFs, manage your findings in spreadsheets, and seamlessly integrate with your favorite Google tools.
-          From scanned forms to email attachments - 
-          our AI agents work 24/7 to streamline your workflows.
+
+        <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8 max-w-3xl mx-auto px-2 md:px-0">
+          Meet Cellilox AI - your intelligent document query agent that{" "}
+          <span className="font-semibold text-blue-600">understands natural language requests</span>,
+          extracts precise data points, and delivers answers in structured formats.
+          Powered by NLP and machine learning, your AI agent becomes smarter at
+          interpreting document queries with every interaction.
         </p>
-        <div className="flex gap-4 justify-center">
+
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-2">
           <Link
             href="/dashboard"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 md:py-3 px-6 md:px-8 rounded-lg shadow-lg transition-all hover:scale-105 text-sm md:text-base"
           >
             Get Started
           </Link>
           <Link
             href="/demo"
-            className="border-2 border-blue-600 text-blue-600 font-medium py-3 px-8 rounded-lg transition-all hover:bg-blue-50"
+            className="border-2 border-blue-600 text-blue-600 font-medium py-2.5 md:py-3 px-6 md:px-8 rounded-lg transition-all hover:bg-blue-50 text-sm md:text-base"
           >
             Watch Demo
           </Link>
         </div>
       </div>
-
-      {/* Features Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-12">
-        <div className="bg-white p-8 rounded-xl shadow-lg">
+      {/* AI Agent Capabilities Grid - Blue Accents */}
+      <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
           <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold mb-3">Smart Document Processing</h3>
+          <h3 className="text-xl font-semibold mb-3">Cognitive Document Analysis</h3>
           <p className="text-gray-600">
-            Extract precise data from any format - images, PDFs, scans. Our OCR + NLP engine learns your requirements and auto-fills spreadsheets in real-time.
+            Our AI agent understands document layouts and context like humans do,
+            adapting to new formats through continuous learning.
           </p>
         </div>
 
-        <div className="bg-white p-8 rounded-xl shadow-lg">
+        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
           <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold mb-3">Live Mobile Integration</h3>
+          <h3 className="text-xl font-semibold mb-3">Intelligent Data Structuring</h3>
           <p className="text-gray-600">
-            Scan documents with your phone and watch data appear instantly on your desktop. Project-specific QR codes ensure seamless team collaboration.
+            The AI agent doesn't just extract - it organizes information logically,
+            detects relationships, and validates data integrity automatically.
           </p>
         </div>
 
-        <div className="bg-white p-8 rounded-xl shadow-lg">
+        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
           <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold mb-3">Email Automation</h3>
+          <h3 className="text-xl font-semibold mb-3">Self-Improving AI</h3>
           <p className="text-gray-600">
-            Auto-process email attachments 24/7. Connect your Gmail and let our AI parse incoming documents while you focus on what matters.
+            The more you use Cellilox AI, the smarter it becomes. Our agent learns
+            from your feedback and document patterns unique to your workflow.
           </p>
         </div>
       </div>
 
-      {/* Real-time Demo Preview */}
-      <div className="bg-blue-50 py-16">
+
+      <div className="bg-white py-16">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Live Data Synchronization</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              Watch extracted data populate your spreadsheets in real-time across all devices. Our WebSocket technology ensures you never work with outdated information.
-            </p>
-            <ul className="space-y-4">
-              <li className="flex items-center">
-                <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Instant mobile-to-desktop updates
-              </li>
-              {/* Add more list items */}
-            </ul>
-          </div>
-          <div className="flex-1 bg-white p-8 rounded-xl shadow-lg">
-            {/* Add your screenshot or mockup here */}
+          <div className="flex-1 space-y-6">
+            <h2 className="text-3xl font-bold text-gray-900">
+              AI Agent Processing Pipeline
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">1</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Project Setup & Template Design</h4>
+                  <p className="text-gray-600">
+                    Create projects and define key data points like setting spreadsheets. The Agent will take all columns text as a batch of queries during query processing</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">2</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Create Collection Link</h4>
+                  <p className="text-gray-600">Generate a secure URL to share with document senders</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">3</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Automatic Processing</h4>
+                  <p className="text-gray-600">AI agent receives documents via upload or secure collection links and prefill data in your prepared spreadsheet</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold">4</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Review & Export</h4>
+                  <p className="text-gray-600">Push clean data to HubSpot CRM or Google Sheets</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <Testimonial/>
+
+      <Testimonial />
     </div>
   );
 }

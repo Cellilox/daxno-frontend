@@ -9,42 +9,44 @@ interface Transactions {
   transactions: Transaction[];
 }
 
-
 export default function CurrentPlan({ transactions }: Transactions) {
-  const [plan, setPlan] = useState<string>('')
+  const [plan, setPlan] = useState<string>('');
   const [currentTransaction, setCurrentTransaction] = useState<Transaction>();
-  if(transactions?.length) {
-     setCurrentTransaction(transactions[0])
-  }
 
   useEffect(() => {
-    if (!currentTransaction) return
+    if (transactions?.length) {
+      setCurrentTransaction(transactions[0]);
+    }
+  }, [transactions]); 
+
+  useEffect(() => {
+    if (!currentTransaction) return;
+    
     const fetchPlan = async () => {
       try {
-        const planName = await checkPlan(currentTransaction)
-        setPlan(planName) 
+        const planName = await checkPlan(currentTransaction);
+        setPlan(planName);
       } catch (e) {
-        console.error('Failed to load plan:', e)
+        console.error('Failed to load plan:', e);
       }
-    }
+    };
 
-    fetchPlan()
-  }, [currentTransaction]) 
+    fetchPlan();
+  }, [currentTransaction]);
 
-
-
-
-  if (currentTransaction == undefined) {
+  if (!currentTransaction) {
     return (
       <div>
-        <PricingModal/>
+        <PricingModal />
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className='md:flex md:mr-3 items-center text-right'>
-      <p className='md:mr-7'>Plan: <span className='text-green-500'>{plan || 'loading...'}</span></p>
+      <p className='md:mr-7'>
+        Plan: <span className='text-green-500'>{plan || 'loading...'}</span>
+      </p>
       <div>
         <PricingModal />
       </div>
