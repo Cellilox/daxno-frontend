@@ -67,6 +67,13 @@ const MobileMenu = ({ userId }: { userId: string | null }) => {
         <div className="flex flex-col space-y-3">
           {userId && (
             <>
+            <Link
+                href="/"
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded"
+              >
+                Home
+              </Link>
               <Link
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}
