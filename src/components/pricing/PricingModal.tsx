@@ -47,6 +47,7 @@ export default function PricingModal() {
 
     const setAvailablePlans = async () => {
       const plans = await getAvailablePlans();
+      console.log("PlansFetch", plans)
        setPlansList(plans?.data)
     }
   
