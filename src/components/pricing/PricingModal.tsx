@@ -17,7 +17,7 @@ export default function PricingModal() {
   const [timeoutIds, setTimeoutIds] = useState<number[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [planName, setPlanName] = useState<string>('')
-  const pathname = usePathname()
+  const pathname = usePathname().slice(1)
   const router = useRouter()
   const toggleExpand = () => {
     if (isOuterExpanded) {
