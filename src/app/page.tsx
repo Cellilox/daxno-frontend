@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Testimonial from "@/components/Testimonial";
+import Demo from "@/components/Demo";
 
 export default function Home() {
   return (
@@ -26,15 +27,9 @@ export default function Home() {
           >
             Get Started
           </Link>
-          <Link
-            href="/demo"
-            className="border-2 border-blue-600 text-blue-600 font-medium py-2.5 md:py-3 px-6 md:px-8 rounded-lg transition-all hover:bg-blue-50 text-sm md:text-base"
-          >
-            Watch Demo
-          </Link>
+          <Demo/>
         </div>
       </div>
-      {/* AI Agent Capabilities Grid - Blue Accents */}
       <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-8">
         <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
           <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
