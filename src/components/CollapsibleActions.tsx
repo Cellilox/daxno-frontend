@@ -123,7 +123,7 @@ export default function CollapsibleActions({ projectId, address, plan, is_projec
           onCancel={() => setIsAddressPopupVisible(false)}
           position="center"
           size="small"
-          isHeaderVisible={false}
+          isHeaderHidden={true}
         >
           <div className='flex justify-between'>
           <Address  address={address} setIsAddressPopupVisible={setIsAddressPopupVisible}/>

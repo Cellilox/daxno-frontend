@@ -6,15 +6,15 @@ import MessageAlert from './messageAlert';
 
 type ModalHeaderProps = {
   title?: string;
-  isHeaderVisible?: boolean;
+  isHeaderHidden?: boolean;
   onClose: () => void;
   message?: messageType;
 }
 
-export default function ModalHeader({ title, onClose, message, isHeaderVisible }: ModalHeaderProps) {
+export default function ModalHeader({ title, onClose, message, isHeaderHidden }: ModalHeaderProps) {
   return (
     <>
-    {isHeaderVisible && (
+    {!isHeaderHidden && (
       <div className="flex flex-col bg-blue-600 text-white rounded-t-lg">
       <div className="flex justify-between items-center px-4 py-3">
         <h2 className="text-lg font-semibold">{title}</h2>

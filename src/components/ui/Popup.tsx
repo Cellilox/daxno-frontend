@@ -5,7 +5,7 @@ import { messageType } from '@/types';
 type FormModalProps = {
   visible: boolean;
   title?: string;
-  isHeaderVisible?: boolean;
+  isHeaderHidden?: boolean;
   message?: messageType;
   onSubmit?: (e: React.FormEvent) => void;
   onCancel: () => void;
@@ -18,7 +18,7 @@ type FormModalProps = {
 export default function FormModal({
   visible,
   title,
-  isHeaderVisible,
+  isHeaderHidden,
   message,
   onCancel,
   children,
@@ -58,7 +58,7 @@ export default function FormModal({
           ${size === 'large' ? "lg:w-5/6" : "lg:w-2/5"}
         `}
       >
-        <ModalHeader title={title} onClose={onCancel} message={message} isHeaderVisible={isHeaderVisible}/>
+        <ModalHeader title={title} onClose={onCancel} message={message} isHeaderHidden={isHeaderHidden}/>
         <div className="p-6 flex-1">
           <div className="flex flex-col h-full">
             <div 
