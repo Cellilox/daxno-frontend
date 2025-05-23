@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, FileText, Share2, Trash2, Download, Upload, Database, MessageSquare, Users } from 'lucide-react';
+import { ChevronDown, ChevronUp, Users, Mail } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import GenerateLinkOverlay from './GenerateLinkOverlay';
 import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import CreateInvite from './forms/CreateInvite';
 import { Field, Record } from './spreadsheet/types';
+import Address from './Address';
+
 
 interface CollapsibleActionsProps {
   projectId: string;
+  address: string;
   plan: string;
   is_project_owner: boolean;
   linkOwner: string;
@@ -18,12 +21,17 @@ interface CollapsibleActionsProps {
   records: Record[]
 }
 
-export default function CollapsibleActions({ projectId, plan, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, address, plan, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
+  const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
 
   const handleShowInvitePopup = () => {
      setIsInvitePopupVisible(true)
+  }
+
+  const handleShowAddressPopup = () => {
+    setIsAddressPopupVisible(true)
   }
 
   return (
@@ -57,6 +65,13 @@ export default function CollapsibleActions({ projectId, plan, is_project_owner, 
               />
 
               {is_project_owner && <GenerateLinkOverlay plan={plan} />}
+
+              <div>
+              <button onClick={handleShowAddressPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                Mail Attachments
+              </button>
+            </div>
             </div>
 
             {/* Right Action Group */}
@@ -100,6 +115,21 @@ export default function CollapsibleActions({ projectId, plan, is_project_owner, 
           </div>
         </FormModal>
       )}
+
+       {/* Generate Address Popup */}
+       {isAddressPopupVisible && (
+        <FormModal
+          visible={isAddressPopupVisible}
+          onCancel={() => setIsAddressPopupVisible(false)}
+          position="center"
+          size="small"
+          isHeaderVisible={false}
+        >
+          <div className='flex justify-between'>
+          <Address  address={address} setIsAddressPopupVisible={setIsAddressPopupVisible}/>
+          </div>
+        </FormModal>
+      )} 
     </div>
   );
 } 

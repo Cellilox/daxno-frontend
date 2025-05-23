@@ -40,6 +40,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
             {fields.length >= 1 && (
               <CollapsibleActions 
                 projectId={id}
+                address={project.address_domain}
                 is_project_owner={is_project_owner}
                 linkOwner={linkOwner} 
                 fields={fields}
