@@ -18,6 +18,8 @@ type Project = {
   description: string;
   owner: string;
   is_owner: string;
+  address_domain: string;
+  owner_email: string;
 }
 
 export default function Card({project}: CardProps) {
@@ -54,6 +56,7 @@ export default function Card({project}: CardProps) {
   }
 
   const handleShowProjectUpdateForm = (project: Project) => {
+     console.log('PPX', project)
      setIsPopupVisible(true)
      setSelectedprojectToUpdate(project)
   }
@@ -64,7 +67,9 @@ export default function Card({project}: CardProps) {
     const updateData = {
       name: selectedProjectToUpdate?.name || '',
       description: selectedProjectToUpdate?.description || '',
-      owner: selectedProjectToUpdate?.owner || ''  
+      owner: selectedProjectToUpdate?.owner || '',
+      address_domain: selectedProjectToUpdate?.address_domain || '',
+      owner_email: selectedProjectToUpdate?.owner_email || ''  
     };
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)

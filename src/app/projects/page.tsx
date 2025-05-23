@@ -4,11 +4,13 @@ import CreateProjectForm from "@/components/forms/CreateProject"
 import { getProjects } from "@/actions/project-actions"
 
 type Project = {
-  id: string,
-  name: string,
-  description: string,
-  owner: string
-  is_owner: string
+  id: string;
+  name: string;
+  description: string;
+  owner: string;
+  is_owner: string;
+  address_domain: string;
+  owner_email: string;
 }
 
 export default async function Projects() {
