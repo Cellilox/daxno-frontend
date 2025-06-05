@@ -5,14 +5,14 @@ export default function CookiePolicyPage() {
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
       <h1>Cookie Policy</h1>
       <p>
-        <strong>Effective Date:</strong> [Insert Date]
+        <strong>Effective Date:</strong> Jun 05, 2025
       </p>
 
       <hr />
 
       <h2>1. Introduction</h2>
       <p>
-        This Cookie Policy explains how [Your Company Name] (“Company,” “we,” “us,” or “our”) uses cookies and similar tracking technologies on our website and web application (collectively, the “Services”). We respect your privacy and are committed to protecting
+        This Cookie Policy explains how Cellilox Limited (“Company,” “we,” “us,” or “our”) uses cookies and similar tracking technologies on our website and web application (collectively, the “Services”). We respect your privacy and are committed to protecting
         your personal data. By accessing or using our Services, you agree to this Cookie Policy in conjunction with our Privacy Policy.
       </p>
       <p>
@@ -256,11 +256,9 @@ export default function CookiePolicyPage() {
         </li>
       </ul>
       <p>If you have any questions, concerns, or requests regarding this Cookie Policy, please contact us at:</p>
-      <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
-[Your Company Name]
-Email: privacy@yourcompany.com
-Address: [Your Company Address]
-Phone: [Your Company Phone Number] (optional)
+      <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
+Support
+Email: support@cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

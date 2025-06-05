@@ -5,14 +5,14 @@ export default function TermsOfServicePage() {
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
       <h1>Terms of Service</h1>
       <p>
-        <strong>Effective Date:</strong> [Insert Date]
+        <strong>Effective Date:</strong> Jun 05, 2025
       </p>
 
       <hr />
 
       <h2>1. Introduction</h2>
       <p>
-        Welcome to [Your Company Name] (“Company,” “we,” “us,” or “our”). These Terms of Service (“Terms” or “Agreement”) govern your access to and use of our website, SaaS platform, APIs, mobile applications, and any related services (collectively,
+        Welcome to Cellilox Limited (“Company,” “we,” “us,” or “our”). These Terms of Service (“Terms” or “Agreement”) govern your access to and use of our website, SaaS platform, APIs, mobile applications, and any related services (collectively,
         “Services”). By accessing or using our Services, you agree to be bound by these Terms and our Privacy Policy and Refund Policy. If you do not agree with any part of these Terms, you must not use our Services.
       </p>
 
@@ -263,8 +263,8 @@ export default function TermsOfServicePage() {
       <h3>15.1 Termination by You</h3>
       <p>
         You may terminate your Account at any time by canceling your subscription through your Account dashboard or by contacting{' '}
-        <a href="mailto:support@yourcompany.com" className="text-blue-600 hover:underline">
-          support@yourcompany.com
+        <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
+          support@cellilox.com
         </a>. Termination takes effect at the end of your current billing period. After termination, your access to the Services will be suspended, and we may delete Your Content in accordance with Section 7.3 of the Privacy Policy.
       </p>
 
@@ -295,8 +295,8 @@ export default function TermsOfServicePage() {
       <h3>16.2 Informal Resolution</h3>
       <p>
         Before bringing any formal dispute, you agree to contact us at{' '}
-        <a href="mailto:disputes@yourcompany.com" className="text-blue-600 hover:underline">
-          disputes@yourcompany.com
+        <a href="mailto:disputes@cellilox.com" className="text-blue-600 hover:underline">
+          disputes@cellilox.com
         </a>{' '}
         to attempt to informally resolve the issue. We will endeavor to respond within thirty (30) days of receipt.
       </p>
@@ -344,11 +344,11 @@ export default function TermsOfServicePage() {
         <li>When delivered by email to the address associated with your Account (if to you).</li>
         <li>
           When received by us at:
-          <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
-[Your Company Name]
+          <pre className="bg-gray-100 p-4 text-black rounded text-sm overflow-x-auto">
+Cellilox Limited
 Attn: Legal Department
-Email: legal@yourcompany.com
-Address: [Your Company Address]
+Email: legal@cellilox.com
+Address: Kigali - Gasabo
           </pre>
         </li>
       </ul>
@@ -361,11 +361,9 @@ Address: [Your Company Address]
 
       <h2>18. Contact Information</h2>
       <p>If you have any questions, concerns, or requests regarding these Terms of Service, please contact us:</p>
-      <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
-[Your Company Name]
-Email: legal@yourcompany.com
-Address: [Your Company Address]
-Phone: [Your Company Phone Number] (optional)
+  <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
+Support
+Email: support@cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

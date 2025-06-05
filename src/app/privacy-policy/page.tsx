@@ -5,14 +5,14 @@ export default function PrivacyPolicyPage() {
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
       <h1>Privacy Policy</h1>
       <p>
-        <strong>Effective Date:</strong> [Insert Date]
+        <strong>Effective Date:</strong> Jun 05, 2025
       </p>
 
       <hr />
 
       <h2>1. Introduction</h2>
       <p>
-        [Your Company Name] (“Company,” “we,” “us,” or “our”) is committed to protecting the privacy and security of the personal information we collect from our users (“you” or “your”). This Privacy Policy explains how we collect, use, disclose, and safeguard your
+        Cellilox Limited (“Company,” “we,” “us,” or “our”) is committed to protecting the privacy and security of the personal information we collect from our users (“you” or “your”). This Privacy Policy explains how we collect, use, disclose, and safeguard your
         information when you visit our website, use our SaaS applications, or otherwise interact with us. By accessing or using our Services, you agree to this Privacy Policy in addition to our Terms of Service.
       </p>
 
@@ -191,8 +191,8 @@ export default function PrivacyPolicyPage() {
       <p>
         Our Services are not directed at children under the age of 13 (or the applicable age in jurisdictions where higher). We do not knowingly collect Personal Information from children under the age of 13. If you become aware that a child has provided us with
         Personal Information, please contact us immediately at{' '}
-        <a href="mailto:privacy@yourcompany.com" className="text-blue-600 hover:underline">
-          privacy@yourcompany.com
+        <a href="mailto:privacy@cellilox.com" className="text-blue-600 hover:underline">
+          privacy@cellilox.com
         </a>, and we will take steps to delete such information promptly.
       </p>
 
@@ -223,15 +223,15 @@ export default function PrivacyPolicyPage() {
       </ul>
       <p>
         To exercise any of these rights, please contact us at{' '}
-        <a href="mailto:privacy@yourcompany.com" className="text-blue-600 hover:underline">
-          privacy@yourcompany.com
+        <a href="mailto:privacy@cellilox.com" className="text-blue-600 hover:underline">
+          privacy@cellilox.com
         </a>. We may request reasonable information to confirm your identity before fulfilling your request. Note that certain legal obligations or legitimate
         business interests may prevent us from fully honoring your request, in which case we will inform you.
       </p>
 
       <h2>12. International Data Transfers</h2>
       <p>
-        If you are located outside of [Your Company’s Home Country] and use our Services, your Personal Information may be transferred to, stored, and processed in [Your Company’s Home Country] or other jurisdictions. These countries may have data protection laws
+        If you are located outside of Rwanda and use our Services, your Personal Information may be transferred to, stored, and processed in Rwanda or other jurisdictions. These countries may have data protection laws
         that are different from those in your jurisdiction. Whenever we transfer Personal Information internationally, we ensure that it is protected in accordance with this Privacy Policy and applicable law (e.g., using Standard Contractual Clauses or other
         approved transfer mechanisms).
       </p>
@@ -252,11 +252,9 @@ export default function PrivacyPolicyPage() {
 
       <h2>14. Contact Us</h2>
       <p>If you have questions, concerns, or complaints regarding this Privacy Policy or our privacy practices, please contact us:</p>
-      <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-auto">
-[Your Company Name]
-Email: privacy@yourcompany.com
-Address: [Your Company Address]
-Phone: [Your Company Phone Number] (optional)
+      <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
+Support
+Email: privacy@cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>
