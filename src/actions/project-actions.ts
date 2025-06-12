@@ -10,8 +10,9 @@ type projectCreateData = {
 }
 
 type projectUpdateData = {
-    name: string
-    description: string
+    name?: string
+    description?: string,
+    link_is_active?: boolean
 }
 
 export async function createProject(formData: projectCreateData) {
@@ -41,23 +42,31 @@ export async function getProjects() {
 }
 
 export async function getProjectsById(projectId: string) {
-  const response = await fetchAuthed(`${apiUrl}/projects/${projectId}`)
+  try {
+    const response = await fetchAuthed(`${apiUrl}/projects/${projectId}`)
   if(!response.ok) {
     throw new Error ("Failed to fetch projects")
   }
   return await response.json();
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 export async function updateProject(projectId: string | undefined, formData: projectUpdateData) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
+  console.log('FormData', formData)
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
     method: 'PUT',
     body: JSON.stringify(formData),
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to update project');
-  }
+  
   revalidatePath('/projects');
+  return await response.json()
+  } catch (error) {
+    console.log(error)
+  }
+
 }
 
 export async function deleteProject(projectId: string) {

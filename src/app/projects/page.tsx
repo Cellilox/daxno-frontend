@@ -2,16 +2,7 @@ import Card from "@/components/Card"
 import CreateProjectForm from "@/components/forms/CreateProject"
 
 import { getProjects } from "@/actions/project-actions"
-
-type Project = {
-  id: string;
-  name: string;
-  description: string;
-  owner: string;
-  is_owner: string;
-  address_domain: string;
-  owner_email: string;
-}
+import { Project } from "@/types";
 
 export default async function Projects() {
   const projects = await getProjects()

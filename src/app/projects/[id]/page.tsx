@@ -9,6 +9,7 @@ import CollapsibleActions from "@/components/CollapsibleActions"
 export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
   const { id } = await params
   const project = await getProjectsById(id)
+  console.log('P2', project)
   const fields = await getColumns(project.id)
   const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
@@ -40,6 +41,9 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
             {fields.length >= 1 && (
               <CollapsibleActions 
                 projectId={id}
+                project={project}
+                shareableLink={project.shareable_link}
+                isLinkActive={project.link_is_active}
                 address={project.address_domain}
                 is_project_owner={is_project_owner}
                 linkOwner={linkOwner} 
