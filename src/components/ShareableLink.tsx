@@ -3,7 +3,7 @@
 import { CopyIcon, CheckCircleIcon, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { updateProject } from "@/actions/project-actions";
+import { regenerateProjectLink, updateProject } from "@/actions/project-actions";
 import { Project } from "@/types";
 import LoadingSpinner from "./ui/LoadingSpinner";
 
@@ -20,6 +20,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
   const [currentLink, setCurrentLink] = useState(shareableLink);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [loading, setLoading] = useState(false)
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false)
   // Sync prop changes
   useEffect(() => {
     setCurrentLink(shareableLink);
@@ -39,13 +40,16 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
     }
   };
 
-//   const generateRandomLink = () => {
-//     const randomPart = Math.random().toString(36).substring(2, 10);
-//     const newLink = `${window.location.origin}/share/${randomPart}`;
-//     setCurrentLink(newLink);
-//     setDeactivated(false);
-//     setSettingsOpen(false);
-//   };
+  const regenerateProjectShareLink = async () => {
+    const data = {
+        ...project
+    }
+
+    setIsGeneratingLink(true)
+    const result = await regenerateProjectLink(projectId, data)
+    setIsGeneratingLink(false)
+    setSettingsOpen(false);
+  };
 
   const deactivateLink = async () => {
     const data = {
@@ -80,7 +84,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
                 <Image src="/close.svg" alt="Close" width={24} height={24} onClick={() => setSettingsOpen(false)}/>
                 </div>
                 <button
-                  onClick={() => deactivateLink()}
+                  onClick={deactivateLink}
                   disabled={!isLinkActive}
                   className={`flex px-4 py-2 text-left text-sm font-medium rounded-md ${!isLinkActive ? 'text-gray-500 bg-gray-100 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
                 >
@@ -88,10 +92,11 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
                   {!isLinkActive ? 'Link Deactivated' : 'Deactivate Link'}
                 </button>
                 <button
-                //   onClick={generateRandomLink}
-                  className="mt-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                  onClick={regenerateProjectShareLink}
+                  className="flex mt-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
-                  Regenerate Link
+                  {isGeneratingLink && <LoadingSpinner className="mr-3"/>}
+                  Get new Link
                 </button>
               </div>
             </div>

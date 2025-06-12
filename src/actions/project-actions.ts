@@ -69,6 +69,22 @@ export async function updateProject(projectId: string | undefined, formData: pro
 
 }
 
+export async function regenerateProjectLink(projectId: string | undefined, formData: projectUpdateData) {
+  console.log('FormData', formData)
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${projectId}`, {
+    method: 'PUT',
+    body: JSON.stringify(formData),
+  });
+  
+  revalidatePath('/projects');
+  return await response.json()
+  } catch (error) {
+    console.log(error)
+  }
+
+}
+
 export async function deleteProject(projectId: string) {
     const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
       method: 'DELETE'
