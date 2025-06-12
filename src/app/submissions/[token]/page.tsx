@@ -4,10 +4,8 @@ import DropzoneWrapper from "@/components/files/DropzoneWrapper"
 export default async function Submission({ params }: {params: Promise<{token: string}>}) {
   const { token } = await params
   const project = await getProject(token)
-  console.log('Projex', project)
-  console.log('projectId', project.id)
-  console.log('Owner', project.owner)
-  if (!project) {
+  
+  if (!project || !project?.link_is_active) {
      return <div className="min-h-[80vh] flex flex-col items-center justify-center">
       <p>Invalid or deleted link</p>
       </div>
