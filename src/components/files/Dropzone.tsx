@@ -25,13 +25,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false)
+  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(true)
   const router = useRouter();
-  useEffect(() => {
-    if(plan === "Professional" || plan === "Team") {
-      setIsBulkUploadAllowed(true)
-    }
-  }, [plan])
+  // useEffect(() => {
+  //   if(plan === "Professional" || plan === "Team") {
+  //     setIsBulkUploadAllowed(true)
+  //   }
+  // }, [plan])
 
   // Single file upload handlers
   const handleSingleFileDrop = useCallback((acceptedFiles: File[]) => {
@@ -57,9 +57,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
-      console.log('PPORL', projectId)
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
       const result = await uploadFile(formData, projectId);
+      console.log('RE', JSON.stringify(result.detail))
+      if(result.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
@@ -143,10 +148,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      
-      console.log('PPORL3', projectId)
       const uploadResult = await uploadFile(formData, projectId);
-      
+      if(uploadResult.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
