@@ -8,7 +8,6 @@ interface PricingCardProps {
   title: string
   monthlyPrice: number | string
   isPopular?: boolean
-  isCurrentPlan?: boolean
   features: JSX.Element[]
   ctaText: string
   ctaLink?: string
@@ -17,13 +16,13 @@ interface PricingCardProps {
   makePayment: (plan: string) => void
   loading: boolean;
   planName: string;
+  current_plan: string;
 }
 
 export function PricingCard({
   title,
   monthlyPrice,
   isPopular,
-  isCurrentPlan,
   features,
   ctaText,
   ctaLink,
@@ -31,18 +30,14 @@ export function PricingCard({
   isEnterprise,
   makePayment,
   loading,
-  planName
+  planName,
+  current_plan
 }: PricingCardProps) {
   const calculateAnnualPrice = (price: number) => (price * 12 * 0.8).toFixed(2)
 
   return (
     <div className={`bg-white p-6 rounded-xl shadow-lg flex flex-col ${isPopular ? 'border-2 border-blue-600 transform scale-105' : ''}`}>
       <div className='flex items-center justify-between mb-4 w-ful'>
-      {isCurrentPlan && (
-          <span className="bg-green-600 text-white px-2 py-1 rounded-full text-sm">
-            Current Plan
-          </span>
-        )}
         {isPopular && (
           <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-sm">
             Most Popular
@@ -99,10 +94,10 @@ export function PricingCard({
       ) : (
         <button 
         onClick={() => makePayment(title)}
-        disabled={loading}
-        className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${loading && planName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
+        disabled={current_plan === title || loading}
+        className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed': ''} ${loading && planName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
           {loading && planName === title? <LoadingSpinner/>: null}
-          {ctaText}
+          {`${current_plan === title? "Current Plan": ctaText}`}
         </button>
       )}
     </div>

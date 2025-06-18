@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-
-// import UserProvider from "@/components/context/user-provider";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Footer from "@/components/Footer";
 import Header from "@/components/header/header";

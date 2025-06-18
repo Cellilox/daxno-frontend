@@ -8,9 +8,10 @@ interface PricingContentProps {
   makePayment:(plan: string) => void
   loading: boolean;
   planName: string;
+  current_plan: string;
 }
 
-export function PricingContent({ billingInterval, makePayment, loading, planName }: PricingContentProps) {
+export function PricingContent({ billingInterval, makePayment, loading, planName, current_plan}: PricingContentProps) {
   const features = {
     starter: [
       <>500 documents/month</>,
@@ -40,37 +41,37 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
         title="Starter"
         monthlyPrice={19}
         features={features.starter}
-        ctaText="Start Free Trial"
+        ctaText="Upgrade"
         billingInterval={billingInterval}
-        isCurrentPlan={true}
         makePayment={makePayment}
         loading={loading}
         planName={planName}
+        current_plan={current_plan}
       />
 
       <PricingCard
         title="Professional"
         monthlyPrice={49}
         features={features.professional}
-        ctaText="Get Started"
+        ctaText="Upgrade"
         billingInterval={billingInterval}
         isPopular
-        isCurrentPlan={false}
         makePayment={makePayment}
         loading={loading}
         planName={planName}
+        current_plan={current_plan}
       />
 
       <PricingCard
         title="Team"
         monthlyPrice={70}
         features={features.team}
-        ctaText="Start Free Trial"
+        ctaText="Upgrade"
         billingInterval={billingInterval}
-        isCurrentPlan={false}
         makePayment={makePayment}
         loading={loading}
         planName={planName}
+        current_plan={current_plan}
       />
 
       <PricingCard
@@ -81,10 +82,10 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
         ctaLink="/contact"
         billingInterval={billingInterval}
         isEnterprise
-        isCurrentPlan={false}
         makePayment={makePayment}
         loading={loading}
         planName={planName}
+        current_plan={current_plan}
       />
     </div>
   )

@@ -8,8 +8,14 @@ import { PricingContent } from "./PricingContent"
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
 import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
+import { Transaction } from "./types"
+import CurrentPlan from "../header/CurrentPlan"
 
-export default function PricingModal() {
+type Transactions = {
+  transactions: Transaction[]
+}
+
+export default function PricingModal({transactions}: Transactions) {
   const [isOuterExpanded, setIsOuterExpanded] = useState(false)
   const [isInnerVisible, setIsInnerVisible] = useState(false)
   const [areCardsVisible, setAreCardsVisible] = useState(false)
@@ -107,9 +113,8 @@ export default function PricingModal() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Simple, Transparent Pricing
             </h2>
-            <p>{pathname}</p>
             <p className="text-gray-600 max-w-xl mx-auto">
-              Start free then upgrade as you grow. No hidden fees, cancel anytime.
+              No hidden fees, cancel anytime.
             </p>
             
             <BillingToggle
@@ -128,7 +133,11 @@ export default function PricingModal() {
                 <div className={`transition-opacity duration-300 ${
                   areCardsVisible ? 'opacity-100' : 'opacity-0'
                 }`}>
-                  <PricingContent billingInterval={billingInterval} makePayment={makePayment} loading={loading} planName={planName} />
+                  <PricingContent 
+                  billingInterval={billingInterval} 
+                  makePayment={makePayment} 
+                  loading={loading} planName={planName} 
+                  current_plan={transactions[0]?.plan_name}/>
                 </div>
               </div>
             </div>

@@ -2,7 +2,7 @@ import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
 import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
-import { getProjectsById } from "@/actions/project-actions"
+import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 
@@ -16,7 +16,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
-  const plan=""
+  const plan = await get_project_plan(project.owner)
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -49,7 +49,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 linkOwner={linkOwner} 
                 fields={fields}
                 records={records}
-                plan={plan}
+                plan={plan.plan_name}
               />
             )}
           </div>

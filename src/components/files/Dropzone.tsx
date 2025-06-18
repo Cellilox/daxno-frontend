@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { FileStatus } from './types';
+import { getTransactions } from '@/actions/transaction-actions';
 
 type MyDropzoneProps = {
   projectId: string;
@@ -25,13 +26,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(true)
+  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false)
   const router = useRouter();
-  // useEffect(() => {
-  //   if(plan === "Professional" || plan === "Team") {
-  //     setIsBulkUploadAllowed(true)
-  //   }
-  // }, [plan])
+  useEffect(() => {
+    if(plan === "Professional" || plan === "Team") {
+      setIsBulkUploadAllowed(true)
+    }
+  }, [plan])
 
   // Single file upload handlers
   const handleSingleFileDrop = useCallback((acceptedFiles: File[]) => {
@@ -285,7 +286,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         >
           Bulk Upload
           {!isBulkUploadAllowed && (
-            <span className="ml-1 text-xs text-red-500">(Premium)</span>
+            <span className="ml-1 text-xs text-red-500">(professional)</span>
           )}
         </button>
       </div>
