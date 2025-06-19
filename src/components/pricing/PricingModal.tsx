@@ -124,11 +124,11 @@ export default function PricingModal({transactions}: Transactions) {
           </div>
 
           <div
-            className={`mt-3 bg-white w-11/12 transform origin-top transition-transform duration-500 overflow-y-auto ${
+            className={`mt-3 bg-white w-11/12 flex justify-center transform origin-top transition-transform duration-500 overflow-y-auto ${
               isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
             }`}
           >
-            <div className="py-8 bg-gray-100">
+            <div className="py-8 bg-gray-100 w-11/12">
               <div className="mx-auto px-4">
                 <div className={`transition-opacity duration-300 ${
                   areCardsVisible ? 'opacity-100' : 'opacity-0'

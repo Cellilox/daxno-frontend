@@ -97,7 +97,7 @@ export function PricingCard({
         disabled={current_plan === title || loading}
         className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed': ''} ${loading && planName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
           {loading && planName === title? <LoadingSpinner/>: null}
-          {`${current_plan === title? "Current Plan": ctaText}`}
+          {`${current_plan === title? "Current Plan": current_plan=== "Professional"? "Downgrade": ctaText}`}
         </button>
       )}
     </div>

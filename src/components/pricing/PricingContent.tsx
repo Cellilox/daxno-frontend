@@ -36,7 +36,7 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
   }
 
   return (
-    <div className="grid gap-8 md:grid-cols-4">
+    <div className="grid gap-8 md:grid-cols-3">
       <PricingCard
         title="Starter"
         monthlyPrice={19}
@@ -62,7 +62,7 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
         current_plan={current_plan}
       />
 
-      <PricingCard
+      {/* <PricingCard
         title="Team"
         monthlyPrice={70}
         features={features.team}
@@ -72,7 +72,7 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
         loading={loading}
         planName={planName}
         current_plan={current_plan}
-      />
+      /> */}
 
       <PricingCard
         title="Enterprise"
