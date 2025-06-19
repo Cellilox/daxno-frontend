@@ -46,9 +46,11 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
     }
 
     setIsGeneratingLink(true)
-    const result = await regenerateProjectLink(projectId, data)
-    setIsGeneratingLink(false)
-    setSettingsOpen(false);
+    await regenerateProjectLink(projectId, data)
+    setTimeout(()=> {
+      setIsGeneratingLink(false)
+      setSettingsOpen(false);
+    }, 3000)
   };
 
   const deactivateLink = async () => {
@@ -57,9 +59,11 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
         link_is_active: false
     }
     setLoading(true)
-    const result = await updateProject(projectId, data)
-    setLoading(false)
+    await updateProject(projectId, data)
+    setTimeout(() => {
+      setLoading(false)
     setSettingsOpen(false);
+    }, 3000)
   };
 
   return (
@@ -147,7 +151,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
           ) : (
             <>
               <span className={`text-sm font-mono mr-2 break-all ${
-                !isLinkActive ? 'text-gray-500' : 'text-blue-700'
+                !isLinkActive ? 'text-gray-500 line-through' : 'text-blue-700'
               }`}>
                 {currentLink}
               </span>

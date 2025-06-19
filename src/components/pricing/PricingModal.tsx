@@ -8,7 +8,8 @@ import { PricingContent } from "./PricingContent"
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
 import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
-import { Transaction } from "./types"
+import { Transaction, Plan} from "./types"
+
 import CurrentPlan from "../header/CurrentPlan"
 
 type Transactions = {
@@ -19,10 +20,10 @@ export default function PricingModal({transactions}: Transactions) {
   const [isOuterExpanded, setIsOuterExpanded] = useState(false)
   const [isInnerVisible, setIsInnerVisible] = useState(false)
   const [areCardsVisible, setAreCardsVisible] = useState(false)
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly')
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('annual')
   const [timeoutIds, setTimeoutIds] = useState<number[]>([])
   const [loading, setLoading] = useState<boolean>(false)
-  const [planName, setPlanName] = useState<string>('')
+  const [clickedPlanName, setClickedPlanName] = useState<string>('')
   const pathname = usePathname().slice(1)
   const router = useRouter()
   const toggleExpand = () => {
@@ -60,26 +61,34 @@ export default function PricingModal({transactions}: Transactions) {
     useEffect(() => {
        setAvailablePlans()
     }, [])
+
+    const monthlyPlans = plansList?.filter((x: Plan) => x.interval === "monthly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+    console.log('MONTLY_PLANS', monthlyPlans)
+
+    const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+    console.log('Yearly_PLANS', yearlyPlans)
   
   
-    const makePayment = async (plan: string) => {
+    const makePayment = async (planId: number | undefined) => {
+      if (!planId) return;
+      
       try {
         setLoading(true)
-        const pickedPlan = plansList.filter((x: any) => x.name === plan)
-        const paymentPlanId = pickedPlan[0].id
+        const pickedPlan = plansList.filter((x: Plan) => x.id === planId)
+        const paymentPlan = pickedPlan[0].id
         const amount = pickedPlan[0].amount
-        setPlanName(pickedPlan[0].name)
-        if(paymentPlanId && amount) {
-              const result = await requestPayment (pathname, amount, paymentPlanId)
+        setClickedPlanName(pickedPlan[0].name)
+        if(paymentPlan && amount) {
+              const result = await requestPayment (pathname, amount, paymentPlan)
               console.log('Payment', result)
               if(result?.data) {
-              setPlanName('')
+              setClickedPlanName('')
               setLoading(false)
               router.push(result?.data?.link)
               }
         }
       } catch (error) {
-        setPlanName('')
+        setClickedPlanName('')
         setLoading(false)
         console.log('Error', error)
         alert('Error requesting to pay')
@@ -136,8 +145,11 @@ export default function PricingModal({transactions}: Transactions) {
                   <PricingContent 
                   billingInterval={billingInterval} 
                   makePayment={makePayment} 
-                  loading={loading} planName={planName} 
-                  current_plan={transactions[0]?.plan_name}/>
+                  loading={loading} clickedPlanName={clickedPlanName} 
+                  current_plan={transactions[0]?.plan_name}
+                  monthlyPlans={monthlyPlans}
+                  yearlyPlans={yearlyPlans}
+                  />
                 </div>
               </div>
             </div>
