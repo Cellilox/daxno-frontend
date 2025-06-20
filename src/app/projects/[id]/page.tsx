@@ -49,7 +49,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 linkOwner={linkOwner} 
                 fields={fields}
                 records={records}
-                plan={plan.plan_name}
+                plan={plan?.plan_name}
               />
             )}
           </div>
