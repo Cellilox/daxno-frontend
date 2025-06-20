@@ -32,26 +32,28 @@ export function PricingContent({ billingInterval, makePayment, loading, clickedP
       <>Dedicated Support</>
     ]
   }
-
   return (
     <>
     {billingInterval === "annual"? 
         <div className="grid gap-8 md:grid-cols-3">
-          {yearlyPlans?.map((plan: Plan) => (
+          {yearlyPlans?.map((plan: Plan) => {
+            const key = plan.name.toLowerCase() as keyof typeof features;
+          return (
             <PricingCard
             key={plan.plan_token}
             planId={plan.id}
             title={plan.name}
             monthlyPrice={plan.amount / 12}
-            features={features.starter}
+            features={features[key] || []}
             ctaText="Upgrade"
             billingInterval={billingInterval}
             makePayment={makePayment}
             loading={loading}
             clickedPlanName={clickedPlanName}
             current_plan={current_plan}
+            isPopular={plan.name === 'Professional'}
             />
-          ))}
+       )})}
           <PricingCard
           title="Enterprise"
           monthlyPrice="Custom"
@@ -68,21 +70,24 @@ export function PricingContent({ billingInterval, makePayment, loading, clickedP
     </div>:
 
        <div className="grid gap-8 md:grid-cols-3">
-        {monthlyPlans?.map((plan: Plan) => (
+        {monthlyPlans?.map((plan: Plan) => {
+          const key = plan.name.toLowerCase() as keyof typeof features;
+          return (
           <PricingCard
             key={plan.plan_token}
             planId={plan.id}
             title={plan.name}
             monthlyPrice={plan.amount}
-            features={features.starter}
+            features={features[key] || []}
             ctaText="Upgrade"
             billingInterval={billingInterval}
             makePayment={makePayment}
             loading={loading}
             clickedPlanName={clickedPlanName}
             current_plan={current_plan}
+            isPopular={plan.name === 'Professional'}
           />
-        ))}  
+         )})}  
           <PricingCard
           title="Enterprise"
           monthlyPrice="Custom"

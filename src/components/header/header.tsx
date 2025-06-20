@@ -6,6 +6,7 @@ import CurrentPlan from './CurrentPlan'
 import { getTransactions } from '@/actions/transaction-actions'
 import Image from 'next/image'
 import MobileMenu from './MobileMenu'
+import PricingModal from '../pricing/PricingModal'
 
 const Header = async () => {
   const user = await currentUser()
@@ -35,7 +36,7 @@ const Header = async () => {
             <div className='flex justify-between'>
               <CurrentPlan transactions={transactions} />
               <div className="md:hidden -mt-2 ml-3">
-                <MobileMenu userId={userId!} />
+                <MobileMenu userId={userId!}/>
               </div>
             </div>
           </SignedIn>

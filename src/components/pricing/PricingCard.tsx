@@ -39,15 +39,13 @@ export function PricingCard({
   return (
     <div className={`bg-white p-6 rounded-xl shadow-lg flex flex-col ${isPopular ? 'border-2 border-blue-600 transform scale-105' : ''}`}>
       <div className='flex items-center justify-between mb-4 w-ful'>
+        <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
         {isPopular && (
           <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-sm">
             Most Popular
           </span>
         )}
       </div>
-      
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
-      
       <div className="text-4xl font-bold mb-4">
         {isEnterprise ? (
           'Custom'

@@ -2,8 +2,13 @@
 
 import Link from 'next/link'
 import React, { useState, useEffect, useRef } from 'react'
+import { Transaction } from '../pricing/types';
 
-const MobileMenu = ({ userId }: { userId: string | null }) => {
+interface MobileMenuProps {
+  userId: string | null
+}
+
+const MobileMenu = ({ userId }: MobileMenuProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 

@@ -50,7 +50,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
     setTimeout(()=> {
       setIsGeneratingLink(false)
       setSettingsOpen(false);
-    }, 3000)
+    }, 2500)
   };
 
   const deactivateLink = async () => {
@@ -63,7 +63,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
     setTimeout(() => {
       setLoading(false)
     setSettingsOpen(false);
-    }, 3000)
+    }, 2500)
   };
 
   return (
@@ -92,7 +92,7 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
                   disabled={!isLinkActive}
                   className={`flex px-4 py-2 text-left text-sm font-medium rounded-md ${!isLinkActive ? 'text-gray-500 bg-gray-100 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
                 >
-                  {loading && <LoadingSpinner className="mr-3"/>}
+                  {loading && <LoadingSpinner className="mr-3 text-red-300"/>}
                   {!isLinkActive ? 'Link Deactivated' : 'Deactivate Link'}
                 </button>
                 <button
