@@ -11,7 +11,7 @@ export default async function BillingPage() {
     return (
       <div className="max-w-2xl mx-auto py-12 px-4 bg-red-300 flex flex-col justify-center items-center">
         <h1 className="text-2xl font-bold mb-6">Billing & Subscription</h1>
-        <p>You haven’t made any transactions yet.</p>
+        <p>You don't have any ongoing subscription.</p>
       </div>
     );
   }

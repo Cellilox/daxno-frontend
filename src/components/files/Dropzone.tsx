@@ -77,7 +77,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
   const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Analysing...',});
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Optical Character Recognition...',});
+      setTimeout(() => {
+        onMessageChange({type: messageTypeEnum.INFO, text: 'AI Model Thinking....',});
+      }, 4000)
       const response = await queryDocument(projectId, fileName);
       const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key};
       console.log('Record Payload:', recordPayload)
