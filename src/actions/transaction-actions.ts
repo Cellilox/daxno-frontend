@@ -1,6 +1,6 @@
 "use server"
 
-import { fetchAuthed } from "@/lib/api-client";
+import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,3 +15,18 @@ export async function getTransactions() {
     console.log('Error', error)
  }
 }
+
+export async function deleteTransaction(transaction_id: number) {
+   try {
+          const response = await fetchAuthedJson(`${apiUrl}/transactions?t_id=${transaction_id}`, {
+      method: 'DELETE'
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to delete a transanction');
+    }
+   } catch (error) {
+      console.log('Error', error)
+   }
+  }
+

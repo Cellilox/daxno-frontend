@@ -15,6 +15,8 @@ export default async function BillingPage() {
 
   return (
     <Billing 
+    sub_id = {subscription?.data[0]?.id}
+    t_id = {transactions[0]?.t_id}
     subPlan= {userPlan?.data?.name}
     subAmount={subscription?.data[0]?.amount}
     subInterval={userPlan?.data?.interval}

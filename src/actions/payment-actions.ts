@@ -78,3 +78,19 @@ try {
   console.log(error)
 }
 };
+
+export async function cancelSubscription(sub_id: number) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/payments/cancel-subscription?sub_id=${sub_id}`, {
+    method: 'POST',
+  });
+
+  // if (!response.ok) {
+  //   throw new Error('Failed to cancel subscription');
+  // }
+
+  return await response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}
