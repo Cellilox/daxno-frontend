@@ -95,3 +95,16 @@ export async function deleteProject(projectId: string) {
     }
     revalidatePath('/projects');
   }
+
+
+  export async function get_project_plan(project_owner: string) {
+  try {
+    const response = await fetchAuthed(`${apiUrl}/projects/get-project-plan?project_owner=${project_owner}`)
+    // if(!response.ok) {
+    //   throw new Error ("Failed to fetch projects")
+    // }
+    return await response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}

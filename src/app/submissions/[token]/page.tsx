@@ -1,10 +1,11 @@
+import { get_project_plan } from "@/actions/project-actions"
 import { getProject } from "@/actions/submission-actions"
 import DropzoneWrapper from "@/components/files/DropzoneWrapper"
 
 export default async function Submission({ params }: {params: Promise<{token: string}>}) {
   const { token } = await params
   const project = await getProject(token)
-  
+  const plan = await get_project_plan(project.owner)
   if (!project || !project?.link_is_active) {
      return <div className="min-h-[80vh] flex flex-col items-center justify-center">
       <p>Invalid or deleted link</p>
@@ -21,7 +22,7 @@ export default async function Submission({ params }: {params: Promise<{token: st
         <DropzoneWrapper
           projectId={project.id}
           linkOwner = {project.owner}
-          plan = 'Professional' // to be modified later
+          plan = {plan.plan_name}
         />
       </div>
     </div>

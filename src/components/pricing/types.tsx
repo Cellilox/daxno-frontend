@@ -1,8 +1,13 @@
 export interface Transaction {
-    payment_type: 'mobilemoneyrw' | 'card';
-    end_date?: string;
-    amount?: number;
-    t_id?: number;
-    payment_plan: number,
-    end_data: string
+    plan_name: string;
   }
+
+export type Plan = {
+id: number;
+amount: number;
+currency: string;
+interval: string;
+name: string;
+status: boolean;
+plan_token: string
+}

@@ -9,15 +9,19 @@ export async function revalidate() {
 }
 
 export async function uploadFile (formData:any, projectId: string | undefined)  {
+     try {
       const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
         method: 'POST',
         body: formData
       });
 
-    if (!response.ok) {
-    throw new Error('Failed to upload a file to aws ');
-    }
+    // if (!response.ok) {
+    // throw new Error('Failed to upload a file to aws ');
+    // }
     return await response.json()
+     } catch (error) {
+      console.log('Error', error)
+     }
   };
 
 

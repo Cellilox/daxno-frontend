@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { FileStatus } from './types';
+import { getTransactions } from '@/actions/transaction-actions';
 
 type MyDropzoneProps = {
   projectId: string;
@@ -57,9 +58,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const formData = new FormData();
     formData.append('file', file);
     try {
-      console.log('PPORL', projectId)
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
       const result = await uploadFile(formData, projectId);
+      console.log('RE', JSON.stringify(result.detail))
+      if(result.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
@@ -143,10 +149,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      
-      console.log('PPORL3', projectId)
       const uploadResult = await uploadFile(formData, projectId);
-      
+      if(uploadResult.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
@@ -278,7 +286,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         >
           Bulk Upload
           {!isBulkUploadAllowed && (
-            <span className="ml-1 text-xs text-red-500">(Premium)</span>
+            <span className="ml-1 text-xs text-red-500">(professional)</span>
           )}
         </button>
       </div>

@@ -26,11 +26,11 @@ export default function Card({project}: CardProps) {
   const router = useRouter()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
-
+  
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-
+  console.log('Proj_to_update', selectedProjectToUpdate)
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
@@ -65,11 +65,7 @@ export default function Card({project}: CardProps) {
     e.preventDefault()
     setIsLoading(true)
     const updateData = {
-      name: selectedProjectToUpdate?.name || '',
-      description: selectedProjectToUpdate?.description || '',
-      owner: selectedProjectToUpdate?.owner || '',
-      address_domain: selectedProjectToUpdate?.address_domain || '',
-      owner_email: selectedProjectToUpdate?.owner_email || ''  
+      ...selectedProjectToUpdate
     };
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)

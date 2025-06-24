@@ -35,7 +35,7 @@ const Header = async () => {
             <div className='flex justify-between'>
               <CurrentPlan transactions={transactions} />
               <div className="md:hidden -mt-2 ml-3">
-                <MobileMenu userId={userId!} />
+                <MobileMenu userId={userId!}/>
               </div>
             </div>
           </SignedIn>

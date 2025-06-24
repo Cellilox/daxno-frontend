@@ -1,16 +1,20 @@
 'use client'
 
 import { PricingCard } from "./PricingCard"
+import { Plan } from "./types";
 
 
 interface PricingContentProps {
   billingInterval: 'monthly' | 'annual'
-  makePayment:(plan: string) => void
+  makePayment:(planId: number | undefined) => void
   loading: boolean;
-  planName: string;
+  clickedPlanName: string;
+  current_plan: string;
+  monthlyPlans: Plan[];
+  yearlyPlans: Plan[];
 }
 
-export function PricingContent({ billingInterval, makePayment, loading, planName }: PricingContentProps) {
+export function PricingContent({ billingInterval, makePayment, loading, clickedPlanName, current_plan, monthlyPlans, yearlyPlans}: PricingContentProps) {
   const features = {
     starter: [
       <>500 documents/month</>,
@@ -22,70 +26,83 @@ export function PricingContent({ billingInterval, makePayment, loading, planName
       <>Advanced Templates</>,
       <>Priority Support</>
     ],
-    team: [
-      <>500 documents/month</>,
-      <>Basic Templates</>,
-      <>Email Support</>
-    ],
     enterprise: [
       <>Unlimited Documents</>,
       <>Custom Workflows</>,
       <>Dedicated Support</>
     ]
   }
-
   return (
-    <div className="grid gap-8 md:grid-cols-4">
-      <PricingCard
-        title="Starter"
-        monthlyPrice={19}
-        features={features.starter}
-        ctaText="Start Free Trial"
-        billingInterval={billingInterval}
-        isCurrentPlan={true}
-        makePayment={makePayment}
-        loading={loading}
-        planName={planName}
-      />
+    <>
+    {billingInterval === "annual"? 
+        <div className="grid gap-8 md:grid-cols-3">
+          {yearlyPlans?.map((plan: Plan) => {
+            const key = plan.name.toLowerCase() as keyof typeof features;
+          return (
+            <PricingCard
+            key={plan.plan_token}
+            planId={plan.id}
+            title={plan.name}
+            monthlyPrice={plan.amount / 12}
+            features={features[key] || []}
+            ctaText="Upgrade"
+            billingInterval={billingInterval}
+            makePayment={makePayment}
+            loading={loading}
+            clickedPlanName={clickedPlanName}
+            current_plan={current_plan}
+            isPopular={plan.name === 'Professional'}
+            />
+       )})}
+          <PricingCard
+          title="Enterprise"
+          monthlyPrice="Custom"
+          features={features.enterprise}
+          ctaText="Contact Sales"
+          ctaLink="/contact"
+          billingInterval={billingInterval}
+          isEnterprise
+          makePayment={makePayment}
+          loading={loading}
+          clickedPlanName={clickedPlanName}
+          current_plan={current_plan}
+        />
+    </div>:
 
-      <PricingCard
-        title="Professional"
-        monthlyPrice={49}
-        features={features.professional}
-        ctaText="Get Started"
-        billingInterval={billingInterval}
-        isPopular
-        isCurrentPlan={false}
-        makePayment={makePayment}
-        loading={loading}
-        planName={planName}
-      />
-
-      <PricingCard
-        title="Team"
-        monthlyPrice={70}
-        features={features.team}
-        ctaText="Start Free Trial"
-        billingInterval={billingInterval}
-        isCurrentPlan={false}
-        makePayment={makePayment}
-        loading={loading}
-        planName={planName}
-      />
-
-      <PricingCard
-        title="Enterprise"
-        monthlyPrice="Custom"
-        features={features.enterprise}
-        ctaText="Contact Sales"
-        ctaLink="/contact"
-        billingInterval={billingInterval}
-        isEnterprise
-        isCurrentPlan={false}
-        makePayment={makePayment}
-        loading={loading}
-        planName={planName}
-      />
+       <div className="grid gap-8 md:grid-cols-3">
+        {monthlyPlans?.map((plan: Plan) => {
+          const key = plan.name.toLowerCase() as keyof typeof features;
+          return (
+          <PricingCard
+            key={plan.plan_token}
+            planId={plan.id}
+            title={plan.name}
+            monthlyPrice={plan.amount}
+            features={features[key] || []}
+            ctaText="Upgrade"
+            billingInterval={billingInterval}
+            makePayment={makePayment}
+            loading={loading}
+            clickedPlanName={clickedPlanName}
+            current_plan={current_plan}
+            isPopular={plan.name === 'Professional'}
+          />
+         )})}  
+          <PricingCard
+          title="Enterprise"
+          monthlyPrice="Custom"
+          features={features.enterprise}
+          ctaText="Contact Sales"
+          ctaLink="/contact"
+          billingInterval={billingInterval}
+          isEnterprise
+          makePayment={makePayment}
+          loading={loading}
+          clickedPlanName={clickedPlanName}
+          current_plan={current_plan}
+        />
     </div>
+  }
+    </>
   )
 }

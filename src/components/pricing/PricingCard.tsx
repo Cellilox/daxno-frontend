@@ -2,28 +2,30 @@
 
 import Link from "next/link"
 import LoadingSpinner from "../ui/LoadingSpinner"
+import { Plan } from "./types"
 
 
 interface PricingCardProps {
   title: string
+  planId?: number | undefined
   monthlyPrice: number | string
   isPopular?: boolean
-  isCurrentPlan?: boolean
   features: JSX.Element[]
   ctaText: string
   ctaLink?: string
   billingInterval: 'monthly' | 'annual'
   isEnterprise?: boolean
-  makePayment: (plan: string) => void
+  makePayment: (planId: number | undefined) => void
   loading: boolean;
-  planName: string;
+  clickedPlanName: string;
+  current_plan: string;
 }
 
 export function PricingCard({
   title,
+  planId,
   monthlyPrice,
   isPopular,
-  isCurrentPlan,
   features,
   ctaText,
   ctaLink,
@@ -31,47 +33,28 @@ export function PricingCard({
   isEnterprise,
   makePayment,
   loading,
-  planName
+  clickedPlanName,
+  current_plan
 }: PricingCardProps) {
-  const calculateAnnualPrice = (price: number) => (price * 12 * 0.8).toFixed(2)
-
   return (
     <div className={`bg-white p-6 rounded-xl shadow-lg flex flex-col ${isPopular ? 'border-2 border-blue-600 transform scale-105' : ''}`}>
       <div className='flex items-center justify-between mb-4 w-ful'>
-      {isCurrentPlan && (
-          <span className="bg-green-600 text-white px-2 py-1 rounded-full text-sm">
-            Current Plan
-          </span>
-        )}
+        <h3 className="text-2xl font-bold text-gray-900">{title}</h3>
         {isPopular && (
           <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-sm">
             Most Popular
           </span>
         )}
       </div>
-      
-      <h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
-      
       <div className="text-4xl font-bold mb-4">
         {isEnterprise ? (
           'Custom'
-        ) : billingInterval === 'monthly' ? (
-          typeof monthlyPrice === 'number' ? (
+        ) : (
             <>
               ${monthlyPrice}<span className="text-lg text-gray-500">/mo</span>
+              <p className="text-xs text-gray-400">{billingInterval === "annual"? "Billed annually": "Billed monthly"}</p>
             </>
-          ) : (
-            monthlyPrice
-          )
-        ) : (
-          <>
-            ${calculateAnnualPrice(monthlyPrice as number)}
-            <span className="text-lg text-gray-500">/year</span>
-            <div className="text-sm text-gray-500 mt-1">
-              (${(Number(monthlyPrice) * 0.8).toFixed(2)}/mo equivalent)
-            </div>
-          </>
-        )}
+          )}
       </div>
 
       <ul className="space-y-2 mb-6 flex-1">
@@ -98,11 +81,11 @@ export function PricingCard({
         </Link>
       ) : (
         <button 
-        onClick={() => makePayment(title)}
-        disabled={loading}
-        className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${loading && planName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
-          {loading && planName === title? <LoadingSpinner/>: null}
-          {ctaText}
+        onClick={() => makePayment(planId)}
+        disabled={current_plan === title || loading}
+        className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed': ''} ${loading && clickedPlanName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}>
+          {loading && clickedPlanName === title? <LoadingSpinner/>: null}
+          {`${current_plan === title? "Current Plan": current_plan=== "Professional"? "Downgrade": ctaText}`}
         </button>
       )}
     </div>

@@ -63,3 +63,34 @@ try {
   console.log(error)
 }
 };
+
+export async function getUserSubscription (transaction_id: string)  {
+try {
+  const response = await fetchAuthed(`${apiUrl}/payments/subscription?transsaction_id=${transaction_id}`, {
+    method: 'GET',
+  });
+  
+  // if (!response.ok) {
+  // throw new Error('Failed user plan');
+  // }
+  return await response.json()
+} catch (error) {
+  console.log(error)
+}
+};
+
+export async function cancelSubscription(sub_id: number) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/payments/cancel-subscription?sub_id=${sub_id}`, {
+    method: 'POST',
+  });
+
+  // if (!response.ok) {
+  //   throw new Error('Failed to cancel subscription');
+  // }
+
+  return await response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}
