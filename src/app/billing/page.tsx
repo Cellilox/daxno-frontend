@@ -7,11 +7,8 @@ import Billing from "@/components/Billing";
 export default async function BillingPage() {
 
   const transactions = await getTransactions()
-  console.log('TXX', transactions[0])
   const subscription = await getUserSubscription(transactions[0]?.t_id)
-  console.log('SUB', subscription)
   const userPlan = await getUserPlan(transactions[0]?.plan_id)
-  console.log('PLAN', userPlan)
 
   return (
     <Billing 
