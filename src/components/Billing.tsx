@@ -6,6 +6,7 @@ import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
 import { useRouter } from "next/navigation";
 import { create_sub_feedback } from "@/actions/cancel-feedback-actions";
+import { usePathname } from "next/navigation";
 
 type BillingProps = {
     sub_id: number;
@@ -24,6 +25,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
   const [customReason, setCustomReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter()
+  const pathname = usePathname()
 
   const options = [
     'Found a better alternative',
@@ -63,7 +65,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
       const res = await cancelSubscription(sub_id)
       if(res.data.status === 'cancelled') {
         await deleteTransaction(t_id)
-        router.push('/')
+        router.push(pathname)
       }
     } catch (error) {
       console.error('Error cancelling subscription:', error);
