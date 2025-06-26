@@ -1,6 +1,6 @@
 'use client';
 
-import { cancelSubscription } from "@/actions/payment-actions";
+import { activateSubscription, cancelSubscription } from "@/actions/payment-actions";
 import { deleteTransaction } from "@/actions/transaction-actions";
 import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
@@ -24,6 +24,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
   const [reason, setReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
   const router = useRouter()
   const pathname = usePathname()
 
@@ -73,11 +74,36 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     }
   }
 
+   const handleActivateSubscription = async (sub_id: number) => {
+    setIsActivating(true);
+    try {
+      const res = await activateSubscription(sub_id)
+      if(res.data.status === 'active') {
+        router.push(pathname)
+      }
+    } catch (error) {
+      console.error('Error activating subscription:', error);
+    } finally {
+      setIsActivating(true);
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6 flex justify-between items-center">
       <h1 className="text-2xl font-bold">Billing & Subscription</h1>
-      {!isActive && <button className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">Reactivate</button>}
+      {isActive ? 
+      (
+      <div className="border border-green-600 px-4 py-2 rounded-lg">
+      <h1 className="text-green-600 bold">Active</h1>
+      </div>
+      ): (
+        <button 
+        onClick={() => handleActivateSubscription(sub_id)}
+        className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
+          {isActivating ? 'Reactivating...' : 'Reactivate'}
+          </button>
+        )}
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
