@@ -1,5 +1,7 @@
 export interface Transaction {
     plan_name: string;
+    amount: number;
+    end_date: string;
   }
 
 export type Plan = {

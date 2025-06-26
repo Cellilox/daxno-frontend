@@ -64,7 +64,6 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     try {
       const res = await cancelSubscription(sub_id)
       if(res.data.status === 'cancelled') {
-        await deleteTransaction(t_id)
         router.push(pathname)
       }
     } catch (error) {
@@ -76,7 +75,10 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-2xl font-bold mb-6">Billing & Subscription</h1>
+      <div className="mb-6 flex justify-between items-center">
+      <h1 className="text-2xl font-bold">Billing & Subscription</h1>
+      {!isActive && <button className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">Reactivate</button>}
+      </div>
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
           <span className="font-medium">Current Plan:</span>

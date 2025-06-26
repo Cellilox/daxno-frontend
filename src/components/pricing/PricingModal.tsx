@@ -10,8 +10,6 @@ import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { Transaction, Plan} from "./types"
 
-import CurrentPlan from "../header/CurrentPlan"
-
 type Transactions = {
   transactions: Transaction[]
 }
@@ -24,6 +22,7 @@ export default function PricingModal({transactions}: Transactions) {
   const [timeoutIds, setTimeoutIds] = useState<number[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [clickedPlanName, setClickedPlanName] = useState<string>('')
+  const [clickedPlanAmount, setClickedPlanAmount] = useState<number>()
   const pathname = usePathname().slice(1)
   const router = useRouter()
   const toggleExpand = () => {
@@ -67,16 +66,24 @@ export default function PricingModal({transactions}: Transactions) {
 
     const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
     console.log('Yearly_PLANS', yearlyPlans)
+
+     const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+    console.log('HOURLY_PLANS', hourlyPlans)
   
   
-    const makePayment = async (planId: number | undefined) => {
+    const makePayment = async (planId: number | undefined, proratedAmount: number | undefined) => {
       if (!planId) return;
       
       try {
         setLoading(true)
+        let amount;
         const pickedPlan = plansList.filter((x: Plan) => x.id === planId)
         const paymentPlan = pickedPlan[0].id
-        const amount = pickedPlan[0].amount
+        if(proratedAmount) {
+          amount = proratedAmount
+        } else {
+          amount = pickedPlan[0].amount
+        }
         setClickedPlanName(pickedPlan[0].name)
         if(paymentPlan && amount) {
               const result = await requestPayment (pathname, amount, paymentPlan)
@@ -145,10 +152,13 @@ export default function PricingModal({transactions}: Transactions) {
                   <PricingContent 
                   billingInterval={billingInterval} 
                   makePayment={makePayment} 
-                  loading={loading} clickedPlanName={clickedPlanName} 
+                  loading={loading} clickedPlanName={clickedPlanName}
                   current_plan={transactions[0]?.plan_name}
+                  current_txn_amount={transactions[0]?.amount}
+                  current_txn_end_date={transactions[0]?.end_date}
                   monthlyPlans={monthlyPlans}
                   yearlyPlans={yearlyPlans}
+                  hourlyPlans={hourlyPlans}
                   />
                 </div>
               </div>

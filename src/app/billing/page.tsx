@@ -18,6 +18,7 @@ export default async function BillingPage() {
 
   const firstTx = transactions[0];
   const subscription = await getUserSubscription(firstTx.t_id);
+  console.log('Curr', subscription)
   const userPlan    = await getUserPlan(firstTx.plan_id);
 
   return (
