@@ -18,6 +18,7 @@ export type Geometry = {
 export type AnswerData = {
   text: string;
   geometry: Geometry;
+  page: number;
 };
 
 export type ApiRecord = {
@@ -29,6 +30,7 @@ export type ApiRecord = {
   orginal_file_name: string;
   file_key: string;
   project_id: string;
+  pages: number;
 };
 
 export type Record = {
@@ -40,6 +42,7 @@ export type Record = {
   answers: { [key: string]: AnswerData };
   created_at: string;
   updated_at: string;
+  pages: number;
 };
 
 export type SpreadSheetProps = {
