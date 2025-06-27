@@ -1,168 +1,243 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
+import * as pdfjsLib from "pdfjs-dist/webpack";
+import type { PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 
-interface Geometry {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
+// serve the worker from /public
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+const cMapUrl = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`;
 
-interface Answer {
-  text: string;
-  geometry: Geometry;
-}
-
+interface Geometry { left: number; top: number; width: number; height: number }
+interface Answer { text: string; geometry: Geometry; page: number }
 interface PdfViewerProps {
   fileUrl: string;
   activeItem: string | null;
   answers: Record<string, Answer>;
+  totalPages?: number;
 }
 
-export default function PdfViewer({ fileUrl, activeItem, answers }: PdfViewerProps) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
+export default function PdfViewer({
+  fileUrl,
+  activeItem,
+  answers,
+  totalPages,
+}: PdfViewerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageDimensions, setPageDimensions] = useState<Record<number, { width: number; height: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [renderScale, setRenderScale] = useState(1);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Handle PDF load
-  const handleLoad = useCallback(() => {
-    setIsLoading(false);
-    setError(null);
-    
-    // Update dimensions after load
-    if (wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setDimensions({ width: rect.width, height: rect.height });
-    }
-  }, []);
+  const renderTaskRef = useRef<RenderTask | null>(null);
+  const isMountedRef = useRef(true);
+  const pendingRenderRef = useRef(false);
 
-  // Handle iframe error
-  const handleError = useCallback(() => {
-    setError("Failed to load PDF document. Please check the file URL.");
-    setIsLoading(false);
-  }, []);
-
-  // Update dimensions on resize
+  // 1) Load PDF & preload dims
   useEffect(() => {
-    const updateDimensions = () => {
-      if (wrapperRef.current) {
-        const rect = wrapperRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
+    isMountedRef.current = true;
+    setIsLoading(true);
+    setError(null);
+
+    const loadingTask = pdfjsLib.getDocument({ url: fileUrl, cMapUrl, cMapPacked: true });
+    loadingTask.promise
+      .then((pdfDoc: any) => {
+        if (!isMountedRef.current) return;
+        setPdf(pdfDoc);
+
+        const dims: Record<number, { width: number; height: number }> = {};
+        return Promise.all(
+          Array.from({ length: pdfDoc.numPages }, (_, i) => i + 1).map(i =>
+            pdfDoc.getPage(i).then((page: any) => {
+              const vp = page.getViewport({ scale: 1 });
+              dims[i] = { width: vp.width, height: vp.height };
+            })
+          )
+        ).then(() => {
+          if (!isMountedRef.current) return;
+          setPageDimensions(dims);
+          setIsLoading(false);
+        });
+      })
+      .catch((err: any) => {
+        if (!isMountedRef.current) return;
+        console.error("PDF loading error:", err);
+        setError("Failed to load PDF document. Please check the file URL.");
+        setIsLoading(false);
+      });
+
+    return () => {
+      isMountedRef.current = false;
+      renderTaskRef.current?.cancel();
+      pdf?.destroy();
+    };
+  }, [fileUrl]);
+
+  // 2) Track container size
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const update = () => {
+      if (!isMountedRef.current) return;
+      const { width, height } = containerRef.current!.getBoundingClientRect();
+      setContainerSize({ width, height });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // 3) Compute renderScale (tighter zoom)
+  useEffect(() => {
+    if (!pdf) return;
+    const { width, height } = containerSize;
+    if (width === 0 || height === 0) return;
+
+    pdf.getPage(currentPage).then(page => {
+      const vp = page.getViewport({ scale: 1 });
+      const scale = Math.min(width / vp.width, height / vp.height, 2);
+      setRenderScale(Math.max(scale, 1));
+    });
+  }, [pdf, currentPage, containerSize]);
+
+  // 4) Render page + highlights (no tooltips)
+  useEffect(() => {
+    if (!pdf || !canvasRef.current) return;
+    if (currentPage < 1 || currentPage > pdf.numPages) return;
+    if (pendingRenderRef.current) return;
+    pendingRenderRef.current = true;
+
+    const doRender = async () => {
+      renderTaskRef.current?.cancel();
+      try {
+        const page = await pdf.getPage(currentPage);
+        const viewport = page.getViewport({ scale: renderScale });
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const task = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = task;
+        await task.promise;
+
+        if (isMountedRef.current) {
+          // draw only border highlights
+          const canvas = canvasRef.current!;
+          const ctx = canvas.getContext("2d")!;
+          Object.entries(answers).forEach(([key, ans]) => {
+            if (ans.page !== currentPage) return;
+            const left = ans.geometry.left * viewport.width;
+            const top = ans.geometry.top * viewport.height;
+            const w = ans.geometry.width * viewport.width;
+            const h = ans.geometry.height * viewport.height;
+            ctx.strokeStyle = key === activeItem ? "#ef4444" : "#888888";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(left, top, w, h);
+          });
+        }
+      } catch (err: any) {
+        if (!err.message.includes("cancelled")) {
+          console.error("Page rendering error:", err);
+        }
+      } finally {
+        pendingRenderRef.current = false;
+        renderTaskRef.current = null;
       }
     };
 
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    if (wrapperRef.current) {
-      resizeObserver.observe(wrapperRef.current);
-    }
+    doRender();
+    return () => {
+      renderTaskRef.current?.cancel();
+      pendingRenderRef.current = false;
+    };
+  }, [pdf, currentPage, activeItem, answers, renderScale]);
 
-    return () => resizeObserver.disconnect();
-  }, []);
+  // 5) Hover jumps only valid pages
+  useEffect(() => {
+    if (!pdf || !activeItem) return;
+    const ans = answers[activeItem];
+    if (!ans) return;
+    const p = ans.page;
+    if (p >= 1 && p <= pdf.numPages && p !== currentPage) {
+      setCurrentPage(p);
+    }
+  }, [activeItem, answers, pdf]);
+
+  // Keyboard nav
+  const goToPage = (p: number) => {
+    if (!pdf || p < 1 || p > pdf.numPages) return;
+    setCurrentPage(p);
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goToPage(currentPage - 1);
+      if (e.key === "ArrowRight") goToPage(currentPage + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [currentPage, pdf]);
 
   return (
-    <div className="flex flex-col w-full">
-      {/* Main container - this is what scrolls */}
-      <div 
-        ref={wrapperRef}
-        className="relative border border-gray-200 rounded-md bg-gray-50 overflow-auto"
-        style={{ height: '80vh', minHeight: '600px' }}
+    <div className="flex flex-col w-full h-full">
+      {/* navigation */}
+      <div className="flex justify-between items-center mb-2 bg-gray-100 p-2 rounded-t">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition disabled:opacity-50"
+        >
+          ← Prev
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">
+            Page {currentPage} {pdf ? `of ${pdf.numPages}` : ""}
+          </span>
+          {totalPages && <span className="text-xs text-gray-500">(Original: {totalPages} pages)</span>}
+        </div>
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={pdf ? currentPage >= pdf.numPages : false}
+          className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition disabled:opacity-50"
+        >
+          Next →
+        </button>
+      </div>
+
+      {/* PDF canvas */}
+      <div
+        ref={containerRef}
+        className="relative flex-grow border border-gray-200 rounded-b bg-gray-50 overflow-hidden"
+        style={{ minHeight: "500px" }}
       >
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-30">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="text-blue-600 font-medium">Loading PDF...</span>
-            </div>
+            {/* spinner */}
           </div>
         )}
-        
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center z-30 p-4">
-            <div className="text-red-600 text-center">
-              <div className="text-lg font-semibold mb-2">Error Loading PDF</div>
-              <div className="text-sm">{error}</div>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center z-30 p-4 bg-white">
+            {/* error UI */}
           </div>
         )}
-
-        {/* Content area - larger than container to enable scrolling */}
-        <div className="relative" style={{ width: '80%', height: '100%', minWidth: '100%', minHeight: '100%' }}>
-          {/* PDF iframe */}
-          <iframe
-            ref={iframeRef}
-            src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
-            className="w-full h-full border-none"
-            onLoad={handleLoad}
-            onError={handleError}
-            title="PDF Viewer"
-            style={{ 
-              visibility: isLoading ? 'hidden' : 'visible'
-            }}
-          />
-          
-          {/* Overlays - positioned absolutely on top of PDF */}
-          <div
-            ref={overlayRef}
-            className="absolute inset-0 pointer-events-none"
-            style={{ zIndex: 10 }}
-          >
-            {!isLoading && Object.entries(answers).map(([key, answer]) => {
-              const isActive = activeItem === key;
-              
-              return (
-                <div
-                  key={key}
-                  className="absolute transition-all duration-200"
-                  style={{
-                    left: `${answer.geometry.left * 100}%`,
-                    top: `${answer.geometry.top * 100}%`,
-                    width: `${answer.geometry.width * 100}%`,
-                    height: `${answer.geometry.height * 100}%`,
-                    border: `${isActive ? '3px' : '2px'} solid ${isActive ? '#ef4444' : '#3b82f6'}`,
-                    backgroundColor: isActive 
-                      ? 'rgba(239, 68, 68, 0.1)' 
-                      : 'rgba(59, 130, 246, 0.08)',
-                    boxShadow: isActive 
-                      ? '0 0 10px rgba(239, 68, 68, 0.3)' 
-                      : '0 0 5px rgba(59, 130, 246, 0.2)',
-                    borderRadius: '2px',
-                    zIndex: isActive ? 15 : 10,
-                  }}
-                >
-                  {/* Tooltip for active item */}
-                  {isActive && answer.text && (
-                    <div 
-                      className="absolute bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap max-w-60 truncate z-20"
-                      style={{
-                        top: '-2rem',
-                        left: '0',
-                        transform: 'translateY(-2px)'
-                      }}
-                    >
-                      {answer.text.length > 60 ? `${answer.text.substring(0, 60)}...` : answer.text}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+        {!isLoading && !error && (
+          <div className="absolute inset-0 flex justify-center items-center overflow-auto">
+            <canvas
+              ref={canvasRef}
+              className="shadow-lg bg-white"
+              style={{ maxWidth: "100%", maxHeight: "100%", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+            />
           </div>
-        </div>
+        )}
       </div>
-      
-      {/* Status info */}
-      {/* <div className="mt-2 flex justify-between items-center text-sm text-gray-600">
-        <div>
-          {Object.keys(answers).length} annotation{Object.keys(answers).length !== 1 ? 's' : ''}
-          {activeItem && ` • Active: ${activeItem}`}
-        </div>
-        <div className="text-xs text-gray-400">
-          Scroll to navigate • Annotations synchronized
-        </div>
-      </div> */}
     </div>
   );
 }
