@@ -1,8 +1,20 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useForm } from 'react-hook-form';
+import { createSupportMessage } from '@/actions/support-messages-actions';
+import LoadingSpinner from './ui/LoadingSpinner';
+import MessageAlert from './ui/messageAlert';
+import { messageTypeEnum } from '@/types';
+
+type SupportData = {
+  fullname: string;
+  email: string;
+  subject: string;
+  message: string;
+}
 
 // Animation variants
 const cardVariants = {
@@ -22,6 +34,31 @@ const cardVariants = {
 };
 
 export default function Testimonial() {
+
+    const { register, resetField, control, handleSubmit, formState: { errors } } = useForm<SupportData>();
+    const [isLoading, setIsLoading] = useState(false)
+    const [showMessage, setShowMessage] = useState<boolean>(false)
+    const sendMessage = async (data: SupportData) => {
+        try {
+            setIsLoading(true)
+            await createSupportMessage(data);
+            setShowMessage(true)
+            setIsLoading(false)
+            resetField('fullname')
+            resetField('email')
+            resetField('subject')
+            resetField('message')
+        } catch (error) {
+            alert('Error sending support message')
+            setIsLoading(false)
+        }
+    }
+
+  const notification = {
+    type: messageTypeEnum.SUCCESS,
+    text: 'Message sucessfully sent!!'
+  }
+
   return (
     <div className="overflow-x-hidden">
       <motion.div 
@@ -42,6 +79,32 @@ export default function Testimonial() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <motion.div variants={cardVariants}>
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
+                  <div>
+                    <div className="font-semibold">Sarah Johnson</div>
+                    <div className="text-sm text-gray-500">COO, RetailTech Inc</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+             <motion.div variants={cardVariants}>
+              <div className="bg-gray-50 p-6 rounded-xl">
+                <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
+                <div className="flex items-center">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
+                  <div>
+                    <div className="font-semibold">Sarah Johnson</div>
+                    <div className="text-sm text-gray-500">COO, RetailTech Inc</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+             <motion.div variants={cardVariants}>
               <div className="bg-gray-50 p-6 rounded-xl">
                 <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
                 <div className="flex items-center">
@@ -93,7 +156,7 @@ export default function Testimonial() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Headquarters</h3>
-                    <p className="text-gray-600">123 AI Innovation Blvd<br/>San Francisco, CA 94107</p>
+                    <p className="text-gray-600">Gasabo<br/>Kigali, Rwanda</p>
                   </div>
                 </div>
 
@@ -106,8 +169,8 @@ export default function Testimonial() {
                   <div>
                     <h3 className="font-semibold mb-1">Contact</h3>
                     <p className="text-gray-600">
-                      Email: <a href="mailto:hello@thewings.ai" className="text-blue-600">hello@thewings.ai</a><br/>
-                      Phone: +1 (555) 123-4567
+                      Email: <a href="mailto:hello@thewings.ai" className="text-blue-600">hello@support.cellilox.com</a><br/>
+                      Phone: +(250) 787-295-921
                     </p>
                   </div>
                 </div>
@@ -138,20 +201,49 @@ export default function Testimonial() {
               viewport={{ once: true, margin: "0px 0px -50px 0px" }}
               className="bg-white p-8 rounded-xl shadow-lg"
             >
-              <form className="space-y-6">
+              <form onSubmit={handleSubmit(sendMessage)}
+              className="space-y-6"
+              >
+                {showMessage && <MessageAlert message={notification} onClose={()=> setShowMessage(false)}/>}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input 
+                  type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  id="fullname"
+                  {...register('fullname', { required: 'Fullname is required' })}
+                  />
+                  <p className="text-red-500 text-sm mt-3">{errors.fullname?.message} </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <input 
+                  type="email" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  id="email"
+                  {...register('email', { required: 'Email is required' })}
+                  />
+                  <p className="text-red-500 text-sm mt-3">{errors.email?.message} </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                  <input 
+                  type="text" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  id="subject"
+                  {...register('subject', { required: 'Subject is required' })}
+                  />
+                  <p className="text-red-500 text-sm mt-3">{errors.subject?.message} </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                  <textarea rows={4} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                  <textarea 
+                  id="message"
+                  {...register('message', { required: 'Message is required' })}
+                  rows={4} 
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  </textarea>
+                  <p className="text-red-500 text-sm mt-3">{errors.message?.message} </p>
                 </div>
-                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                <button type="submit" className="w-full flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                 {isLoading && <LoadingSpinner className='mr-3'/>}
                   Send Message
                 </button>
               </form>

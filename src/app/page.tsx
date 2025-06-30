@@ -73,7 +73,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 space-y-6">
             <h2 className="text-3xl font-bold text-gray-900">
-              AI Agent Processing Pipeline
+              Processing Pipeline
             </h2>
             <div className="space-y-4">
               <div className="flex items-start gap-4">
@@ -91,8 +91,8 @@ export default function Home() {
                   <span className="text-blue-600 font-bold">2</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">Create Collection Link</h4>
-                  <p className="text-gray-600">Generate a secure URL to share with document senders</p>
+                  <h4 className="font-semibold">Secure Links and Project Address Domain Generation</h4>
+                  <p className="text-gray-600">Cellilox generates automatically secure links and project address domain to share to your documents senders</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -101,7 +101,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h4 className="font-semibold">Automatic Processing</h4>
-                  <p className="text-gray-600">AI agent receives documents via upload or secure collection links and prefill data in your prepared spreadsheet</p>
+                  <p className="text-gray-600">Whenever documents are sent, cellilox process Optical Character Recognition, pass the result to An AI model for data analaysis and extraction even when you are away</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -109,7 +109,7 @@ export default function Home() {
                   <span className="text-blue-600 font-bold">4</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold">Review & Export</h4>
+                  <h4 className="font-semibold">Review, Share & Export</h4>
                   <p className="text-gray-600">Push clean data to HubSpot CRM or Google Sheets</p>
                 </div>
               </div>
