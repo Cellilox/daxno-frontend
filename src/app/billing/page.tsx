@@ -18,7 +18,6 @@ export default async function BillingPage() {
 
   const firstTx = transactions[0];
   const subscription = await getUserSubscription(firstTx.t_id);
-  console.log('Curr', subscription)
   const userPlan    = await getUserPlan(firstTx.plan_id);
 
   return (
@@ -30,6 +29,7 @@ export default async function BillingPage() {
       subInterval={userPlan?.data?.interval}
       isActive={subscription?.data[0]?.status === 'active'}
       subCurrency={userPlan?.data?.currency}
+      nextBillingDate={firstTx.end_date}
     />
   );
 }

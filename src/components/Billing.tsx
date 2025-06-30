@@ -16,10 +16,11 @@ type BillingProps = {
     subInterval: string;
     isActive: boolean;
     subCurrency: string;
+    nextBillingDate: string;
     
 }
 
-export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval, isActive, subCurrency }: BillingProps) {
+export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval, isActive, subCurrency, nextBillingDate }: BillingProps) {
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
   const [customReason, setCustomReason] = useState('');
@@ -27,6 +28,17 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
   const [isActivating, setIsActivating] = useState(false);
   const router = useRouter()
   const pathname = usePathname()
+
+  const isoString = nextBillingDate;
+  const date = new Date(isoString);
+  const readableDate = date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 
   const options = [
     'Found a better alternative',
@@ -117,6 +129,10 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
         <div className="flex justify-between">
           <span className="font-medium">Billing Interval:</span>
           <span className="capitalize">{subInterval}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Next Billing Date:</span>
+          <span className="capitalize">{readableDate}</span>
         </div>
         {isActive ? (
           <button
