@@ -170,7 +170,6 @@ export default function Testimonial() {
                     <h3 className="font-semibold mb-1">Contact</h3>
                     <p className="text-gray-600">
                       Email: <a href="mailto:hello@thewings.ai" className="text-blue-600">hello@support.cellilox.com</a><br/>
-                      Phone: +(250) 787-295-921
                     </p>
                   </div>
                 </div>

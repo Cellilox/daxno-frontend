@@ -5,19 +5,27 @@ import Demo from "@/components/Demo";
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section - Blue Color Scheme */}
+      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 text-center">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 md:mb-6">
-          <span className="text-blue-600 block mb-3">Cellilox AI</span>
-          Your AI-Powered Automation
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <span className="text-blue-600 block mb-3">Meet Cellilox</span>
+          Your AI Doc Assistant
         </h1>
 
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Simplify your data entry with AI-powered automation. Create projects, define key insights, and let Cellilox handle the rest. 
-          Powered by NLP and machine learning, Cellilox extract data from incoming files (documents), manage your findings in spreadsheets, and seamlessly integrate with your favorite Cloud and CRM tools (Google, Hubspot etc).
-          From scanned forms to email attachments - 
-          Cellilox work 24/7 to streamline your workflows even when you are away.
-        </p>
+        <div className="prose prose-blue prose-xl mx-auto mb-8">
+          <p>
+            Speed up data entry with AI. Create projects,
+            define key insights, and let Cellilox handle the rest.
+          </p>
+          <p>
+            Powered by NLP and machine learning, Cellilox extracts data from incoming files, 
+            manages your findings in spreadsheets, and seamlessly integrates with your favorite cloud and CRM tools (Google, HubSpot, etc.).
+          </p>
+          <p>
+            From scanned forms to email attachments—Cellilox works 24/7 to
+            streamline your workflows even when you’re off.
+          </p>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-2">
           <Link
