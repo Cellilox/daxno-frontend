@@ -82,13 +82,13 @@ export default function Testimonial() {
               <div className="bg-gray-50 p-6 rounded-xl">
                 <p className="text-gray-600 mb-4">
                   “Cellilox transformed our data workflows—cutting entry time by over 80% and delivering flawless accuracy on every file.”
-                — Michael Lee, CTO, FinServe Solutions
+                — Michael Lee, Accountant Manager
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
-                    <div className="font-semibold">Sarah Johnson</div>
-                    <div className="text-sm text-gray-500">COO, RetailTech Inc</div>
+                    <div className="font-semibold">Michael Lee</div>
+                    <div className="text-sm text-gray-500">Accountant Manager</div>
                   </div>
                 </div>
               </div>
@@ -103,8 +103,8 @@ export default function Testimonial() {
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
-                    <div className="font-semibold">Sarah Johnson</div>
-                    <div className="text-sm text-gray-500">COO, RetailTech Inc</div>
+                    <div className="font-semibold">Priya Singh</div>
+                    <div className="text-sm text-gray-500">Operations Manager, HealthWave Corp</div>
                   </div>
                 </div>
               </div>
@@ -114,13 +114,13 @@ export default function Testimonial() {
               <div className="bg-gray-50 p-6 rounded-xl">
                 <p className="text-gray-600 mb-4">
                   “Cellilox was a game‑changer: we eliminated human error entirely and accelerated our month‑end reporting cycle from days to hours.”
-                  — Javier Morales, Director of Analytics, EcoTrade Global
+                  — Javier Morales
                   </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
-                    <div className="font-semibold">Sarah Johnson</div>
-                    <div className="text-sm text-gray-500">COO, RetailTech Inc</div>
+                    <div className="font-semibold">Javier Morales</div>
+                    <div className="text-sm text-gray-500">Director of Analytics, EcoTrade Global</div>
                   </div>
                 </div>
               </div>
