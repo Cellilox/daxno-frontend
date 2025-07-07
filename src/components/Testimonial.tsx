@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useForm } from 'react-hook-form';
 import { createSupportMessage } from '@/actions/support-messages-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 import MessageAlert from './ui/messageAlert';
 import { messageTypeEnum } from '@/types';
+import Image from 'next/image';
 
 type SupportData = {
   fullname: string;
@@ -80,7 +80,10 @@ export default function Testimonial() {
           <div className="grid md:grid-cols-3 gap-8">
             <motion.div variants={cardVariants}>
               <div className="bg-gray-50 p-6 rounded-xl">
-                <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
+                <p className="text-gray-600 mb-4">
+                  “Cellilox transformed our data workflows—cutting entry time by over 80% and delivering flawless accuracy on every file.”
+                — Michael Lee, CTO, FinServe Solutions
+                </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
@@ -93,7 +96,10 @@ export default function Testimonial() {
 
              <motion.div variants={cardVariants}>
               <div className="bg-gray-50 p-6 rounded-xl">
-                <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
+                <p className="text-gray-600 mb-4">
+                  “Since integrating Cellilox, our team has reclaimed countless hours from manual tasks, boosting overall productivity by 50%.”
+                  — Priya Singh, Operations Manager, HealthWave Corp.
+                </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
@@ -106,7 +112,10 @@ export default function Testimonial() {
 
              <motion.div variants={cardVariants}>
               <div className="bg-gray-50 p-6 rounded-xl">
-                <p className="text-gray-600 mb-4">"TheWings AI reduced our data entry costs by 70% and eliminated human errors completely."</p>
+                <p className="text-gray-600 mb-4">
+                  “Cellilox was a game‑changer: we eliminated human error entirely and accelerated our month‑end reporting cycle from days to hours.”
+                  — Javier Morales, Director of Analytics, EcoTrade Global
+                  </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 rounded-full bg-blue-100 mr-4"></div>
                   <div>
@@ -116,8 +125,6 @@ export default function Testimonial() {
                 </div>
               </div>
             </motion.div>
-
-            {/* Add 2 more testimonials with similar structure */}
           </div>
         </div>
       </motion.div>

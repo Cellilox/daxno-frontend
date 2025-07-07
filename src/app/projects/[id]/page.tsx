@@ -5,8 +5,9 @@ import { getColumns } from "@/actions/column-actions"
 import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
+import { Metadata } from "next"
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
   description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
 };

@@ -1,6 +1,7 @@
+import { Metadata } from 'next';
 import React from 'react';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Cellilox | Terms of Service',
   description: 'Read the terms of service for using Cellilox. Understand your rights and responsibilities as a user.'
 };

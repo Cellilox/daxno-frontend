@@ -1,9 +1,10 @@
 import { getProjects } from "@/actions/project-actions";
 import ProjectsClient from "./ProjectsClient";
+import { Metadata } from "next";
 
-export const metadata = {
-  title: 'Daxno | Projects',
-  description: 'View and manage all your projects in one place. Create, edit, and organize your work efficiently with Daxno.'
+export const metadata: Metadata = {
+  title: 'Cellilox | Projects',
+  description: 'View and manage all your projects in one place. Create, edit, and organize your work efficiently with Cellilox.'
 };
 
 export default async function ProjectsPage() {

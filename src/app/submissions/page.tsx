@@ -1,4 +1,6 @@
-export const metadata = {
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
   title: 'Daxno | Submissions',
   description: 'Track and manage all your submissions in one place. Stay organized and up-to-date with Daxno.'
 };

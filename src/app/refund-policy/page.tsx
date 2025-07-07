@@ -1,7 +1,8 @@
 // File: /app/refund-policy/page.tsx
+import { Metadata } from 'next';
 import React from 'react';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Cellilox | Refund Policy',
   description: 'Review refund policy to understand your options and rights regarding payments and refunds.'
 };

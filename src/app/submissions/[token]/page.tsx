@@ -1,8 +1,9 @@
 import { get_project_plan } from "@/actions/project-actions"
 import { getProject } from "@/actions/submission-actions"
 import DropzoneWrapper from "@/components/files/DropzoneWrapper"
+import { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Cellilox | Submission Details',
   description: 'Submit your documents to Cellilox for processing. Only project owner will receive this submission.'
 };
