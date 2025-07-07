@@ -2,11 +2,6 @@ import Link from "next/link";
 import Testimonial from "@/components/Testimonial";
 import Demo from "@/components/Demo";
 
-export const metadata = {
-  title: 'Cellilox | Home',
-  description: 'Welcome to Cellilox, your smart system for document processing and data entry!'
-};
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
