@@ -1,8 +1,12 @@
 import { getUserPlan, getUserSubscription } from "@/actions/payment-actions";
 import { getTransactions } from "@/actions/transaction-actions";
 import Billing from "@/components/Billing";
+import { Metadata } from "next";
 
-
+export const metadata: Metadata = {
+  title: 'Cellilox | Billing',
+  description: 'Manage your billing information, view invoices, and update your payment methods securely with Daxno.'
+};
 
 export default async function BillingPage() {
   const transactions = await getTransactions();

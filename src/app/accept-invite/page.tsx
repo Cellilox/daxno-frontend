@@ -1,4 +1,9 @@
+export const metadata: Metadata = {
+  title: 'Cellilox | Accept Invitation',
+  description: 'Accept your invitation to join Daxno and start collaborating on projects and submissions.'
+};
 
+import { Metadata } from "next";
 import AcceptInvitation from "./AcceptInvitation";
 
 export default async function AcceptInvite({

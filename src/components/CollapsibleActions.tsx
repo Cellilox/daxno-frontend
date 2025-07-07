@@ -120,7 +120,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
        {isInvitePopupVisible && (
         <FormModal
           visible={isInvitePopupVisible}
-          title="Send Invite to this Project"
+          title="Send Invite"
           onCancel={() => setIsInvitePopupVisible(false)}
           position="center"
           size="small"

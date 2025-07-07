@@ -61,8 +61,7 @@ export default function Footer() {
           {/* Contact Info */}
           <div>
             <h3 className="text-white text-lg font-medium mb-3">Get in Touch</h3>
-            <p>Email: support@cellilox.com</p>
-            <p>Phone: +(250) 787-295-921</p>
+            <p>Email: hello@support.cellilox.com</p>
             <p>Address: Rwanda - Kigali - Gasabo</p>
           </div>
         </div>

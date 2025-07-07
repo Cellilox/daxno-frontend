@@ -58,7 +58,7 @@ export function PricingCard({
     let intervalDays: number
     if (billingInterval === 'annual') {
       intervalDays = 365
-    }  {
+    } else {
       intervalDays = 30
     }
 

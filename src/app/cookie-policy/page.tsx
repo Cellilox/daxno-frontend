@@ -1,4 +1,10 @@
+import { Metadata } from 'next';
 import React from 'react';
+
+export const metadata: Metadata = {
+  title: 'Cellilox | Cookie Policy',
+  description: 'Understand how Cellilox uses cookies to enhance your experience and provide essential functionality.'
+};
 
 export default function CookiePolicyPage() {
   return (

@@ -82,16 +82,17 @@ export default function Demo() {
                     {isInnerVisible && (
                         <div className="w-full mx-auto px-4">
                             <div className="relative aspect-video rounded-2xl shadow-xl overflow-hidden">
-                                <iframe
-                                    width="100%"
-                                    height="100%"
-                                    src="https://www.youtube.com/embed/6XwSZ9x6ZRQ?si=Ly71GTA0yQhHnA2u"
-                                    title="YouTube video player"
-                                    frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    referrerPolicy="strict-origin-when-cross-origin"
-                                    allowFullScreen
-                                ></iframe>
+                                <iframe 
+                                   width="100%" 
+                                   height="100%" 
+                                   src="https://www.youtube.com/embed/OcjhoReRTYE?si=GTLdXpCdEckgVtBl" 
+                                   title="YouTube video player" 
+                                   frameBorder="0" 
+                                   allow="accelerometer; 
+                                   autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                   referrerPolicy="strict-origin-when-cross-origin" 
+                                   allowFullScreen>
+                                   </iframe>
                             </div>
                         </div>
                     )}
