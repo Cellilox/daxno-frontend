@@ -1,5 +1,10 @@
 import React from 'react';
 
+export const metadata = {
+  title: 'Cellilox | Cookie Policy',
+  description: 'Understand how Cellilox uses cookies to enhance your experience and provide essential functionality.'
+};
+
 export default function CookiePolicyPage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">

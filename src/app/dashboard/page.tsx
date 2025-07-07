@@ -3,9 +3,10 @@ import { getProjects } from "@/actions/project-actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import Link from "next/link";
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Overview of your projects and files",
+
+export const metadata = {
+  title: 'Cellilox | Dashboard',
+  description: 'Your Daxno dashboard: get an overview of your projects, submissions, and recent activity.'
 };
 
 type doc = {

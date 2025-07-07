@@ -1,3 +1,7 @@
+export const metadata = {
+  title: 'Cellilox | Accept Invitation',
+  description: 'Accept your invitation to join Daxno and start collaborating on projects and submissions.'
+};
 
 import AcceptInvitation from "./AcceptInvitation";
 

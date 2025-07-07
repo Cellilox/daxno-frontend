@@ -2,6 +2,11 @@ import Link from "next/link";
 import Testimonial from "@/components/Testimonial";
 import Demo from "@/components/Demo";
 
+export const metadata = {
+  title: 'Cellilox | Home',
+  description: 'Welcome to Cellilox, your smart system for document processing and data entry!'
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,7 +28,7 @@ export default function Home() {
           </p>
           <p>
             From scanned forms to email attachments—Cellilox works 24/7 to
-            streamline your workflows even when you’re off.
+            streamline your workflows even when you're off.
           </p>
         </div>
 

@@ -1,6 +1,12 @@
 // File: /app/refund-policy/page.tsx
 import React from 'react';
 
+export const metadata = {
+  title: 'Cellilox | Refund Policy',
+  description: 'Review refund policy to understand your options and rights regarding payments and refunds.'
+};
+
+
 export default function RefundPolicyPage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
@@ -13,8 +19,8 @@ export default function RefundPolicyPage() {
 
       <h2>1. Introduction</h2>
       <p>
-        This Refund Policy applies to all purchases of subscription plans, licenses, or other services (collectively, “Services”)
-        offered by Cellilox Limited (“Company,” “we,” “us,” or “our”). By subscribing to or purchasing our Services,
+        This Refund Policy applies to all purchases of subscription plans, licenses, or other services (collectively, "Services")
+        offered by Cellilox Limited ("Company," "we," "us," or "our"). By subscribing to or purchasing our Services,
         you agree to be bound by the terms of this Refund Policy in addition to our Terms of Service and Privacy Policy.
       </p>
 
@@ -87,7 +93,7 @@ export default function RefundPolicyPage() {
       <ul>
         <li>Any subscription period that has already passed beyond the initial 14-day window.</li>
         <li>Downgrading from a higher-priced plan to a lower-priced plan (unused credits or overages remain non-refundable).</li>
-        <li>Failure to use the Service or changing one’s mind after the 14-day period.</li>
+        <li>Failure to use the Service or changing one's mind after the 14-day period.</li>
         <li>Temporary service interruptions, errors, or minor performance issues, so long as we are making commercially reasonable efforts to resolve them.</li>
         <li>Add-ons, usage-based overages, or one-time fees (unless otherwise stated).</li>
       </ul>
@@ -99,7 +105,7 @@ export default function RefundPolicyPage() {
         <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
           support@cellilox.com
         </a>{' '}
-        with the subject line “Refund Request.” Include the following information:
+        with the subject line "Refund Request." Include the following information:
       </p>
       <ul>
         <li>Full name of the Customer.</li>
@@ -120,7 +126,7 @@ export default function RefundPolicyPage() {
 
       <h2>7. Refund Exceptions and Special Circumstances</h2>
       <p>
-        <strong>Service-Outage Credit:</strong> If our Services are unavailable for more than 72 consecutive hours due to causes within our control (excluding scheduled maintenance or force majeure events), you may be eligible for a service credit (not a cash refund) equal to one full day’s subscription fee for each 24-hour period of continuous downtime.
+        <strong>Service-Outage Credit:</strong> If our Services are unavailable for more than 72 consecutive hours due to causes within our control (excluding scheduled maintenance or force majeure events), you may be eligible for a service credit (not a cash refund) equal to one full day's subscription fee for each 24-hour period of continuous downtime.
       </p>
       <p>
         <strong>Chargeback Policy:</strong> If you initiate a chargeback with your bank or credit card company without first seeking a refund per this policy, your account may be suspended or terminated, and you may be responsible for all fees, collection costs, and late charges.

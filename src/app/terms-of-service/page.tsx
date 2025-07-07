@@ -1,5 +1,10 @@
 import React from 'react';
 
+export const metadata = {
+  title: 'Cellilox | Terms of Service',
+  description: 'Read the terms of service for using Cellilox. Understand your rights and responsibilities as a user.'
+};
+
 export default function TermsOfServicePage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
@@ -89,7 +94,7 @@ export default function TermsOfServicePage() {
       <h3>6.1 Subscription Plans</h3>
       <p>
         Our Services are offered under various Subscription Plans (e.g., Free, Basic, Pro, Enterprise). Each plan includes specific features, usage limits, and pricing. Plan details (feature sets, usage caps) are accessible on our website or dashboard. We
-        reserve the right to modify plan offerings or pricing at any time, provided that existing Subscribers receive at least 30 days’ advance notice before changes take effect.
+        reserve the right to modify plan offerings or pricing at any time, provided that existing Subscribers receive at least 30 days' advance notice before changes take effect.
       </p>
 
       <h3>6.2 Billing and Payment</h3>
@@ -131,7 +136,7 @@ export default function TermsOfServicePage() {
       <h3>7.2 Your Content</h3>
       <p>
         You retain all rights in the Content you submit or upload through the Services (“Your Content”). You represent and warrant that you own or have valid licenses for all Intellectual Property Rights in Your Content and that Your Content does not infringe
-        upon any third party’s rights. By submitting or uploading Your Content, you grant us a worldwide, non-exclusive, royalty-free, sublicensable, and transferable license to host, store, reproduce, modify, create derivative works of, communicate,
+        upon any third party's rights. By submitting or uploading Your Content, you grant us a worldwide, non-exclusive, royalty-free, sublicensable, and transferable license to host, store, reproduce, modify, create derivative works of, communicate,
         publish, and display Your Content to provide, promote, and improve the Services. We may review, refuse to post, or remove any Content that, in our sole discretion, violates these Terms or poses a legal or security risk.
       </p>
 
@@ -158,10 +163,10 @@ export default function TermsOfServicePage() {
       <ul>
         <li>Use the Services to upload, post, email, or otherwise transmit any Content that is illegal, harmful, abusive, harassing, defamatory, vulgar, obscene, or otherwise objectionable.</li>
         <li>Impersonate any person or entity, or falsely state or otherwise misrepresent your affiliation with someone.</li>
-        <li>Engage in any automated or manual activity that interferes with or disrupts the Services (e.g., bots, scrapers, “denial-of-service” attacks).</li>
+        <li>Engage in any automated or manual activity that interferes with or disrupts the Services (e.g., bots, scrapers, "denial-of-service" attacks).</li>
         <li>Use the Services to infringe upon any third-party rights (e.g., copyright, trademark, patent, trade secret, privacy).</li>
         <li>Introduce any viruses, trojan horses, worms, or other malicious code.</li>
-        <li>Attempt to gain unauthorized access to any portion of the Services, including other users’ data.</li>
+        <li>Attempt to gain unauthorized access to any portion of the Services, including other users' data.</li>
         <li>Encourage or facilitate violations of these Terms.</li>
       </ul>
       <p>We reserve the right to investigate and take appropriate legal action against anyone who, in our sole discretion, violates this provision.</p>
@@ -190,26 +195,26 @@ export default function TermsOfServicePage() {
       <h3>11.2 Obligations</h3>
       <p>
         The Receiving Party shall use Confidential Information solely to perform its obligations under these Terms and disclose it only to its employees, contractors, or agents who need to know such information for those purposes and are bound by confidentiality
-        obligations no less strict than those set forth herein. The Receiving Party shall protect the Disclosing Party’s Confidential Information with at least the same degree of care it uses to protect its own Confidential Information, but in no event less
+        obligations no less strict than those set forth herein. The Receiving Party shall protect the Disclosing Party's Confidential Information with at least the same degree of care it uses to protect its own Confidential Information, but in no event less
         than reasonable care. Confidential Information does not include information that:
       </p>
       <ul>
         <li>Is or becomes publicly available without breach of these Terms;</li>
-        <li>Was in the Receiving Party’s possession before receipt from the Disclosing Party;</li>
+        <li>Was in the Receiving Party's possession before receipt from the Disclosing Party;</li>
         <li>Is rightfully obtained from a third party without breach of any confidentiality obligation; or</li>
-        <li>Is independently developed by the Receiving Party without reference to the Disclosing Party’s Confidential Information.</li>
+        <li>Is independently developed by the Receiving Party without reference to the Disclosing Party's Confidential Information.</li>
       </ul>
 
       <h3>11.3 Compelled Disclosure</h3>
       <p>
         If the Receiving Party is legally compelled to disclose any Confidential Information (e.g., subpoena, court order), it shall provide the Disclosing Party with prompt written notice so that the Disclosing Party may seek a protective order or other
-        appropriate remedy. The Receiving Party will provide reasonable assistance, at the Disclosing Party’s expense, in obtaining such remedy.
+        appropriate remedy. The Receiving Party will provide reasonable assistance, at the Disclosing Party's expense, in obtaining such remedy.
       </p>
 
       <h2>12. Disclaimers</h2>
-      <h3>12.1 “AS IS” and “AS AVAILABLE”</h3>
+      <h3>12.1 "AS IS" and "AS AVAILABLE"</h3>
       <p>
-        THE SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE,” WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE. WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
+        THE SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE. WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
       </p>
       <ul>
         <li>WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT;</li>
@@ -248,7 +253,7 @@ export default function TermsOfServicePage() {
 
       <h2>14. Indemnification</h2>
       <p>
-        You agree to defend, indemnify, and hold harmless [Your Company Name], its affiliates, officers, directors, employees, and agents from and against any and all losses, liabilities, damages, expenses, and costs (including reasonable attorneys’ fees)
+        You agree to defend, indemnify, and hold harmless [Your Company Name], its affiliates, officers, directors, employees, and agents from and against any and all losses, liabilities, damages, expenses, and costs (including reasonable attorneys' fees)
         arising from or related to:
       </p>
       <ul>
@@ -304,7 +309,7 @@ export default function TermsOfServicePage() {
       <h3>16.3 Arbitration</h3>
       <p>
         If we cannot resolve a dispute informally, either party may elect to submit the dispute to binding arbitration under the rules of [Arbitration Organization, e.g., the American Arbitration Association] then in effect. The arbitration will take
-        place in [City, State/Country], and the arbitrator’s decision will be final and binding. Judgment on the arbitrator’s award may be entered in any court of competent jurisdiction. This Section does not prevent us from seeking injunctive relief in
+        place in [City, State/Country], and the arbitrator's decision will be final and binding. Judgment on the arbitrator's award may be entered in any court of competent jurisdiction. This Section does not prevent us from seeking injunctive relief in
         a court of competent jurisdiction to protect our intellectual property rights or Confidential Information.
       </p>
 

@@ -2,6 +2,11 @@ import { get_project_plan } from "@/actions/project-actions"
 import { getProject } from "@/actions/submission-actions"
 import DropzoneWrapper from "@/components/files/DropzoneWrapper"
 
+export const metadata = {
+  title: 'Cellilox | Submission Details',
+  description: 'Submit your documents to Cellilox for processing. Only project owner will receive this submission.'
+};
+
 export default async function Submission({ params }: {params: Promise<{token: string}>}) {
   const { token } = await params
   const project = await getProject(token)

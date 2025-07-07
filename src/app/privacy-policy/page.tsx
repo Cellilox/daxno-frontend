@@ -1,5 +1,10 @@
 import React from 'react';
 
+export const metadata = {
+  title: 'Cellilox | Privacy Policy',
+  description: 'Learn how Daxno collects, uses, and protects your personal information. Your privacy matters to us.'
+};
+
 export default function PrivacyPolicyPage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
@@ -175,7 +180,7 @@ export default function PrivacyPolicyPage() {
       </p>
       <ul>
         <li><strong>Encryption:</strong> We use industry-standard encryption (TLS/SSL) for data in transit and encryption at rest for sensitive data stored on our servers.</li>
-        <li><strong>Access Controls:</strong> Access to Personal Information is limited to authorized personnel on a “need-to-know” basis.</li>
+        <li><strong>Access Controls:</strong> Access to Personal Information is limited to authorized personnel on a "need-to-know" basis.</li>
         <li><strong>Regular Audits & Monitoring:</strong> We conduct routine security assessments and vulnerability scans to identify and remediate potential risks.</li>
         <li><strong>Secure Development Practices:</strong> Our engineering teams follow secure coding standards and conduct code reviews and penetration testing.</li>
       </ul>
@@ -187,7 +192,7 @@ export default function PrivacyPolicyPage() {
         the privacy policies of any third-party sites you visit. This Privacy Policy applies only to information we collect.
       </p>
 
-      <h2>10. Children’s Privacy</h2>
+      <h2>10. Children's Privacy</h2>
       <p>
         Our Services are not directed at children under the age of 13 (or the applicable age in jurisdictions where higher). We do not knowingly collect Personal Information from children under the age of 13. If you become aware that a child has provided us with
         Personal Information, please contact us immediately at{' '}
@@ -206,7 +211,7 @@ export default function PrivacyPolicyPage() {
           <strong>Correction:</strong> You can update or correct inaccurate or incomplete information.
         </li>
         <li>
-          <strong>Deletion (“Right to Be Forgotten”):</strong> You can request that we delete your Personal Information, subject to exceptions (e.g., legal obligations).
+          <strong>Deletion ("Right to Be Forgotten"):</strong> You can request that we delete your Personal Information, subject to exceptions (e.g., legal obligations).
         </li>
         <li>
           <strong>Restriction of Processing:</strong> You can ask us to limit how we process your data.

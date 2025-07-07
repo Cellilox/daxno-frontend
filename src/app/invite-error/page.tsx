@@ -1,5 +1,10 @@
 import Link from "next/link";
 
+export const metadata = {
+  title: 'Cellilox | Invitation Error',
+  description: 'There was an issue with your invitation. Please check your link or contact support for assistance.'
+};
+
 export default async function AcceptInvite({
   searchParams,
 }: {

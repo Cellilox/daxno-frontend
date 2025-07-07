@@ -6,6 +6,11 @@ import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 
+export const metadata = {
+  title: 'Cellilox | Project Details',
+  description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
+};
+
 export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
   const { id } = await params
   const project = await getProjectsById(id)
