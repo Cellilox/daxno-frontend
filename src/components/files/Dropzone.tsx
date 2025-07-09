@@ -45,6 +45,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   }, []);
 
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB in bytes
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -55,6 +56,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       router.push(`/projects/${projectId}`);
       return;
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+    onMessageChange({
+      type: messageTypeEnum.ERROR,
+      text: `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 1 MB.`,
+    });
+    setIsLoading(false);
+    return;
+  }
     const formData = new FormData();
     formData.append('file', file);
     try {
