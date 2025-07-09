@@ -10,6 +10,8 @@ import { Field, Record } from './spreadsheet/types';
 import Address from './Address';
 import ShareableLink from './ShareableLink';
 import { Project } from '@/types';
+import ModelSelector from './Models';
+import InsightsAndChat from './files/InsightsAndChat';
 
 
 interface CollapsibleActionsProps {
@@ -91,16 +93,8 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <button className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Select a model
-              </button>
-
-              <button className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Insights & Chat
-              </button>
-        
+              <ModelSelector/>
+              <InsightsAndChat/>
               {is_project_owner && (
               <div>
               <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
