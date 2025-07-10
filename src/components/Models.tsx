@@ -16,6 +16,8 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
   const [autoEnabled, setAutoEnabled] = useState(true);
   const [showTooltip, setShowTooltip] = useState(false);
 
+
+
   const extractLabel = (full: string) =>
     full
       .split(':')
@@ -26,7 +28,7 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
 
   useEffect(() => {
     if (models.some((m) => m.id.endsWith(':free'))) {
-      const deep = models.find((m) => m.id.includes('deepseek'));
+      const deep = models.find((m) => m.id.includes('deepseek/deepseek-r1-0528-qwen3-8b:free'));
       setSelectedModel(deep?.id || models[0]?.id || '');
     } else {
       const mistral = models.find((m) =>
