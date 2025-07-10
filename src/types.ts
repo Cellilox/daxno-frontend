@@ -23,3 +23,9 @@ export type Project = {
   owner_email: string;
   shareable_link: string;
 }
+
+
+export type Model = { 
+  id: string; 
+  name: string; 
+}

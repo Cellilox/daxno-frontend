@@ -9,7 +9,7 @@ import CreateInvite from './forms/CreateInvite';
 import { Field, Record } from './spreadsheet/types';
 import Address from './Address';
 import ShareableLink from './ShareableLink';
-import { Project } from '@/types';
+import { Model, Project } from '@/types';
 import ModelSelector from './Models';
 import InsightsAndChat from './files/InsightsAndChat';
 
@@ -25,9 +25,11 @@ interface CollapsibleActionsProps {
   linkOwner: string;
   fields: Field[]
   records: Record[]
+  freeModels: Model[]
+  paidModels: Model[]
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels}: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
@@ -93,7 +95,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <ModelSelector/>
+              <ModelSelector models={freeModels}/>
               <InsightsAndChat/>
               {is_project_owner && (
               <div>

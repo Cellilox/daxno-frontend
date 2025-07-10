@@ -6,6 +6,8 @@ import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
+import { getModels } from "@/actions/ai-models-actions"
+import { Model } from "@/types"
 
 export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
@@ -23,6 +25,43 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
+  const aiModels = await getModels()
+
+// the human‑readable names you care about (lowercased for matching)
+const allowedPaid = [
+  'mistral small 3.1',
+  'deephermes 3',
+  'optimus alpha',
+  'quasar alpha',
+  'Claude Sonnet 4',
+  'gpt4',
+]
+
+// helper to strip prefix and “(free)”
+const extractLabel = (full: string) =>
+  full
+    .split(':')
+    .slice(1)
+    .join(':')
+    .replace(/\(free\)/i, '')
+    .trim()
+
+// build two lists
+const freeModels = aiModels.filter((m: Model) => m.id.endsWith(':free'))
+
+const paidModels = aiModels.filter((m: Model) => {
+  const label = extractLabel(m.name).toLowerCase().replace(/\s+/g, ' ')
+  // does any allowedPaid entry appear as a substring?
+  return allowedPaid.some((p) => label.includes(p))
+})
+
+// debug: see what labels you actually got back
+console.log(
+  'All normalized labels:',
+  aiModels.map((m: Model) => extractLabel(m.name))
+)
+console.log('Paid matches:', paidModels.map((m: Model) => extractLabel(m.name)))
+
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -56,6 +95,8 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 fields={fields}
                 records={records}
                 plan={plan?.plan_name}
+                freeModels={freeModels}
+                paidModels={paidModels}
               />
             )}
           </div>
