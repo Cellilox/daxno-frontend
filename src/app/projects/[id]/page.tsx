@@ -34,7 +34,7 @@ const allowedPaid = [
   'optimus alpha',
   'quasar alpha',
   'Claude Sonnet 4',
-  'gpt4',
+  'GPT-4.1 Mini',
 ]
 
 // helper to strip prefix and “(free)”

@@ -28,11 +28,11 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
 
   useEffect(() => {
     if (models.some((m) => m.id.endsWith(':free'))) {
-      const deep = models.find((m) => m.id.includes('deepseek/deepseek-r1-0528-qwen3-8b:free'));
+      const deep = models.find((m) => m.id.includes(`${process.env.NEXT_PUBLIC_DEFAULT_FREE_MODEL}`));
       setSelectedModel(deep?.id || models[0]?.id || '');
     } else {
       const mistral = models.find((m) =>
-        extractLabel(m.name).toLowerCase().includes('mistral small 3.1')
+        extractLabel(m.name).toLowerCase().includes(`${process.env.NEXT_PUBLIC_DEFAULT_PAID_MODEL}`)
       );
       setSelectedModel(mistral?.id || models[0]?.id || '');
     }
