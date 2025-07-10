@@ -27,9 +27,10 @@ interface CollapsibleActionsProps {
   records: Record[]
   freeModels: Model[]
   paidModels: Model[]
+  tenantModal: string;
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels}: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal}: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
@@ -95,7 +96,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <ModelSelector models={freeModels}/>
+              <ModelSelector models={paidModels} tenantModal={tenantModal}/>
               <InsightsAndChat/>
               {is_project_owner && (
               <div>

@@ -3,19 +3,34 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { Model } from '@/types';
+import { selecte_model } from '@/actions/ai-models-actions';
+import LoadingSpinner from './ui/LoadingSpinner';
 
 type ModelSelectorProps = {
   models: Model[];
+  tenantModal: string;
 };
 
-export default function ModelSelector({ models }: ModelSelectorProps): JSX.Element {
+export default function ModelSelector({ models, tenantModal }: ModelSelectorProps): JSX.Element {
   const [open, setOpen] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>();
   const [userHasSelected, setUserHasSelected] = useState(false);
   const [filter, setFilter] = useState('');
   const [autoEnabled, setAutoEnabled] = useState(true);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
+  const [pickedModel, setPickedModal] = useState('')
+  useEffect(() => {
+     setSelectedModel(tenantModal)
+  }, [tenantModal])
 
+
+  const handleSelectModal =  async (selectedModal: string) => {
+    setPickedModal(selectedModal)
+    setIsLoading(true)
+    await selecte_model(selectedModal)
+    setIsLoading(false)
+  }
 
 
   const extractLabel = (full: string) =>
@@ -26,17 +41,17 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
       .replace(/\s*\(free\)/i, '')
       .trim();
 
-  useEffect(() => {
-    if (models.some((m) => m.id.endsWith(':free'))) {
-      const deep = models.find((m) => m.id.includes(`${process.env.NEXT_PUBLIC_DEFAULT_FREE_MODEL}`));
-      setSelectedModel(deep?.id || models[0]?.id || '');
-    } else {
-      const mistral = models.find((m) =>
-        extractLabel(m.name).toLowerCase().includes(`${process.env.NEXT_PUBLIC_DEFAULT_PAID_MODEL}`)
-      );
-      setSelectedModel(mistral?.id || models[0]?.id || '');
-    }
-  }, [models]);
+//   useEffect(() => {
+//     if (models.some((m) => m.id.endsWith(':free'))) {
+//       const deep = models.find((m) => m.id.includes(`${process.env.NEXT_PUBLIC_DEFAULT_FREE_MODEL}`));
+//       setSelectedModel(deep?.id || models[0]?.id || '');
+//     } else {
+//       const mistral = models.find((m) =>
+//         extractLabel(m.name).toLowerCase().includes(`${process.env.NEXT_PUBLIC_DEFAULT_PAID_MODEL}`)
+//       );
+//       setSelectedModel(mistral?.id || models[0]?.id || '');
+//     }
+//   }, [models]);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -59,7 +74,8 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
     ? extractLabel(models.find((m) => m.id === selectedModel)!.name)
     : '';
 
-  const handleSelect = (id: string) => {
+  const handleSelect = async (id: string) => {
+    await handleSelectModal(id)
     setSelectedModel(id);
     setUserHasSelected(true);
     setOpen(false);
@@ -149,6 +165,7 @@ export default function ModelSelector({ models }: ModelSelectorProps): JSX.Eleme
                   {selectedModel === model.id && (
                     <Check size={16} className="text-green-600 ml-2" />
                   )}
+                  {model.id === pickedModel && isLoading? <LoadingSpinner/> : null }
                 </li>
               ))}
             </ul>
