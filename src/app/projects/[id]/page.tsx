@@ -6,6 +6,8 @@ import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
+import { getModels, getSelectedModel } from "@/actions/ai-models-actions"
+import { Model } from "@/types"
 
 export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
@@ -23,6 +25,33 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
+  const aiModels = await getModels()
+  const tenantModel = await getSelectedModel()
+  console.log('Model-SELE', tenantModel.selected_model)
+
+  // trusted providers you care about (lowercased)
+  const trustedProviders = [
+    'mistralai',
+    'openai',
+    'deepseek',
+    'anthropic',
+  ]
+
+  // build two lists with provider filtering
+  const freeModels = aiModels.filter((m: Model) => {
+    const isFree = m.id.endsWith(':free')
+    const provider = m.id.split(':')[0].split('/')[0].toLowerCase()
+    const isTrusted = trustedProviders.includes(provider)
+    return isFree && isTrusted
+  })
+
+  const paidModels = aiModels.filter((m: Model) => {
+    const provider = m.id.split('/')[0].toLowerCase()
+    const isTrusted = trustedProviders.includes(provider)
+    const isFree = m.id.endsWith(':free')
+    return isTrusted && !isFree
+  })
+
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -56,6 +85,9 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 fields={fields}
                 records={records}
                 plan={plan?.plan_name}
+                freeModels={freeModels}
+                paidModels={paidModels}
+                tenantModal = {tenantModel.selected_model}
               />
             )}
           </div>
