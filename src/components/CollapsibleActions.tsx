@@ -96,7 +96,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <ModelSelector models={paidModels} tenantModal={tenantModal}/>
+              <ModelSelector models={freeModels} tenantModal={tenantModal}/>
               <InsightsAndChat/>
               {is_project_owner && (
               <div>
