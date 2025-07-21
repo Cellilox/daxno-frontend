@@ -23,6 +23,8 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
+  console.log('RECORDS', records)
+  console.log('FIELDS', fields)
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
   const aiModels = await getModels()

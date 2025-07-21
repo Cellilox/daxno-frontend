@@ -1,7 +1,14 @@
-import { useState, useEffect, useRef, ChangeEvent } from 'react'
+import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent } from 'react'
 import { motion } from 'framer-motion'
-import OverayPopup from '../ui/OverayPopup'
+import OverlayPopup from '../ui/OverlayPopup'
 import { Send } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+
+export type OverlayPopupProps = {
+  widthClassName: string;
+  buttonLabel: string;
+  children: React.ReactNode;
+}
 
 export type IntegrationsProps = {
   widthClassName?: string
@@ -46,7 +53,7 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
   }
 
   return (
-    <OverayPopup widthClassName={widthClassName} buttonLabel="Insights & Chat">
+    <OverlayPopup widthClassName={widthClassName} buttonLabel="Insights & Chat">
       <div className="flex border-b border-gray-200">
         {['chat', 'visualization'].map(tab => (
           <button
@@ -83,13 +90,11 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
                     key={idx}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={
-                      `block w-max max-w-[70%] px-4 py-2 rounded-2xl shadow-sm break-words ${
-                        msg.from === 'user'
-                          ? 'ml-auto bg-blue-50 text-gray-800'
-                          : 'mr-auto bg-gray-100 text-gray-800'
-                      }`
-                    }
+                    className={`block w-max max-w-[70%] px-4 py-2 rounded-2xl shadow-sm break-words ${
+                      msg.from === 'user'
+                        ? 'ml-auto bg-blue-50 text-gray-800'
+                        : 'mr-auto bg-gray-100 text-gray-800'
+                    }`}
                   >
                     {msg.text}
                   </motion.div>
@@ -118,7 +123,12 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
                   placeholder="Type your message..."
                   value={chatInput}
                   onChange={handleInputChange}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendChat())}
+                  onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendChat();
+                    }
+                  }}
                 />
                 <button
                   className="absolute right-2 bottom-0 transform -translate-y-1/2"
@@ -140,7 +150,7 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
                 className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"
                 placeholder="Describe the visualization you want..."
                 value={vizPrompt}
-                onChange={e => setVizPrompt(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setVizPrompt(e.target.value)}
               />
             </div>
             <button
@@ -158,6 +168,6 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
           </div>
         </div>
       )}
-    </OverayPopup>
+    </OverlayPopup>
   )
 }

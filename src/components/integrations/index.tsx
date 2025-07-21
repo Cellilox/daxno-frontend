@@ -1,7 +1,7 @@
 import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import HubSpotExport from './hubspot/HubSpotExport';
-import OverayPopup from '../ui/OverayPopup';
+import OverlayPopup from '../ui/OverlayPopup';
 import { Field, Record } from '../spreadsheet/types';
 
 export type IntegrationsProps = {
@@ -13,7 +13,7 @@ export type IntegrationsProps = {
 
 export function Integrations({ projectId, fields, records, widthClassName }: IntegrationsProps) {
   return (
-    <OverayPopup widthClassName={widthClassName} buttonLabel = 'Integrations'>
+    <OverlayPopup widthClassName={widthClassName} buttonLabel = 'Integrations'>
       {/* Download Section */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-gray-900">Download your data</h3>
@@ -31,7 +31,7 @@ export function Integrations({ projectId, fields, records, widthClassName }: Int
           records={records}
         />
       </div>
-    </OverayPopup>
+    </OverlayPopup>
   );
 }
 
