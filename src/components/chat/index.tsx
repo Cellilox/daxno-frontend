@@ -2,69 +2,126 @@ import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent } from 'react'
 import { motion } from 'framer-motion'
 import OverlayPopup from '../ui/OverlayPopup'
 import { Send } from 'lucide-react'
-import { AnimatePresence } from 'framer-motion'
-
-export type OverlayPopupProps = {
-  widthClassName: string;
-  buttonLabel: string;
-  children: React.ReactNode;
-}
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from 'recharts'
 
 export type IntegrationsProps = {
   widthClassName?: string
 }
 
-export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: IntegrationsProps) {
+interface Message {
+  from: 'user' | 'ai'
+  content: string
+}
+
+// Hard‑coded AI response (no backticks!)
+const initialAIResponse: string =
+  "Here's a visualization of the \"Due total\" amounts across different invoices, providing insight into the invoice-related financial standings in your data.\n\n" +
+  "```chart-spec\n" +
+  "{\n" +
+  "  \"chartType\": \"bar\",\n" +
+  "  \"data\": {\n" +
+  "    \"labels\": [\n" +
+  "      \"SI-2025-001\",\n" +
+  "      \"SI-2025-002\",\n" +
+  "      \"SI-2025-003\",\n" +
+  "      \"SI-2025-004\",\n" +
+  "      \"SI-2025-005\"\n" +
+  "    ],\n" +
+  "    \"datasets\": [\n" +
+  "      {\n" +
+  "        \"label\": \"Due total\",\n" +
+  "        \"data\": [2343.00, 2574.00, 2625.00, 4080.72, 3096.00]\n" +
+  "      }\n" +
+  "    ]\n" +
+  "  }\n" +
+  "}\n" +
+  "```\n\n" +
+  "This bar chart illustrates the \"Due total\" for each invoice, helping identify which invoices have higher due amounts."
+
+function parseMessage(text: string): { narrative: string; spec: any | null } {
+  const fenceRE = /```chart-spec\s*([\s\S]*?)```/m
+  const match = text.match(fenceRE)
+  if (!match) return { narrative: text, spec: null }
+  const narrative = text.replace(fenceRE, '').trim()
+  let spec = null
+  try {
+    spec = JSON.parse(match[1])
+  } catch (e) {
+    console.error('Failed to parse chart-spec JSON:', e)
+  }
+  return { narrative, spec }
+}
+
+function ChartRenderer({ spec }: { spec: any }) {
+  if (!spec) return null
+  const { chartType, data } = spec
+  const chartData = data.labels.map((lbl: string, i: number) => ({
+    name: lbl,
+    value: data.datasets[0].data[i],
+  }))
+
+  if (chartType === 'bar') {
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData}>
+          <XAxis dataKey="name" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="value" name={data.datasets[0].label} />
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  return <div>Unsupported chart type: {chartType}</div>
+}
+
+export default function InsightsAndChat({
+  widthClassName = 'w-[480px]',
+}: IntegrationsProps) {
   const [activeTab, setActiveTab] = useState<'chat' | 'visualization'>('chat')
-  const [messages, setMessages] = useState<{ from: 'user' | 'ai'; text: string }[]>([])
+  const [messages, setMessages] = useState<Message[]>([
+    { from: 'ai', content: initialAIResponse },
+  ])
   const [chatInput, setChatInput] = useState('')
-  const [vizPrompt, setVizPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // auto-resize textarea
-  const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setChatInput(e.target.value)
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto'
-      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`
-    }
-  }
-
   useEffect(() => {
-    if (chatContainerRef.current && messages.length > 0) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-    }
+    const el = chatContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages])
 
   const sendChat = () => {
-    if (!chatInput.trim()) return
-    setMessages(prev => [...prev, { from: 'user', text: chatInput }])
+    const text = chatInput.trim()
+    if (!text) return
+    setMessages((m) => [...m, { from: 'user', content: text }])
     setChatInput('')
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto'
-    }
-    setLoading(true)
     setTimeout(() => {
-      setMessages(prev => [...prev, { from: 'ai', text: 'AI response based on chat input.' }])
-      setLoading(false)
+      setMessages((m) => [...m, { from: 'ai', content: initialAIResponse }])
     }, 1000)
   }
 
   return (
     <OverlayPopup widthClassName={widthClassName} buttonLabel="Insights & Chat">
       <div className="flex border-b border-gray-200">
-        {['chat', 'visualization'].map(tab => (
+        {['chat', 'visualization'].map((tab) => (
           <button
             key={tab}
-            className={
-              `flex-1 py-3 text-center font-medium transition-all ${
-                activeTab === tab
-                  ? 'border-b-4 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`
-            }
+            className={`flex-1 py-3 text-center font-medium transition-all ${
+              activeTab === tab
+                ? 'border-b-4 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
             onClick={() => setActiveTab(tab as 'chat' | 'visualization')}
           >
             {tab === 'chat' ? 'Chat' : 'Visualization'}
@@ -73,99 +130,58 @@ export default function InsightsAndChat({ widthClassName = 'w-[480px]' }: Integr
       </div>
 
       {activeTab === 'chat' && (
-        <div className="relative flex flex-col max-h-[65vh] lg:max-h-[75vh] lg:w-[60%] mx-auto">
-          {/* Messages area */}
+        <div className="relative flex flex-col max-h-[65vh] w-full mx-auto">
           <div
             ref={chatContainerRef}
             className="flex-1 overflow-y-auto p-4 space-y-4 pb-24"
           >
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-500 mt-8">
-                Hey, I am Cellilox. What can I help you?
-              </div>
-            ) : (
-              <>
-                {messages.map((msg, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`block w-max max-w-[70%] px-4 py-2 rounded-2xl shadow-sm break-words ${
-                      msg.from === 'user'
-                        ? 'ml-auto bg-blue-50 text-gray-800'
-                        : 'mr-auto bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {msg.text}
-                  </motion.div>
-                ))}
-                {loading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="block w-max max-w-[70%] mr-auto px-4 py-2 rounded-2xl shadow-sm bg-gray-100 text-gray-500"
-                  >
-                    Loading...
-                  </motion.div>
-                )}
-              </>
-            )}
+            {messages.map((msg, i) => {
+              const { narrative, spec } = parseMessage(msg.content)
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm break-words ${
+                    msg.from === 'user'
+                      ? 'ml-auto bg-blue-50 text-gray-800'
+                      : 'mr-auto bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  <div className="prose">{narrative}</div>
+                  {spec && <ChartRenderer spec={spec} />}
+                </motion.div>
+              )
+            })}
           </div>
 
-          {/* Fixed auto‑expanding input bar */}
-          
-            <div className="flex items-center">
-              <div className="relative flex-1">
-                <textarea
-                  ref={inputRef}
-                  rows={3}
-                  className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-hidden"
-                  placeholder="Type your message..."
-                  value={chatInput}
-                  onChange={handleInputChange}
-                  onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      sendChat();
-                    }
-                  }}
-                />
-                <button
-                  className="absolute right-2 bottom-0 transform -translate-y-1/2"
-                  onClick={sendChat}
-                >
-                  <Send className="h-6 w-6 text-blue-600" />
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center p-4 border-t border-gray-200">
+            <textarea
+              ref={inputRef}
+              rows={1}
+              className="flex-1 border border-gray-300 bg-gray-100 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-hidden"
+              placeholder="Type your message..."
+              value={chatInput}
+              onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                setChatInput(e.target.value)
+              }
+              onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  sendChat()
+                }
+              }}
+            />
+            <button className="ml-2" onClick={sendChat}>
+              <Send className="h-6 w-6 text-blue-600" />
+            </button>
+          </div>
         </div>
       )}
 
       {activeTab === 'visualization' && (
-        <div className="flex flex-col max-h-[75vh] w-[60%] mx-auto">
-          <div className="p-4 border-b border-gray-200">
-            <div className="relative">
-              <textarea
-                rows={3}
-                className="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300 resize-none"
-                placeholder="Describe the visualization you want..."
-                value={vizPrompt}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setVizPrompt(e.target.value)}
-              />
-            </div>
-            <button
-              className="mt-3 bg-green-600 text-white rounded-lg px-6 py-2 shadow hover:bg-green-700 transition"
-              onClick={() => {}}
-            >
-              Generate Chart
-            </button>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-              Chart will render here.
-            </div>
-          </div>
+        <div className="flex flex-col max-h-[75vh] w-full mx-auto">
+          {/* Visualization tab content */}
         </div>
       )}
     </OverlayPopup>
