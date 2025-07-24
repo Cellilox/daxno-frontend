@@ -101,6 +101,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <InsightsAndChat 
+                  projectId={projectId}
                   widthClassName="lg:w-11/12"
                 />
               </div>
