@@ -8,7 +8,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 type ChatPayload = {
     message: string;
     project_id: string;
-    history?: []
+    history: any
 }
 
 export async function sendChat(formData: ChatPayload) {

@@ -244,11 +244,13 @@ export default function InsightsAndChat({ projectId, widthClassName = 'w-[480px]
       content: m.content,
     }));
 
+    console.log('HISTORY', historyPayload)
+
     try {
       const result = await sendChat({
         message: text,
         project_id: projectId,
-        // history: historyPayload,
+        history: historyPayload,
       });
 
       const aiContent = result.response ?? '';
