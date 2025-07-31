@@ -6,6 +6,8 @@ import OverlayPopup from '../ui/OverlayPopup';
 import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Message } from '../chat/types'
+
 import {
   ResponsiveContainer,
   BarChart,
@@ -21,16 +23,14 @@ import {
   Line,
 } from 'recharts';
 import { sendChat } from '@/actions/chat-bot-actions';
+import { storeConversation } from '@/actions/conversations-actions';
 
 export type IntegrationsProps = {
   projectId: string;
   widthClassName?: string;
+  chats: Message[]
 };
 
-interface Message {
-  from: 'user' | 'ai';
-  content: string;
-}
 
 // Predefined colors for charts
 const CHART_COLORS = [
@@ -219,13 +219,11 @@ function ChartRenderer({ spec }: { spec: any }) {
   }
 }
 
-export default function InsightsAndChat({ projectId, widthClassName = 'w-[480px]' }: IntegrationsProps) {
-  const [activeTab, setActiveTab] = useState<'chat' | 'visualization'>('chat');
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-[480px]' }: IntegrationsProps) {
+  const [messages, setMessages] = useState<Message[]>([...chats]);
   const [chatInput, setChatInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const el = chatContainerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -234,17 +232,18 @@ export default function InsightsAndChat({ projectId, widthClassName = 'w-[480px]
   const handleSend = async () => {
     const text = chatInput.trim();
     if (!text || isLoading) return;
-
-    setMessages((prev) => [...prev, { from: 'user', content: text }]);
+    const chatToSend: Message[] = []
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    chatToSend.push({ role: 'user', content: text })
     setChatInput('');
-    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(true);
+    }, 100)
 
-    const historyPayload = [...messages, { from: 'user', content: text }].map((m) => ({
-      role: m.from === 'user' ? 'user' : 'assistant',
+    const historyPayload = [...messages, { role: 'user', content: text }].map((m) => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content,
     }));
-
-    console.log('HISTORY', historyPayload)
 
     try {
       const result = await sendChat({
@@ -254,10 +253,22 @@ export default function InsightsAndChat({ projectId, widthClassName = 'w-[480px]
       });
 
       const aiContent = result.response ?? '';
-      setMessages((prev) => [...prev, { from: 'ai', content: aiContent }]);
+      setMessages((prev) => [...prev, { role: 'ai', content: aiContent }]);
+      if(aiContent) {
+        setIsLoading(false)
+      }
+      chatToSend.push({ role: 'ai', content: aiContent })
+      if (chatToSend.length === 2) {
+        const conversationData = {
+        project_id: projectId,
+        messages: [...chatToSend]
+      }
+      await storeConversation(conversationData)
+      }
+
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages((prev) => [...prev, { from: 'ai', content: 'Sorry, something went wrong.' }]);
+      setMessages((prev) => [...prev, { role: 'ai', content: 'Sorry, something went wrong.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -284,7 +295,7 @@ export default function InsightsAndChat({ projectId, widthClassName = 'w-[480px]
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`max-w-[100%] w-fit px-4 py-2 break-words ${
-                    msg.from === 'user'
+                    msg.role === 'user'
                       ? 'ml-auto bg-gray-100 text-black rounded-2xl shadow-sm max-w-[50%]'
                       : 'mr-auto text-black'
                   }`}

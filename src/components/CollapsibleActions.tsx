@@ -12,6 +12,7 @@ import ShareableLink from './ShareableLink';
 import { Model, Project } from '@/types';
 import ModelSelector from './Models';
 import InsightsAndChat from './chat';
+import { Message } from "@/components/chat/types"
 
 
 
@@ -29,9 +30,10 @@ interface CollapsibleActionsProps {
   freeModels: Model[]
   paidModels: Model[]
   tenantModal: string;
+  chats: Message[]
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal}: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal, chats}: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
@@ -103,6 +105,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
                 <InsightsAndChat 
                   projectId={projectId}
                   widthClassName="lg:w-11/12"
+                  chats={chats}
                 />
               </div>
               {is_project_owner && (

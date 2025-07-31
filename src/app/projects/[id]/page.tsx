@@ -8,11 +8,20 @@ import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
 import { getModels, getSelectedModel } from "@/actions/ai-models-actions"
 import { Model } from "@/types"
+import { getConversations } from "@/actions/conversations-actions"
+import { Message } from "@/components/chat/types"
 
 export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
   description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
 };
+
+type Conversation = {
+  id: string;
+  project_id: string;
+  owner: string;
+  messages: Message[]
+}
 
 export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
   const { id } = await params
@@ -29,8 +38,9 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const plan = await get_project_plan(project.owner)
   const aiModels = await getModels()
   const tenantModel = await getSelectedModel()
-  console.log('Model-SELE', tenantModel.selected_model)
 
+  const allProjectConvesation = await getConversations(project.id)
+  const chats = allProjectConvesation?.flatMap((conv: Conversation)=> conv.messages);
   // trusted providers you care about (lowercased)
   const trustedProviders = [
     'mistralai',
@@ -90,6 +100,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 freeModels={freeModels}
                 paidModels={paidModels}
                 tenantModal = {tenantModel.selected_model}
+                chats={chats}
               />
             )}
           </div>
