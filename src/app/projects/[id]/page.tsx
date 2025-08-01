@@ -77,15 +77,12 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
-              {fields.length >=1 &&
               <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
               <CreateColumn projectId={id} />
             </div>
-              }
             </div>
             
             {/* Action Buttons */}
-            {fields.length >= 1 && (
               <CollapsibleActions 
                 projectId={id}
                 project={project}
@@ -102,7 +99,6 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 tenantModal = {tenantModel.selected_model}
                 chats={chats}
               />
-            )}
           </div>
         </div>
 
