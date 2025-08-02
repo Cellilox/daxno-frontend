@@ -24,12 +24,22 @@ import {
 } from 'recharts';
 import { sendChat } from '@/actions/chat-bot-actions';
 import { storeConversation } from '@/actions/conversations-actions';
+import { getCreditUsage } from '@/actions/credits-usage-actions';
+import PricingModal from '../pricing/PricingModal';
+import BuyCreditsModal from '../pricing/BuyCreditsModal';
 
 export type IntegrationsProps = {
   projectId: string;
   widthClassName?: string;
   chats: Message[]
 };
+
+export type UsageData = {
+  credit_limit: number,
+  is_free_tier: boolean,
+  remaining_credits: boolean,
+  used_credits: number
+}
 
 
 // Predefined colors for charts
@@ -223,7 +233,11 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
   const [messages, setMessages] = useState<Message[]>([...chats]);
   const [chatInput, setChatInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [creditUsage, setCreditUsage] = useState<UsageData | undefined>()
+  const [isLowCredit, setIsLowCredit] = useState<boolean>(false)
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+
   useEffect(() => {
     const el = chatContainerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -239,6 +253,16 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
     setTimeout(() => {
       setIsLoading(true);
     }, 100)
+
+    const data = await getCreditUsage()
+    if (data) {
+        setCreditUsage(data)
+      }
+
+    if(data.remaining_credits <= 0) {
+      setIsLowCredit(true)
+      return;
+    }
 
     const historyPayload = [...messages, { role: 'user', content: text }].map((m) => ({
       role: m.role === 'user' ? 'user' : 'assistant',
@@ -274,8 +298,30 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
     }
   };
 
+useEffect(() => {
+  const handleGetCredits = async () => {
+    try {
+      const data = await getCreditUsage();
+      if (data) {
+        setCreditUsage(data)
+      }
+      if(data.remaining_credits <= 0) {
+        setIsLowCredit(true)
+      }
+    } catch (err) {
+      console.error("Failed to fetch credits:", err);
+    }
+  };
+
+  handleGetCredits();
+}, []);
+
   return (
-    <OverlayPopup widthClassName={widthClassName} buttonLabel="Insights & Chat">
+    <OverlayPopup
+      widthClassName={widthClassName}
+      buttonLabel="Insights & Chat"
+      creditUsage={creditUsage}
+    >
         <div className="relative flex flex-col max-h-[75vh] mx-auto w-full lg:w-3/4">
           <div
             ref={chatContainerRef}
@@ -335,9 +381,17 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
             )}
           </div>
 
+          {isLowCredit && (
+            <div className="bg-red-100 text-red-800 p-3 rounded-lg mb-2 text-center font-semibold flex flex-col justify-center items-center">
+              You have run out of credits. Please top up to continue chatting.
+              <BuyCreditsModal/>
+            </div>
+          )}
+
           <div className="flex items-center">
             <textarea
               rows={3}
+              disabled={isLowCredit}
               className="flex-1 bg-gray-100 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-hidden"
               placeholder="Ask anything"
               value={chatInput}
@@ -352,7 +406,7 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
             <button 
               className={`-ml-8 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`} 
               onClick={handleSend}
-              disabled={isLoading}
+              disabled={isLoading || isLowCredit }
             >
               <Send className={`h-6 w-6 ${isLoading ? 'text-gray-400' : 'text-blue-600'}`} />
             </button>

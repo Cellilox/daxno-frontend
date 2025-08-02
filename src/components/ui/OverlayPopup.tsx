@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
 import { Plug2 } from 'lucide-react';
+import { UsageData } from '../chat';
 
 export type IntegrationsModalProps = {
     widthClassName?: string;
     children?: ReactNode;
     buttonLabel?: string;
+    creditUsage: UsageData | undefined
 };
 
-export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, buttonLabel = 'Integrations' }: IntegrationsModalProps) {
+export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, buttonLabel = 'Integrations', creditUsage }: IntegrationsModalProps) {
     const [isOptionVisible, setIsOptionVisible] = useState<boolean>(false)
     const modalRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +46,9 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                         {/* Fixed Header */}
                         <div className='flex justify-between items-center p-6 border-b border-gray-200'>
                             <h2 className="text-lg font-semibold">{buttonLabel}</h2>
+                            <p>Limit: {creditUsage?.credit_limit}</p>
+                            <p>Used: {creditUsage?.used_credits}</p>
+                            <p>Remaining: {creditUsage?.remaining_credits}</p>
                             <button 
                                 onClick={() => setIsOptionVisible(false)}
                                 className="text-gray-600 hover:text-gray-800 transition-colors"

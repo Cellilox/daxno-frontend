@@ -218,7 +218,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   }
 
   return (
-    <div className="bg-gray-50 border border-1 border-gray relative overflow-x-auto min-h-[calc(100vh-20rem)]">
+    <div className="bg-gray-50 border border-1 border-gray relative overflow-x-auto min-h-[calc(100vh-30rem)]">
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
