@@ -8,6 +8,31 @@ import { Field } from "./types";
 import { updateRecord } from "@/actions/record-actions";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
+interface AnswerItem {
+  text: string;
+  geometry: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+  page: number;
+}
+
+interface DocumentReviewProps {
+  selectedRecordForReview?: {
+    id: string;
+    orginal_file_name: string;
+    created_at: string;
+    answers: Record<string, AnswerItem>;
+    filename: string;
+    file_key: string;
+    project_id: string;
+    pages: number;
+  };
+  columns: Field[];
+}
+
 const getProxiedUrl = (url: string, isPdf: boolean) => {
   if (!isPdf) return url;
   const encodedUrl = encodeURIComponent(url);
@@ -26,28 +51,6 @@ const PdfViewer = dynamic(
   }
 );
 
-interface AnswerItem {
-  text: string;
-  geometry: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-}
-
-interface DocumentReviewProps {
-  selectedRecordForReview?: {
-    id: string;
-    orginal_file_name: string;
-    created_at: string;
-    answers: Record<string, AnswerItem>;
-    filename: string;
-    file_key: string;
-    project_id: string;
-  };
-  columns: Field[];
-}
 
 export default function DocumentReview({ selectedRecordForReview, columns }: DocumentReviewProps) {
   const [activeItem, setActiveItem] = useState<string | null>(null);
@@ -57,7 +60,10 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
   const [editedAnswers, setEditedAnswers] = useState<Record<string, AnswerItem>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [pdfDimensions, setPdfDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  console.log('PAGES', selectedRecordForReview?.pages)
   useEffect(() => {
     if (selectedRecordForReview) {
       setEditedAnswers(selectedRecordForReview.answers);
@@ -210,7 +216,12 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
           )}
 
           {fileUrl && isPdf && (
-            <PdfViewer fileUrl={fileUrl} activeItem={activeItem} answers={editedAnswers} />
+            <PdfViewer 
+            fileUrl={fileUrl} 
+            activeItem={activeItem} 
+            answers={editedAnswers} 
+            totalPages={selectedRecordForReview?.pages}
+            />
           )}
 
           {fileError && (

@@ -3,9 +3,10 @@ import { getProjects } from "@/actions/project-actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import Link from "next/link";
+
 export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "Overview of your projects and files",
+  title: 'Cellilox | Dashboard',
+  description: 'Your Daxno dashboard: get an overview of your projects, submissions, and recent activity.'
 };
 
 type doc = {
@@ -19,8 +20,7 @@ export default async function Dashboard() {
   const projects = await getProjects()
   const user = await currentUser()
   const docs = await getDocs(user?.id)
-  console.log('RRRRESDOCS', docs)
-  const pages = docs.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
+  const pages = docs?.reduce((acc: number, doc: doc) => acc + doc.page_number, 0);
 
   return (
     <div className="mx-auto p-6 md:p-12 h-screen bg-gray-50">

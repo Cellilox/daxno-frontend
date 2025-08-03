@@ -9,7 +9,7 @@ import { Upload } from 'lucide-react'
 type ScanFilesModalProps = {
   projectId: string
   linkOwner: string
-  plan: string
+  plan: string;
 }
 
 export default function ScanFilesModal({ linkOwner, projectId, plan }: ScanFilesModalProps) {

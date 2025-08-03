@@ -11,9 +11,12 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        customBlue: '#2B4690',
+        customBlue: "#2B4690",
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/typography"),
+    // …any other plugins you might have
+  ],
 } satisfies Config;

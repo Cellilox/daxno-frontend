@@ -10,7 +10,12 @@ type ProjectData = {
     name: string
 }
 
-export default function CreateProjectForm() {
+interface CreateProjectFormProps {
+    onCreated?: () => void;
+    onCancel?: () => void;
+}
+
+export default function CreateProjectForm({ onCreated, onCancel }: CreateProjectFormProps) {
     const { register, resetField, control, handleSubmit, formState: { errors } } = useForm<ProjectData>();
     const [isLoading, setIsLoading] = useState(false)
 
@@ -20,6 +25,7 @@ export default function CreateProjectForm() {
             await createProject(data);
             setIsLoading(false)
             resetField('name')
+            if (onCreated) onCreated();
         } catch (error) {
             alert('Error creating a project')
             setIsLoading(false)
@@ -27,38 +33,35 @@ export default function CreateProjectForm() {
     }
 
     return (
-        <div>
-            <div className="bg-white p-6 rounded shadow-md max-w-3xl mx-auto">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 text-right">Create Project</h2>
-                <form onSubmit={handleSubmit(addProject)}>
-                    <div className='w-full flex'>
-                        <input
-                            type="text"
-                            id="name"
-                            {...register('name', { required: 'Name is required' })}
-                            className="flex-1 p-3 mr-3 w-full rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Type your project name"
-                        />
-                        {isLoading ?
-                            <div
-                                className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300"
-                            >
-                                <LoadingSpinner />
-                            </div> :
-                            <button
-                                className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300"
-                            >
-                                Add
-                            </button>
-                        }
-                    </div>
-                    <p className="text-red-500 text-sm mt-3">{errors.name?.message} </p>
-                </form>
+        <form onSubmit={handleSubmit(addProject)}>
+            <div className='w-full flex'>
+                <input
+                    type="text"
+                    id="name"
+                    {...register('name', { required: 'Name is required' })}
+                    className="flex-1 p-3 mr-3 w-full rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Type your project name"
+                />
+                {isLoading ?
+                    <div
+                        className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300"
+                    >
+                        <LoadingSpinner />
+                    </div> :
+                    <button
+                        className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300"
+                    >
+                        Add
+                    </button>
+                }
             </div>
-            {isLoading && <div className='max-w-3xl mx-auto'>
+            <p className="text-red-500 text-sm mt-3">{errors.name?.message} </p>
+            {onCancel && (
+                <button type="button" onClick={onCancel} className="mt-4 text-sm text-gray-500 hover:underline">Cancel</button>
+            )}
+            {isLoading && <div className='max-w-3xl mx-auto mt-4'>
                 <ComponentProgressBar />
             </div>}
-
-        </div>
+        </form>
     )
 }

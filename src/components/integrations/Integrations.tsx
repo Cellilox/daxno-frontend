@@ -5,27 +5,12 @@ import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import { Plug2 } from 'lucide-react';
 import HubSpotExport from './hubspot/HubSpotExport';
-import { HubSpotIcon } from './hubspot/ui/HubSpotIcon';
-import { checkDriveStatus, DisconnectDrive } from '@/actions/google-drive-actions';
+import { Field, Record } from '../spreadsheet/types';
 
 type OptionsProps = {
     projectId: string;
-    fields: {
-        id: string;
-        name: string;
-        type: string;
-    }[];
-    records: {
-        id: string;
-        answers: {
-            [key: string]: string;
-        };
-        filename: string;
-        file_key: string;
-        project_id: string;
-        created_at: string;
-        updated_at: string;
-    }[];
+    fields: Field[]
+    records: Record[]
 }
 
 export default function Integrations({projectId, fields, records}: OptionsProps) {
@@ -51,7 +36,7 @@ export default function Integrations({projectId, fields, records}: OptionsProps)
     }, [isOptionVisible, onCancel]);
 
     return (
-        <div className="z-10">
+        <div className="z-[49]">
             <button
                 className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 onClick={() => setIsOptionVisible(true)}

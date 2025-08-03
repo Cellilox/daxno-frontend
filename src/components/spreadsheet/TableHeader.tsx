@@ -28,9 +28,9 @@ export default function TableHeader({
 
   if (!hasRecords && !hasColumns) {
     return (
-      <thead className="bg-gray-50 border-b-2 border-gray-200 h-[60vh]">
+      <thead className="h-[50vh] bg-gray-50">
         <tr>
-          <th className="px-4 py-8 text-center border-r border-gray-200">
+          <th className="px-4 py-8 text-center">
             <div className="flex flex-col items-center justify-center gap-3">
               <FileSpreadsheet className="w-12 h-12 text-gray-400" />
               <div className="text-center">

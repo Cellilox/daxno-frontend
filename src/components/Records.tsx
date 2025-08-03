@@ -120,16 +120,21 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
 
     return (
         <div>
-            <div
+            <div className="flex justify-between items-center">
+            {isConnected && (<p className='mb-4'>Status: <span className='text-green-500'>Connected</span></p>)}
+            {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Disconnected</span></p>)}
+            {initialFields.length >=2 && 
+                        <div
                 className="text-right"
                 onClick={() => setIsReorderPopupVisible(true)}
             >
-                <button onClick={() => setIsReorderPopupVisible(true)} className="ext-md mb-4 underline sticky right-0 ">
-                    Edit columns
+                <button onClick={() => setIsReorderPopupVisible(true)} className="text-md mb-4 underline sticky right-0 ">
+                    Order columns
                 </button>
             </div>
+            }
+            </div>
             <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
-            <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
             <ColumnReorderPopup
                 columns={columns}
                 isOpen={isReorderPopupVisible}

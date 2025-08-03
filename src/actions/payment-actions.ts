@@ -24,8 +24,8 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
     "payment_options": "card",
     "customer": {},
     "customization": {
-      "title": "Daxno OCR service",
-      "description": "This is for Daxno OCR service",
+      "title": "Cellilox AI Doc Assistant Service",
+      "description": "This AI Doc Assistant Service",
       "logo": "http://logo.png"
     },
     "payment_plan": Number(plan_id),
@@ -35,6 +35,38 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
 
   try {
     const response = await fetchAuthedJson(`${apiUrl}/payments/charge-card-and-mobilerwanda`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+  if(!response.ok) {
+    throw new Error ("Failed to fet url")
+  }
+  console.log('RES', response)
+  return response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}
+
+
+export async function buyCredits(pathname: string, amount: number) {
+  const payload = {
+    "amount": Number(amount),
+    "currency": "RWF",
+    "redirect_url": `${process.env.NEXT_PUBLIC_ClIENT_URL}/${pathname}`,
+    "payment_options": "card",
+    "customer": {},
+    "customization": {
+      "title": "Cellilox AI Doc Assistant Service",
+      "description": "This AI Doc Assistant Service",
+      "logo": "http://logo.png"
+    }
+  }
+
+  console.log('PAYLOAD', payload)
+
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/payments/pay-for-credits`, {
         method: 'POST',
         body: JSON.stringify(payload),
     })
@@ -63,3 +95,51 @@ try {
   console.log(error)
 }
 };
+
+export async function getUserSubscription (transaction_id: string)  {
+try {
+  const response = await fetchAuthed(`${apiUrl}/payments/subscription?transsaction_id=${transaction_id}`, {
+    method: 'GET',
+  });
+  
+  // if (!response.ok) {
+  // throw new Error('Failed user plan');
+  // }
+  return await response.json()
+} catch (error) {
+  console.log(error)
+}
+};
+
+export async function cancelSubscription(sub_id: number) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/payments/cancel-subscription?sub_id=${sub_id}`, {
+    method: 'POST',
+  });
+
+  // if (!response.ok) {
+  //   throw new Error('Failed to cancel subscription');
+  // }
+
+  return await response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}
+
+
+export async function activateSubscription(sub_id: number) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/payments/activate-subscription?sub_id=${sub_id}`, {
+    method: 'POST',
+  });
+
+  // if (!response.ok) {
+  //   throw new Error('Failed to cancel subscription');
+  // }
+
+  return await response.json();
+  } catch (error) {
+    console.log('Error', error)
+  }
+}

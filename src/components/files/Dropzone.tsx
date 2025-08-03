@@ -3,15 +3,13 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { checkFileType, queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
+import { queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
 import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
 import { FileStatus } from './types';
-import { Transaction } from '../pricing/types';
 import { getTransactions } from '@/actions/transaction-actions';
-import { checkPlan } from '../pricing/utils';
 
 type MyDropzoneProps = {
   projectId: string;
@@ -44,16 +42,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setPreview(URL.createObjectURL(selectedFile));
       const formData = new FormData();
       formData.append('file', selectedFile);
-      handleCheckFileType(formData);
     }
   }, []);
 
-  const handleCheckFileType = async (formData: any) => {
-    const res = await checkFileType(formData);
-    if(res.document_type) {
-      onMessageChange({type: messageTypeEnum.SUGGEST_TO_UPGRADE, text: `This document is [${res.document_type}] pattern. Basic Plan extraction may miss critical data.`});
-    }
-  };
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB in bytes
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,12 +56,26 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       router.push(`/projects/${projectId}`);
       return;
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+    onMessageChange({
+      type: messageTypeEnum.ERROR,
+      text: `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 1 MB.`,
+    });
+    setIsLoading(false);
+    return;
+  }
     const formData = new FormData();
     formData.append('file', file);
     try {
-      console.log('PPORL', projectId)
       onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
       const result = await uploadFile(formData, projectId);
+      console.log('RE', JSON.stringify(result.detail))
+      if(result.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       const filename = result.filename;
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
@@ -81,7 +87,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
   const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Analysing...',});
+      onMessageChange({type: messageTypeEnum.INFO, text: 'Optical Character Recognition...',});
+      setTimeout(() => {
+        onMessageChange({type: messageTypeEnum.INFO, text: 'AI Model Thinking....',});
+      }, 4000)
       const response = await queryDocument(projectId, fileName);
       const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key};
       console.log('Record Payload:', recordPayload)
@@ -153,10 +162,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
-      
-      console.log('PPORL3', projectId)
       const uploadResult = await uploadFile(formData, projectId);
-      
+      if(uploadResult.detail) {
+        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}`})
+        setIsLoading(false)
+        return;
+      }
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
@@ -288,7 +299,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         >
           Bulk Upload
           {!isBulkUploadAllowed && (
-            <span className="ml-1 text-xs text-red-500">(Premium)</span>
+            <span className="ml-1 text-xs text-red-500">(professional)</span>
           )}
         </button>
       </div>

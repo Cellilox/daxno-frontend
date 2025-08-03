@@ -23,7 +23,6 @@ export const handleConnect = async (): Promise<void> => {
       throw new Error('Failed to get authorization URL');
     }
     const data = await response.json();
-    console.log('DATA:', data)
     return data;
   } catch (error) {
     console.error('Error connecting to HubSpot:', error);
@@ -69,8 +68,6 @@ export const exportToHubSpot = async (
   };
 
   try {
-    console.log('SENDING PAYLOAD:', JSON.stringify(payload, null, 2));
-    
     const response = await fetchAuthedJson(
       `${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/${type}/batch-upsert`,
       {
@@ -82,13 +79,10 @@ export const exportToHubSpot = async (
     if (!response.ok) {
       const errorData = await response.json();
       console.error('HubSpot API Error Response:', errorData);
-      
-      // Throw error with the full error data
       throw new Error(`HubSpot API Error: ${JSON.stringify(errorData)}`);
     }
 
     const result = await response.json();
-    console.log('HubSpot API Success Response:', result);
     return result;
   } catch (error) {
     console.error(`Error creating ${type}:`, error);
@@ -97,7 +91,7 @@ export const exportToHubSpot = async (
     }
     throw new Error(`Failed to export to HubSpot: ${error}`);
   }
-}; 
+};
 
 export async function DisconnectHubspot() {
   try {
@@ -111,4 +105,4 @@ export async function DisconnectHubspot() {
   } catch (error) {
     console.log(error)
   }
-  }
+}

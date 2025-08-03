@@ -18,17 +18,19 @@ type Project = {
   description: string;
   owner: string;
   is_owner: string;
+  address_domain: string;
+  owner_email: string;
 }
 
 export default function Card({project}: CardProps) {
   const router = useRouter()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
-
+  
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-
+  console.log('Proj_to_update', selectedProjectToUpdate)
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
@@ -54,6 +56,7 @@ export default function Card({project}: CardProps) {
   }
 
   const handleShowProjectUpdateForm = (project: Project) => {
+     console.log('PPX', project)
      setIsPopupVisible(true)
      setSelectedprojectToUpdate(project)
   }
@@ -62,9 +65,7 @@ export default function Card({project}: CardProps) {
     e.preventDefault()
     setIsLoading(true)
     const updateData = {
-      name: selectedProjectToUpdate?.name || '',
-      description: selectedProjectToUpdate?.description || '',
-      owner: selectedProjectToUpdate?.owner || ''  
+      ...selectedProjectToUpdate
     };
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)

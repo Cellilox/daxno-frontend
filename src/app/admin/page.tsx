@@ -3,8 +3,8 @@ import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { getDocs } from "@/actions/documents-action";
 
 export const metadata: Metadata = {
-  title: "Admin",
-  description: "overview of all users",
+  title: 'Cellilox | Admin',
+  description: 'Administrative dashboard for managing users, projects, and platform settings in Daxno.'
 };
 
 export default async function Admin() {

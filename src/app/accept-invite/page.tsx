@@ -1,11 +1,16 @@
+export const metadata: Metadata = {
+  title: 'Cellilox | Accept Invitation',
+  description: 'Accept your invitation to join Daxno and start collaborating on projects and submissions.'
+};
+
+import { Metadata } from "next";
 import AcceptInvitation from "./AcceptInvitation";
 
 export default async function AcceptInvite({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{token?: string, project_id: string}>
 }) {
-  
   const {token} = await searchParams
   const {project_id} = await searchParams;
 

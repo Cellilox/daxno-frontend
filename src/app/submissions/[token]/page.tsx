@@ -1,17 +1,18 @@
-import { getLinkData } from "@/actions/submission-actions"
+import { get_project_plan } from "@/actions/project-actions"
+import { getProject } from "@/actions/submission-actions"
 import DropzoneWrapper from "@/components/files/DropzoneWrapper"
+import { Metadata } from "next";
 
-type SubmissionViewProps = {
-  params: {
-    token: string
-  }
-}
+export const metadata: Metadata = {
+  title: 'Cellilox | Submission Details',
+  description: 'Submit your documents to Cellilox for processing. Only project owner will receive this submission.'
+};
 
-export default async function Submission({ params }: SubmissionViewProps) {
-  const { token } = params
-  const link_data = await getLinkData(token)
-  console.log(link_data)
-  if (!link_data) {
+export default async function Submission({ params }: {params: Promise<{token: string}>}) {
+  const { token } = await params
+  const project = await getProject(token)
+  const plan = await get_project_plan(project.owner)
+  if (!project || !project?.link_is_active) {
      return <div className="min-h-[80vh] flex flex-col items-center justify-center">
       <p>Invalid or deleted link</p>
       </div>
@@ -25,9 +26,9 @@ export default async function Submission({ params }: SubmissionViewProps) {
         </p>
         
         <DropzoneWrapper
-          projectId={link_data.project_id}
-          linkOwner = {link_data.user_id}
-          plan = {link_data.plan}
+          projectId={project.id}
+          linkOwner = {project.owner}
+          plan = {plan.plan_name}
         />
       </div>
     </div>

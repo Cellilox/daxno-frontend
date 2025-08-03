@@ -18,9 +18,9 @@ export async function getFileUrl(key: string, projectId: string) {
 }
 
 
-export async function deleteFileUrl(key: string) {
+export async function deleteFileUrl(key: string, projectId: string) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/records/delete-file/?file_key=${key}`, {
+        const response = await fetchAuthedJson(`${apiUrl}/records/delete-file/?file_key=${key}&project_id=${projectId}`, {
             method: 'DELETE'
           });
         

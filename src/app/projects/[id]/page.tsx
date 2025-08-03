@@ -1,35 +1,69 @@
-import { currentUser } from "@clerk/nextjs/server"
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
 import { fetchAuthed } from "@/lib/api-client"
 import { getColumns } from "@/actions/column-actions"
-import { getProjectsById } from "@/actions/project-actions"
+import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
-import { getTransactions } from "@/actions/transaction-actions"
-import { checkPlan } from "@/components/pricing/utils"
+import { Metadata } from "next"
+import { getModels, getSelectedModel } from "@/actions/ai-models-actions"
+import { Model } from "@/types"
+import { getConversations } from "@/actions/conversations-actions"
+import { Message } from "@/components/chat/types"
 
-type ProjectViewProps = {
-  params: {
-    id: string
-  }
+export const metadata: Metadata = {
+  title: 'Cellilox | Project Details',
+  description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
+};
+
+type Conversation = {
+  id: string;
+  project_id: string;
+  owner: string;
+  messages: Message[]
 }
 
-export default async function ProjectView({ params }: ProjectViewProps) {
+export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
   const { id } = await params
   const project = await getProjectsById(id)
+  console.log('P2', project)
   const fields = await getColumns(project.id)
   const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
+  console.log('RECORDS', records)
+  console.log('FIELDS', fields)
   const is_project_owner = project.is_owner;
-  const transactions = await getTransactions()
-  let plan = ''
-  console.log('PlaN', plan)
-  if(transactions[0]) {
-    plan =  await checkPlan(transactions[0])
-  }
+  const plan = await get_project_plan(project.owner)
+  const aiModels = await getModels()
+  const tenantModel = await getSelectedModel()
+
+  const allProjectConvesation = await getConversations(project.id)
+  const chats = allProjectConvesation?.flatMap((conv: Conversation)=> conv.messages);
+  // trusted providers you care about (lowercased)
+  const trustedProviders = [
+    'mistralai',
+    'openai',
+    'deepseek',
+    'anthropic',
+  ]
+
+  // build two lists with provider filtering
+  const freeModels = aiModels.filter((m: Model) => {
+    const isFree = m.id.endsWith(':free')
+    const provider = m.id.split(':')[0].split('/')[0].toLowerCase()
+    const isTrusted = trustedProviders.includes(provider)
+    return isFree && isTrusted
+  })
+
+  const paidModels = aiModels.filter((m: Model) => {
+    const provider = m.id.split('/')[0].toLowerCase()
+    const isTrusted = trustedProviders.includes(provider)
+    const isFree = m.id.endsWith(':free')
+    return isTrusted && !isFree
+  })
+
   return (
     <>
       <div className="px-4 sm:px-6 lg:px-8">
@@ -43,24 +77,28 @@ export default async function ProjectView({ params }: ProjectViewProps) {
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
-              {fields.length >=1 &&
               <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
               <CreateColumn projectId={id} />
             </div>
-              }
             </div>
             
             {/* Action Buttons */}
-            {fields.length >= 1 && (
               <CollapsibleActions 
                 projectId={id}
+                project={project}
+                shareableLink={project.shareable_link}
+                isLinkActive={project.link_is_active}
+                address={project.address_domain}
                 is_project_owner={is_project_owner}
                 linkOwner={linkOwner} 
                 fields={fields}
                 records={records}
-                plan={plan}
+                plan={plan?.plan_name}
+                freeModels={freeModels}
+                paidModels={paidModels}
+                tenantModal = {tenantModel.selected_model}
+                chats={chats}
               />
-            )}
           </div>
         </div>
 

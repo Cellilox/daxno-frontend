@@ -112,7 +112,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setIsLoading(true);
     try {
       await deleteRecord(recordId);
-      await handleDeleteFileUrl(file_key);
+      await handleDeleteFileUrl(file_key, projectId);
     } catch (error) {
       alert('Error deleting a record');
     } finally {
@@ -122,9 +122,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     }
   };
 
-  const handleDeleteFileUrl = async(file_key: string) => {
-    const key = file_key.split('/')[1];
-    await deleteFileUrl(key);
+  const handleDeleteFileUrl = async(file_key: string, proj_id: string) => {
+    await deleteFileUrl(file_key, proj_id);
   };
 
   const handleEditRow = (rowIndex: number) => {
@@ -219,7 +218,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   }
 
   return (
-    <div className="relative overflow-x-auto min-h-[calc(100vh-20rem)]">
+    <div className="bg-gray-50 border border-1 border-gray relative overflow-x-auto min-h-[calc(100vh-30rem)]">
       <table className="min-w-full bg-white border border-gray-200">
         <TableHeader
           columns={localColumns}
