@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Testimonial from "@/components/Testimonial";
+// import Testimonial from "@/components/Testimonial";
 import Demo from "@/components/Demo";
 
 export default function Home() {
