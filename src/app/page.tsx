@@ -38,7 +38,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-12">
+      {/* <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-12">
         <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
           <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +125,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <Testimonial />
+      <Testimonial /> */}
     </div>
   );
 }

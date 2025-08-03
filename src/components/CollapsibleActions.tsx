@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Users, Mail, Share2 } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
-import Integrations from './integrations/Integrations';
 import FormModal from './ui/Popup';
 import CreateInvite from './forms/CreateInvite';
 import { Field, Record } from './spreadsheet/types';
@@ -11,7 +10,9 @@ import Address from './Address';
 import ShareableLink from './ShareableLink';
 import { Model, Project } from '@/types';
 import ModelSelector from './Models';
-import InsightsAndChat from './files/InsightsAndChat';
+import InsightsAndChat from './chat';
+import { Message } from "@/components/chat/types"
+import Integrations from './integrations/Integrations';
 
 
 interface CollapsibleActionsProps {
@@ -28,9 +29,10 @@ interface CollapsibleActionsProps {
   freeModels: Model[]
   paidModels: Model[]
   tenantModal: string;
+  chats: Message[]
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal}: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal, chats}: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
@@ -97,7 +99,14 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
               <ModelSelector models={freeModels} tenantModal={tenantModal}/>
-              <InsightsAndChat/>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <InsightsAndChat 
+                  projectId={projectId}
+                  widthClassName="lg:w-11/12"
+                  chats={chats}
+                />
+              </div>
               {is_project_owner && (
               <div>
               <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
