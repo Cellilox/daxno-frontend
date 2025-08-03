@@ -33,7 +33,7 @@ export function BuyCreditsForm({ makePayment }: BuyCreditsFormProps) {
 
       <button
         type="submit"
-        className="w-full py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition"
+        className="mt-3 w-full py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition"
       >
         Purchase
       </button>

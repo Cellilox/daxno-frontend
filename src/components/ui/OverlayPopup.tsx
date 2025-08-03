@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
 import { Plug2 } from 'lucide-react';
 import { UsageData } from '../chat';
+import CreditsToolTip from './CreditToolTip';
 
 export type IntegrationsModalProps = {
     widthClassName?: string;
@@ -44,12 +45,12 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end p-4 z-[49]">
                     <div ref={modalRef} className={`bg-white w-full ${widthClassName} h-full rounded-lg shadow-lg flex flex-col`}>
                         {/* Fixed Header */}
-                        <div className='flex justify-between items-center p-6 border-b border-gray-200'>
+                        <div className='flex justify-between p-6 border-b border-gray-200'>
+                            <div>
                             <h2 className="text-lg font-semibold">{buttonLabel}</h2>
-                            <p>Limit: {creditUsage?.credit_limit}</p>
-                            <p>Used: {creditUsage?.used_credits}</p>
-                            <p>Remaining: {creditUsage?.remaining_credits}</p>
-                            <button 
+                            </div>
+                            <div className='flex flex-col items-end'>
+                             <button 
                                 onClick={() => setIsOptionVisible(false)}
                                 className="text-gray-600 hover:text-gray-800 transition-colors"
                             >
@@ -58,7 +59,15 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
+                            <div className='mt-3'>
+                            <CreditsToolTip 
+                            used={creditUsage?.used_credits} 
+                            remaining={creditUsage?.remaining_credits} 
+                            limit={creditUsage?.credit_limit}/>
+                            </div>
+                            </div>
                         </div>
+
 
                         {/* Scrollable Content */}
                         <div className="flex-1 overflow-y-auto">

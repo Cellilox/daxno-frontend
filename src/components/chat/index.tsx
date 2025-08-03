@@ -37,7 +37,7 @@ export type IntegrationsProps = {
 export type UsageData = {
   credit_limit: number,
   is_free_tier: boolean,
-  remaining_credits: boolean,
+  remaining_credits: number,
   used_credits: number
 }
 

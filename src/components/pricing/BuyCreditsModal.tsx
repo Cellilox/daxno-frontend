@@ -98,10 +98,10 @@ export default function BuyCreditsModal() {
 
           <div className="text-center px-4 mb-4">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Simple, Transparent Pricing
+              Top Up
             </h2>
             <p className="text-gray-600 max-w-xl mx-auto">
-              No hidden fees
+              No additional service fee
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export default function BuyCreditsModal() {
               isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
             }`}
           >
-            <div className="py-8 bg-gray-100 w-11/12">
+            <div className="py-8 bg-gray-100">
               <div className="mx-auto px-4">
                 <div className={`transition-opacity duration-300 ${
                   areCardsVisible ? 'opacity-100' : 'opacity-0'
