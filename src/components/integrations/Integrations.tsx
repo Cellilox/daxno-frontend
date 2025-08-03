@@ -36,7 +36,7 @@ export default function Integrations({projectId, fields, records}: OptionsProps)
     }, [isOptionVisible, onCancel]);
 
     return (
-        <div className="z-[49]">
+        <div className="">
             <button
                 className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 onClick={() => setIsOptionVisible(true)}
