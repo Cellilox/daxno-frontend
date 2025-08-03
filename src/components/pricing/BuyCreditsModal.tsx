@@ -60,14 +60,15 @@ export default function BuyCreditsModal() {
       
       try {
         setLoading(true)
-        const result = await buyCredits (pathname, amount)
+        const result = await requestPayment (pathname, amount, 224396)
         console.log('Payment', result)
         if(result?.data) {
+        setClickedPlanName('')
         setLoading(false)
         router.push(result?.data?.link)
         }
-        
       } catch (error) {
+        setClickedPlanName('')
         setLoading(false)
         console.log('Error', error)
         alert('Error requesting to pay')

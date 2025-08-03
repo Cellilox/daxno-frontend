@@ -261,6 +261,7 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
 
     if(data.remaining_credits <= 0) {
       setIsLowCredit(true)
+      alert('Low credits')
       return;
     }
 

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Users, Mail, Share2 } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
-import IntegrationsModal from '@/components/integrations';
 import FormModal from './ui/Popup';
 import CreateInvite from './forms/CreateInvite';
 import { Field, Record } from './spreadsheet/types';
@@ -13,7 +12,7 @@ import { Model, Project } from '@/types';
 import ModelSelector from './Models';
 import InsightsAndChat from './chat';
 import { Message } from "@/components/chat/types"
-
+import Integrations from './integrations/Integrations';
 
 
 interface CollapsibleActionsProps {
@@ -117,7 +116,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
             </div>)
               }
               <div className="flex items-center gap-2 flex-shrink-0">
-                <IntegrationsModal 
+                <Integrations 
                   projectId={projectId} 
                   fields={fields} 
                   records={records}

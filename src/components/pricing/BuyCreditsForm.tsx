@@ -7,7 +7,7 @@ interface BuyCreditsFormProps {
 }
 
 export function BuyCreditsForm({ makePayment }: BuyCreditsFormProps) {
-  const [amount, setAmount] = useState<number>(10)
+  const [amount, setAmount] = useState<number>(5)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()

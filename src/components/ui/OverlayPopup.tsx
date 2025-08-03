@@ -7,7 +7,7 @@ export type IntegrationsModalProps = {
     widthClassName?: string;
     children?: ReactNode;
     buttonLabel?: string;
-    creditUsage: UsageData | undefined
+    creditUsage?: UsageData | undefined
 };
 
 export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, buttonLabel = 'Integrations', creditUsage }: IntegrationsModalProps) {
@@ -59,12 +59,14 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
+                            {buttonLabel == "Insights & Chat" && 
                             <div className='mt-3'>
                             <CreditsToolTip 
                             used={creditUsage?.used_credits} 
                             remaining={creditUsage?.remaining_credits} 
                             limit={creditUsage?.credit_limit}/>
                             </div>
+                            }
                             </div>
                         </div>
 

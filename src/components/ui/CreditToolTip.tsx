@@ -6,7 +6,8 @@ import { InfoIcon, Plug2 } from 'lucide-react';
 type CreditsTooltipProps = {
  limit: number | undefined;
  used: number | undefined;
- remaining: number | undefined
+ remaining: number | undefined;
+ 
 }
 
 
@@ -46,7 +47,7 @@ export default function CreditsToolTip({ used, remaining, limit }: CreditsToolti
         className={`
           absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5
           opacity-0 pointer-events-none
-          transition-opacity duration-150 z-50
+          transition-opacity duration-150 z-[40]
           ${open ? 'opacity-100 pointer-events-auto' : ''}
           
           /* on hover desktop */
