@@ -128,7 +128,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
                 className="text-right"
                 onClick={() => setIsReorderPopupVisible(true)}
             >
-                <button onClick={() => setIsReorderPopupVisible(true)} className="text-md mb-4 underline sticky right-0 ">
+                <button onClick={() => setIsReorderPopupVisible(true)} className="text-blue-600 hover:text-blue-700 text-md mb-4 underline sticky right-0 ">
                     Reorder Columns
                 </button>
             </div>
