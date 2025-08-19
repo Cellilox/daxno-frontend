@@ -122,7 +122,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         <div>
             <div className="flex justify-between items-center">
             {isConnected && (<p className='mb-4'>Status: <span className='text-green-500'>Connected</span></p>)}
-            {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Disconnected</span></p>)}
+            {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Connecting...</span></p>)}
             {initialFields.length >=2 && 
                         <div
                 className="text-right"

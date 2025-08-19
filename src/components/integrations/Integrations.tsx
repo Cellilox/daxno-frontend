@@ -45,7 +45,7 @@ export default function Integrations({projectId, fields, records}: OptionsProps)
                 Integrations
             </button>
             {isOptionVisible &&
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end p-4">
+                <div className="z-10 fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end p-4">
                     <div ref={modalRef} className="bg-white w-full lg:w-2/5 h-full rounded-lg shadow-lg flex flex-col">
                         {/* Fixed Header */}
                         <div className='flex justify-between items-center p-6 border-b border-gray-200'>
