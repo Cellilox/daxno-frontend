@@ -6,6 +6,7 @@ import Image from "next/image";
 import { regenerateProjectLink, updateProject } from "@/actions/project-actions";
 import { Project } from "@/types";
 import LoadingSpinner from "./ui/LoadingSpinner";
+import ProductQRCode from "./QRcode";
 
 type ShareableLinkProps = {
   shareableLink: string;
@@ -173,6 +174,10 @@ export default function ShareableLink({ shareableLink, isLinkActive, projectId, 
           animation: slideDown 200ms ease-out forwards;
         }
       `}</style>
+
+      <div className="flex justify-center mt-6">
+      <ProductQRCode projectUrl={currentLink}/>
+      </div>
     </div>
   );
 }
