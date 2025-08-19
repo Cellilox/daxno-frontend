@@ -62,8 +62,8 @@ export default function RefundPolicyPage() {
       <h3>4.1 Cancellation by Customer</h3>
       <p>
         Customers may cancel their subscription at any time through their account dashboard or by contacting{' '}
-        <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
-          support@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>.
         Cancellation takes effect at the end of the current billing cycle. After cancellation, access to Services continues until the end of the paid period, but no further charges will be incurred for subsequent billing cycles.
       </p>
@@ -76,8 +76,8 @@ export default function RefundPolicyPage() {
         </li>
         <li>
           To request a prorated refund, Customers must contact{' '}
-          <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
-            support@cellilox.com
+          <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+            hello@support.cellilox.com
           </a>{' '}
           and provide:
           <ul>
@@ -103,8 +103,8 @@ export default function RefundPolicyPage() {
       <h3>6.1 Submit a Request</h3>
       <p>
         Email us at{' '}
-        <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
-          support@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>{' '}
         with the subject line "Refund Request." Include the following information:
       </p>
@@ -147,7 +147,7 @@ export default function RefundPolicyPage() {
       <p>If you have any questions, concerns, or requests regarding this Refund Policy, please contact us:</p>
       <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
 Support
-Email: support@cellilox.com
+Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>
