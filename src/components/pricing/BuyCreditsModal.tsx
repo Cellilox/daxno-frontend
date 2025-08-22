@@ -42,11 +42,8 @@ export default function BuyCreditsModal() {
 
 
     const [plansList, setPlansList] = useState<any>()
-    console.log('Available Plans', plansList)
-
     const setAvailablePlans = async () => {
       const plans = await getAvailablePlans();
-      console.log("PlansFetch", plans)
        setPlansList(plans?.data)
     }
   

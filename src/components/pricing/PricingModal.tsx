@@ -49,11 +49,9 @@ export default function PricingModal({transactions}: Transactions) {
 
 
     const [plansList, setPlansList] = useState<any>()
-    console.log('Available Plans', plansList)
 
     const setAvailablePlans = async () => {
       const plans = await getAvailablePlans();
-      console.log("PlansFetch", plans)
        setPlansList(plans?.data)
     }
   
@@ -62,13 +60,8 @@ export default function PricingModal({transactions}: Transactions) {
     }, [])
 
     const monthlyPlans = plansList?.filter((x: Plan) => x.interval === "monthly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('MONTLY_PLANS', monthlyPlans)
-
     const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('Yearly_PLANS', yearlyPlans)
-
-     const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('HOURLY_PLANS', hourlyPlans)
+    const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
   
   
     const makePayment = async (planId: number | undefined, proratedAmount: number | undefined) => {

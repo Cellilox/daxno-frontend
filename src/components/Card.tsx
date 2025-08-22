@@ -30,7 +30,6 @@ export default function Card({project}: CardProps) {
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  console.log('Proj_to_update', selectedProjectToUpdate)
   const handleShowProjectDeleteAlert = (project: Project) => {
     setIsAlertVisible(true)
     setSelectedProjectToDelete(project)
@@ -46,8 +45,6 @@ export default function Card({project}: CardProps) {
       alert('Error deleting a project')
     }
   }
-
-  console.log('PPPPPP', project)
 
   const handleCancelDeleteProject = () => {
     setIsAlertVisible(false)
