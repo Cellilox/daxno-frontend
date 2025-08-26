@@ -354,7 +354,7 @@ export default function TermsOfServicePage() {
 Cellilox Limited
 Attn: Legal Department
 Email: hello@support.cellilox.com
-Address: Kigali - Gasabo
+Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga
           </pre>
         </li>
       </ul>
