@@ -10,7 +10,7 @@ import Address from './Address';
 import ShareableLink from './ShareableLink';
 import { Model, Project } from '@/types';
 import ModelSelector from './Models';
-import InsightsAndChat from './chat';
+import OnyxDeepLinkButton from './OnyxDeepLinkButton';
 import { Message } from "@/components/chat/types"
 import Integrations from './integrations/Integrations';
 
@@ -32,14 +32,14 @@ interface CollapsibleActionsProps {
   chats: Message[]
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal, chats}: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal, chats }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
   const [isShareLinkPopupVisible, setIsShareLinkPopupVisible] = useState<boolean>(false)
 
   const handleShowInvitePopup = () => {
-     setIsInvitePopupVisible(true)
+    setIsInvitePopupVisible(true)
   }
 
   const handleShowAddressPopup = () => {
@@ -80,45 +80,44 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
                 plan={plan}
               />
 
-              {is_project_owner && 
-              
-              <button onClick={handleShowShareLinkPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Shareable Link
-              </button>
-              
-             }
+              {is_project_owner &&
+
+                <button onClick={handleShowShareLinkPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                  Shareable Link
+                </button>
+
+              }
               <div>
-              <button onClick={handleShowAddressPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Mail Attachments
-              </button>
-            </div>
+                <button onClick={handleShowAddressPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                  Mail Attachments
+                </button>
+              </div>
             </div>
 
             {/* Right Action Group */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <ModelSelector models={freeModels} tenantModal={tenantModal}/>
+              <ModelSelector models={freeModels} tenantModal={tenantModal} />
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <InsightsAndChat 
+                <OnyxDeepLinkButton
                   projectId={projectId}
-                  widthClassName="lg:w-11/12"
-                  chats={chats}
+                  projectName={project.name}
                 />
               </div>
               {is_project_owner && (
-              <div>
-              <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                Invite
-              </button>
-            </div>)
+                <div>
+                  <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                    Invite
+                  </button>
+                </div>)
               }
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Integrations 
-                  projectId={projectId} 
-                  fields={fields} 
+                <Integrations
+                  projectId={projectId}
+                  fields={fields}
                   records={records}
                 />
               </div>
@@ -128,8 +127,8 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
       </div>
 
 
-       {/* Invite Popup */}
-       {isInvitePopupVisible && (
+      {/* Invite Popup */}
+      {isInvitePopupVisible && (
         <FormModal
           visible={isInvitePopupVisible}
           title="Send Invite"
@@ -138,13 +137,13 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
           size="small"
         >
           <div className='flex justify-between'>
-          <CreateInvite projectId={projectId} setIsInvitePopupVisible={setIsInvitePopupVisible}/>
+            <CreateInvite projectId={projectId} setIsInvitePopupVisible={setIsInvitePopupVisible} />
           </div>
         </FormModal>
       )}
 
-       {/* Generate Address Popup */}
-       {isAddressPopupVisible && (
+      {/* Generate Address Popup */}
+      {isAddressPopupVisible && (
         <FormModal
           visible={isAddressPopupVisible}
           onCancel={() => setIsAddressPopupVisible(false)}
@@ -153,13 +152,13 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
           isHeaderHidden={true}
         >
           <div className='flex justify-between'>
-          <Address  address={address} setIsAddressPopupVisible={setIsAddressPopupVisible}/>
+            <Address address={address} setIsAddressPopupVisible={setIsAddressPopupVisible} />
           </div>
         </FormModal>
-      )} 
+      )}
 
-        {/* Generate ShareLink Popup */}
-       {isShareLinkPopupVisible && (
+      {/* Generate ShareLink Popup */}
+      {isShareLinkPopupVisible && (
         <FormModal
           visible={isShareLinkPopupVisible}
           onCancel={() => setIsShareLinkPopupVisible(false)}
@@ -168,10 +167,10 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
           isHeaderHidden={true}
         >
           <div className='flex justify-between'>
-          <ShareableLink shareableLink={shareableLink} isLinkActive={isLinkActive} projectId={projectId} project={project} setIsShareLinkPopupVisible={setIsShareLinkPopupVisible}/>
+            <ShareableLink shareableLink={shareableLink} isLinkActive={isLinkActive} projectId={projectId} project={project} setIsShareLinkPopupVisible={setIsShareLinkPopupVisible} />
           </div>
         </FormModal>
-      )} 
+      )}
     </div>
   );
 } 

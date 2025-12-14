@@ -8,57 +8,71 @@ export async function revalidate() {
   revalidatePath('/projects');
 }
 
-export async function uploadFile (formData:any, projectId: string | undefined)  {
-     try {
-      const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
-        method: 'POST',
-        body: formData
-      });
+export async function uploadFile(formData: any, projectId: string | undefined) {
+  try {
+    console.log(`[Frontend] Uploading file for project ${projectId} to ${apiUrl}/records/upload`);
+    const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
+      method: 'POST',
+      body: formData
+    });
 
-    // if (!response.ok) {
-    // throw new Error('Failed to upload a file to aws ');
-    // }
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`[Frontend] Upload failed: ${response.status} ${response.statusText}`, text);
+      throw new Error(`Failed to upload file: ${response.statusText} - ${text}`);
+    }
     return await response.json()
-     } catch (error) {
-      console.log('Error', error)
-     }
-  };
-
-
-
-  export async function queryDocument(projectId: string, fileName: string) {
-    try {
-      const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
-        method: 'POST',
-      });
-      // if (!response.ok) {
-      //   throw new Error('Failed to query document');
-      // }
-  
-      return await response.json();
-    } catch (error) {
-      console.log('EROR', error)
-    }
+  } catch (error) {
+    console.error('[Frontend] Error in uploadFile:', error)
+    throw error;
   }
+};
 
-  export async function saveRecord(formData: any, user_id: string ) {
-    try {
-      const response = await fetchAuthedJson(`${apiUrl}/records/save?user_id=${user_id}`, {
-        method: 'POST',
-        body: JSON.stringify(formData)
-      });
-    
-      // if (!response.ok) {
-      //   throw new Error('Failed to save a record');
-      // }
-      return await response.json();
-    } catch (error) {
-      console.log(error)
-    }
+
+
+export async function queryDocument(projectId: string, fileName: string) {
+  try {
+    console.log(`[Frontend] Querying document ${fileName} for project ${projectId}`);
+    const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
+      method: 'POST',
+    });
+    // if (!response.ok) {
+    //   throw new Error('Failed to query document');
+    // }
+
+    const data = await response.json();
+    console.log(`[Frontend] Query result:`, data ? "Success" : "Empty");
+    return data;
+  } catch (error) {
+    console.error('[Frontend] Error in queryDocument:', error)
+    throw error;
   }
+}
 
-export async function updateRecord(recordId: string | undefined , formData: any) {
-   try {
+export async function saveRecord(formData: any, user_id: string) {
+  try {
+    console.log(`[Frontend] Saving record for user ${user_id}`);
+    const response = await fetchAuthedJson(`${apiUrl}/records/save?user_id=${user_id}`, {
+      method: 'POST',
+      body: JSON.stringify(formData)
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`[Frontend] Save Record Failed: ${response.status}`, text);
+      throw new Error('Failed to save a record');
+    }
+    const data = await response.json();
+    console.log(`[Frontend] Record saved:`, data?.record?.id);
+    return data;
+  } catch (error) {
+    console.error('[Frontend] Error in saveRecord:', error)
+    throw error;
+  }
+}
+
+export async function updateRecord(recordId: string | undefined, formData: any) {
+  try {
     const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
       method: 'PUT',
       body: JSON.stringify(formData),
@@ -66,9 +80,9 @@ export async function updateRecord(recordId: string | undefined , formData: any)
     if (!response.ok) {
       throw new Error('Failed to update record');
     }
-   } catch (error) {
-     console.log(error)
-   }
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 export async function deleteRecord(recordId: string) {
@@ -76,11 +90,11 @@ export async function deleteRecord(recordId: string) {
     const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
       method: 'DELETE'
     });
-  
+
     if (!response.ok) {
       throw new Error('Failed to delete a record');
     }
   } catch (error) {
     console.log(error)
   }
-  }
+}
