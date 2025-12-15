@@ -21,11 +21,13 @@ export default async function BillingPage() {
   }
 
   const firstTx = transactions[0];
-  const subscription = await getUserSubscription(firstTx.t_id);
-  const userPlan    = await getUserPlan(firstTx.plan_id);
+  const [subscription, userPlan] = await Promise.all([
+    getUserSubscription(firstTx.t_id),
+    getUserPlan(firstTx.plan_id)
+  ]);
 
   return (
-    <Billing 
+    <Billing
       sub_id={subscription?.data[0]?.id}
       t_id={firstTx.t_id}
       subPlan={userPlan?.data?.name}

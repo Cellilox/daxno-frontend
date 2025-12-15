@@ -72,56 +72,62 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
       <div className={`${!isExpanded && 'hidden sm:block'}`}>
         <div className="flex flex-col gap-4">
           {/* Action Group */}
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-between w-full">
-            <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
-              <ScanFilesModal
-                linkOwner={linkOwner}
-                projectId={projectId}
-                plan={plan}
-              />
-
-              {is_project_owner &&
-
-                <button onClick={handleShowShareLinkPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                  Shareable Link
-                </button>
-
-              }
-              <div>
-                <button onClick={handleShowAddressPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                  Mail Attachments
-                </button>
-              </div>
-            </div>
-
-            {/* Right Action Group */}
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-              <ModelSelector models={freeModels} tenantModal={tenantModal} />
-
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <OnyxDeepLinkButton
+          <div className={`relative transition-all duration-300 ${fields.length === 0 ? 'blur-sm pointer-events-none select-none opacity-60' : ''}`}>
+            <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-between w-full">
+              <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center sm:justify-start">
+                <ScanFilesModal
+                  linkOwner={linkOwner}
                   projectId={projectId}
-                  projectName={project.name}
+                  plan={plan}
                 />
-              </div>
-              {is_project_owner && (
-                <div>
-                  <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
-                    Invite
+
+                {is_project_owner &&
+
+                  <button onClick={handleShowShareLinkPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                    <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                    Shareable Link
                   </button>
-                </div>)
-              }
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Integrations
-                  projectId={projectId}
-                  fields={fields}
-                  records={records}
-                />
+
+                }
+                <div>
+                  <button onClick={handleShowAddressPopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                    Mail Attachments
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Action Group */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
+                <ModelSelector models={freeModels} tenantModal={tenantModal} />
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <OnyxDeepLinkButton
+                    projectId={projectId}
+                    projectName={project.name}
+                  />
+                </div>
+                {is_project_owner && (
+                  <div>
+                    <button onClick={handleShowInvitePopup} className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+                      Invite
+                    </button>
+                  </div>)
+                }
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Integrations
+                    projectId={projectId}
+                    fields={fields}
+                    records={records}
+                  />
+                </div>
               </div>
             </div>
+
+            {fields.length === 0 && (
+              <div className="absolute inset-0 z-10"></div>
+            )}
           </div>
         </div>
       </div>
