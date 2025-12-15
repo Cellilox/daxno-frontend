@@ -23,7 +23,7 @@ type Conversation = {
   messages: Message[]
 }
 
-export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
+export default async function ProjectView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const project = await getProjectsById(id)
   const fields = await getColumns(project.id)
@@ -37,7 +37,7 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
   const tenantModel = await getSelectedModel()
 
   const allProjectConvesation = await getConversations(project.id)
-  const chats = allProjectConvesation?.flatMap((conv: Conversation)=> conv.messages);
+  const chats = allProjectConvesation?.flatMap((conv: Conversation) => conv.messages);
   // trusted providers you care about (lowercased)
   const trustedProviders = [
     'mistralai',
@@ -74,28 +74,25 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
-              <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
-              <CreateColumn projectId={id} />
             </div>
-            </div>
-            
+
             {/* Action Buttons */}
-              <CollapsibleActions 
-                projectId={id}
-                project={project}
-                shareableLink={project.shareable_link}
-                isLinkActive={project.link_is_active}
-                address={project.address_domain}
-                is_project_owner={is_project_owner}
-                linkOwner={linkOwner} 
-                fields={fields}
-                records={records}
-                plan={plan?.plan_name}
-                freeModels={freeModels}
-                paidModels={paidModels}
-                tenantModal = {tenantModel.selected_model}
-                chats={chats}
-              />
+            <CollapsibleActions
+              projectId={id}
+              project={project}
+              shareableLink={project.shareable_link}
+              isLinkActive={project.link_is_active}
+              address={project.address_domain}
+              is_project_owner={is_project_owner}
+              linkOwner={linkOwner}
+              fields={fields}
+              records={records}
+              plan={plan?.plan_name}
+              freeModels={freeModels}
+              paidModels={paidModels}
+              tenantModal={tenantModel.selected_model}
+              chats={chats}
+            />
           </div>
         </div>
 
