@@ -26,13 +26,12 @@ interface CollapsibleActionsProps {
   linkOwner: string;
   fields: Field[]
   records: Record[]
-  freeModels: Model[]
-  paidModels: Model[]
+  models: Model[]
   tenantModal: string;
   chats: Message[]
 }
 
-export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, freeModels, paidModels, tenantModal, chats }: CollapsibleActionsProps) {
+export default function CollapsibleActions({ projectId, project, shareableLink, isLinkActive, address, plan, is_project_owner, linkOwner, fields, records, models, tenantModal, chats }: CollapsibleActionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState<boolean>(false)
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState<boolean>(false)
@@ -99,7 +98,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
               {/* Right Action Group */}
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-                <ModelSelector models={freeModels} tenantModal={tenantModal} />
+                <ModelSelector models={models} tenantModal={tenantModal} plan={plan} />
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <OnyxDeepLinkButton

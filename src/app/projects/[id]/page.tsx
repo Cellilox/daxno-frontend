@@ -38,28 +38,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
 
   const allProjectConvesation = await getConversations(project.id)
   const chats = allProjectConvesation?.flatMap((conv: Conversation) => conv.messages);
-  // trusted providers you care about (lowercased)
-  const trustedProviders = [
-    'mistralai',
-    'openai',
-    'deepseek',
-    'anthropic',
-  ]
 
-  // build two lists with provider filtering
-  const freeModels = aiModels.filter((m: Model) => {
-    const isFree = m.id.endsWith(':free')
-    const provider = m.id.split(':')[0].split('/')[0].toLowerCase()
-    const isTrusted = trustedProviders.includes(provider)
-    return isFree && isTrusted
-  })
-
-  const paidModels = aiModels.filter((m: Model) => {
-    const provider = m.id.split('/')[0].toLowerCase()
-    const isTrusted = trustedProviders.includes(provider)
-    const isFree = m.id.endsWith(':free')
-    return isTrusted && !isFree
-  })
 
   return (
     <>
@@ -88,8 +67,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
               fields={fields}
               records={records}
               plan={plan?.plan_name}
-              freeModels={freeModels}
-              paidModels={paidModels}
+              models={aiModels}
               tenantModal={tenantModel.selected_model}
               chats={chats}
             />

@@ -30,4 +30,5 @@ export type Project = {
 export type Model = {
   id: string;
   name: string;
+  tier?: 'free' | 'starter' | 'professional';
 }
