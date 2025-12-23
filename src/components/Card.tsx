@@ -8,7 +8,7 @@ import { deleteProject, updateProject } from '@/actions/project-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 import ExpandableDescription from './ExpandableDescription';
 
-type CardProps= {
+type CardProps = {
   project: Project
 };
 
@@ -17,16 +17,17 @@ type Project = {
   name: string;
   description: string;
   owner: string;
-  is_owner: string;
+  is_owner: boolean;
+  is_shared?: boolean;
   address_domain: string;
   owner_email: string;
 }
 
-export default function Card({project}: CardProps) {
+export default function Card({ project }: CardProps) {
   const router = useRouter()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
-  
+
   const [isPopupVisible, setIsPopupVisible] = useState<boolean>(false)
   const [selectedProjectToUpdate, setSelectedprojectToUpdate] = useState<Project | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -53,9 +54,9 @@ export default function Card({project}: CardProps) {
   }
 
   const handleShowProjectUpdateForm = (project: Project) => {
-     console.log('PPX', project)
-     setIsPopupVisible(true)
-     setSelectedprojectToUpdate(project)
+    console.log('PPX', project)
+    setIsPopupVisible(true)
+    setSelectedprojectToUpdate(project)
   }
 
   const handleUpdateProject = async (e: React.FormEvent) => {
@@ -90,30 +91,34 @@ export default function Card({project}: CardProps) {
         <div className="p-4 hover:cursor-point">
           <div className='flex justify-between items-center'>
             <h3 className="text-lg font-bold text-gray-800 truncate">{project.name}</h3>
-            <p className="text-sm text-green-400">({project.is_owner? 'Owner': 'Invitee'})</p>
-            {project.is_owner && 
-            <div>
-            <button
-              className="text-blue-500 hover:text-blue-700 text-sm"
-              title="Edit column"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleShowProjectUpdateForm(project)
-              }}
-            >
-              <Pencil size={14} />
-            </button>
-            <button
-              className="ml-3 text-red-500 hover:text-red-700 text-sm"
-              title="Delete column"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleShowProjectDeleteAlert(project)
-              }}
-            >
-              <Trash size={14} />
-            </button>
-          </div>
+            {project.is_shared && (
+              <p className="text-sm text-green-400">
+                Shared: ({project.is_owner ? 'Owner' : 'Invitee'})
+              </p>
+            )}
+            {project.is_owner &&
+              <div>
+                <button
+                  className="text-blue-500 hover:text-blue-700 text-sm"
+                  title="Edit column"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleShowProjectUpdateForm(project)
+                  }}
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  className="ml-3 text-red-500 hover:text-red-700 text-sm"
+                  title="Delete column"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleShowProjectDeleteAlert(project)
+                  }}
+                >
+                  <Trash size={14} />
+                </button>
+              </div>
             }
           </div>
           <div className="mt-2">
@@ -188,11 +193,10 @@ export default function Card({project}: CardProps) {
             <button
               onClick={handleUpdateProject}
               disabled={isLoading}
-              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
-                isLoading 
-                  ? 'bg-blue-300 cursor-not-allowed' 
-                  : 'bg-blue-500 hover:bg-blue-600'
-              }`}
+              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${isLoading
+                ? 'bg-blue-300 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
+                }`}
             >
               {!isLoading && 'Save'}
               {isLoading && <LoadingSpinner />}

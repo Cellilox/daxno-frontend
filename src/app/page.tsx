@@ -9,7 +9,8 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 text-center">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
           <span className="text-blue-600 block mb-3">Meet Cellilox</span>
-          Your AI Doc Assistant
+          {/* Your AI Doc Assistant */}
+          Your Company AI platform
         </h1>
 
         <div className="prose prose-blue prose-xl mx-auto mb-8">
@@ -18,12 +19,16 @@ export default function Home() {
             define key insights, and let Cellilox handle the rest.
           </p>
           <p>
-            Powered by NLP and machine learning, Cellilox extracts data from incoming files, 
+            Powered by NLP and machine learning, Cellilox extracts data from incoming files,
             manages your findings in spreadsheets, and seamlessly integrates with your favorite cloud and CRM tools (Google, HubSpot, etc.).
           </p>
           <p>
             From scanned forms to email attachments—Cellilox works 24/7 to
             streamline your workflows even when you're off.
+          </p>
+          <p>
+            Cellilox Connectors and Agents helps gather information from most of the tools you use in your day to day tasks.
+            These includes communication tools, project management tools, cloud storage tools and more.
           </p>
         </div>
 
@@ -34,7 +39,7 @@ export default function Home() {
           >
             Get Started
           </Link>
-          <Demo/>
+          <Demo />
         </div>
       </div>
 
