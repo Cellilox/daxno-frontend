@@ -143,3 +143,36 @@ export async function activateSubscription(sub_id: number) {
     console.log('Error', error)
   }
 }
+export async function getPaymentHistory(page: number = 1, per_page: number = 10) {
+  try {
+    const response = await fetchAuthed(`${apiUrl}/payments/history?page=${page}&per_page=${per_page}`);
+    if (!response.ok) throw new Error("Failed to fetch payment history");
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching payment history', error);
+    return null;
+  }
+}
+
+export async function downloadInvoice(t_id: number) {
+  try {
+    const response = await fetchAuthed(`${apiUrl}/payments/invoices/${t_id}`);
+    if (!response.ok) throw new Error("Failed to download invoice");
+    const blob = await response.blob();
+    return blob;
+  } catch (error) {
+    console.error('Error downloading invoice', error);
+    return null;
+  }
+}
+
+export async function getProrationDetails(new_plan_id: string) {
+  try {
+    const response = await fetchAuthed(`${apiUrl}/payments/proration-details?new_plan_id=${new_plan_id}`);
+    if (!response.ok) throw new Error("Failed to fetch proration details");
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching proration details', error);
+    return null;
+  }
+}

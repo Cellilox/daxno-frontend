@@ -44,6 +44,17 @@ export function PricingCard({
 
   // Proration calculations
   const { proRatedCharge, fullCharge, creditAmount, remainingDays } = useMemo(() => {
+    // If no current transaction, no proration needed
+    if (!current_txn_amount || !current_txn_end_date) {
+      setProratedAmount(undefined);
+      return {
+        proRatedCharge: planAmount,
+        fullCharge: planAmount,
+        creditAmount: 0,
+        remainingDays: 0
+      };
+    }
+
     const now = new Date()
     const endDate = new Date(current_txn_end_date)
 
@@ -97,52 +108,52 @@ export function PricingCard({
           'Custom'
         ) : (
           <>
-          {billingInterval === 'annual' && (
-            <div>
-            <p>{planAmount / 12}<span className="text-lg text-gray-500">/mo</span></p>
-            <p className="text-xs text-gray-400">Billed annually</p>
-            </div>
-          )}
-          {billingInterval === 'monthly' && (
-            <div>
-            <p>{planAmount}<span className="text-lg text-gray-500">/mo</span></p>
-            <p className="text-xs text-gray-400">Billed monthly</p>
-            </div>
-          )}
+            {billingInterval === 'annual' && (
+              <div>
+                <p>{planAmount / 12}<span className="text-lg text-gray-500">/mo</span></p>
+                <p className="text-xs text-gray-400">Billed annually</p>
+              </div>
+            )}
+            {billingInterval === 'monthly' && (
+              <div>
+                <p>{planAmount}<span className="text-lg text-gray-500">/mo</span></p>
+                <p className="text-xs text-gray-400">Billed monthly</p>
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {current_plan === title ? null : title === 'Enterprise'? null: (current_plan != 'title' && current_plan === 'Professional')? null: !current_plan? null: (
-      <div className="relative inline-block text-left mb-6 group">
-        <div className="bg-blue-50 p-3 rounded-lg flex items-center space-x-1 cursor-pointer">
-          {billingInterval === 'annual' && (
-          <p className="text-xs text-gray-700">
-            Upgrade today and pay <strong>$ {(proRatedCharge / 12).toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {(fullCharge / 12).toFixed(2)}</strong>/mo thereafter.
-          </p>
-          )}
+      {current_plan === title ? null : title === 'Enterprise' ? null : (current_plan != 'title' && current_plan === 'Professional') ? null : !current_plan ? null : (
+        <div className="relative inline-block text-left mb-6 group">
+          <div className="bg-blue-50 p-3 rounded-lg flex items-center space-x-1 cursor-pointer">
+            {billingInterval === 'annual' && (
+              <p className="text-xs text-gray-700">
+                Upgrade today and pay <strong>$ {(proRatedCharge / 12).toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {(fullCharge / 12).toFixed(2)}</strong>/mo thereafter.
+              </p>
+            )}
 
-         {billingInterval === 'monthly' && (
-          <p className="text-xs text-gray-700">
-            Upgrade today and pay <strong>$ {proRatedCharge.toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {fullCharge.toFixed(2)}</strong>/mo thereafter.
-          </p>
-          )}
-          <span className="text-gray-500">ⓘ</span>
-        </div>
-        {/* Tooltip panel positioned below */}
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 ease-in-out z-20">
-          <div className="relative">
-            {/* Arrow pointing up */}
-            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 h-3 w-3 bg-white border-b border-r border-gray-200 rotate-45"></div>
-            <div>
-            <p className="mb-1">Unused fees from current plan ({remainingDays} days): <strong>$ {creditAmount.toFixed(2)}</strong></p>
-            <p className="mb-1">Plan Fee: <strong>$ {fullCharge.toFixed(2)}</strong></p>
-            <hr className="my-2" />
-            <p><strong>Net today: $ {proRatedCharge.toFixed(2)}</strong></p>
+            {billingInterval === 'monthly' && (
+              <p className="text-xs text-gray-700">
+                Upgrade today and pay <strong>$ {proRatedCharge.toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {fullCharge.toFixed(2)}</strong>/mo thereafter.
+              </p>
+            )}
+            <span className="text-gray-500">ⓘ</span>
+          </div>
+          {/* Tooltip panel positioned below */}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 ease-in-out z-20">
+            <div className="relative">
+              {/* Arrow pointing up */}
+              <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 h-3 w-3 bg-white border-b border-r border-gray-200 rotate-45"></div>
+              <div>
+                <p className="mb-1">Unused fees from current plan ({remainingDays} days): <strong>$ {creditAmount.toFixed(2)}</strong></p>
+                <p className="mb-1">Plan Fee: <strong>$ {fullCharge.toFixed(2)}</strong></p>
+                <hr className="my-2" />
+                <p><strong>Net today: $ {proRatedCharge.toFixed(2)}</strong></p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       <ul className="space-y-2 mb-6 flex-1">
@@ -159,11 +170,10 @@ export function PricingCard({
       {ctaLink ? (
         <Link
           href="/contact"
-          className={`mt-auto ${
-            isEnterprise 
-              ? 'text-blue-600 border border-blue-600 hover:bg-blue-50' 
+          className={`mt-auto ${isEnterprise
+              ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
               : 'bg-blue-600 text-white hover:bg-blue-700'
-          } py-2 rounded-lg text-center transition-colors`}
+            } py-2 rounded-lg text-center transition-colors`}
         >
           {ctaText}
         </Link>
@@ -171,7 +181,7 @@ export function PricingCard({
         <button
           onClick={() => makePayment(planId, proratedAmount)}
           disabled={current_plan === title || loading || current_plan === 'Professional'}
-          className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed': ''} ${loading && clickedPlanName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''} ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed': ''} ${current_plan === 'Professional' ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed': ''}`}
+          className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed' : ''} ${loading && clickedPlanName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''} ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed' : ''} ${current_plan === 'Professional' ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''}`}
         >
           {loading && clickedPlanName === title ? <LoadingSpinner /> : null}
           {`${current_plan === title ? "Current Plan" : current_plan === "Professional" ? "Downgrade" : ctaText}`}

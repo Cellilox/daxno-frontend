@@ -1,6 +1,6 @@
 'use client';
 
-import { activateSubscription, cancelSubscription } from "@/actions/payment-actions";
+import { activateSubscription, cancelSubscription, downloadInvoice, getPaymentHistory } from "@/actions/payment-actions";
 import { deleteTransaction } from "@/actions/transaction-actions";
 import { useState } from "react";
 import LoadingSpinner from "./ui/LoadingSpinner";
@@ -9,18 +9,26 @@ import { create_sub_feedback } from "@/actions/cancel-feedback-actions";
 import { usePathname } from "next/navigation";
 
 type BillingProps = {
-    sub_id: number;
-    t_id: number;
-    subPlan: string;
-    subAmount: number;
-    subInterval: string;
-    isActive: boolean;
-    subCurrency: string;
-    nextBillingDate: string;
-    
+  sub_id: number;
+  t_id: number;
+  subPlan: string;
+  subAmount: number;
+  subInterval: string;
+  isActive: boolean;
+  subCurrency: string;
+  nextBillingDate: string;
+  history: {
+    transactions: any[];
+    total: number;
+    page: number;
+    per_page: number;
+    pages: number;
+  } | null;
 }
 
-export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval, isActive, subCurrency, nextBillingDate }: BillingProps) {
+export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval, isActive, subCurrency, nextBillingDate, history }: BillingProps) {
+  const [historyData, setHistoryData] = useState(history);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState('');
   const [customReason, setCustomReason] = useState('');
@@ -76,7 +84,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     setSubmitting(true)
     try {
       const res = await cancelSubscription(sub_id)
-      if(res.data.status === 'cancelled') {
+      if (res.data.status === 'cancelled') {
         router.push(pathname)
       }
     } catch (error) {
@@ -86,36 +94,65 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     }
   }
 
-   const handleActivateSubscription = async (sub_id: number) => {
+  const handleActivateSubscription = async (sub_id: number) => {
     setIsActivating(true);
     try {
       const res = await activateSubscription(sub_id)
-      if(res.data.status === 'active') {
+      if (res.data.status === 'active') {
         router.push(pathname)
       }
     } catch (error) {
       console.error('Error activating subscription:', error);
     } finally {
       setIsActivating(true);
+
     }
-  }
+  };
+
+
+  const handleDownloadInvoice = async (t_id: number) => {
+    setDownloadingId(t_id);
+    try {
+      const blob = await downloadInvoice(t_id);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice_${t_id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error('Download failed', error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const loadPage = async (page: number) => {
+    const newData = await getPaymentHistory(page);
+    if (newData) setHistoryData(newData);
+  };
+
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6 flex justify-between items-center">
-      <h1 className="text-2xl font-bold">Billing & Subscription</h1>
-      {isActive ? 
-      (
-      <div className="border border-green-600 px-4 py-2 rounded-lg">
-      <h1 className="text-green-600 bold">Active</h1>
-      </div>
-      ): (
-        <button 
-        onClick={() => handleActivateSubscription(sub_id)}
-        className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
-          {isActivating ? 'Reactivating...' : 'Reactivate'}
-          </button>
-        )}
+        <h1 className="text-2xl font-bold">Billing & Subscription</h1>
+        {isActive ?
+          (
+            <div className="border border-green-600 px-4 py-2 rounded-lg">
+              <h1 className="text-green-600 bold">Active</h1>
+            </div>
+          ) : (
+            <button
+              onClick={() => handleActivateSubscription(sub_id)}
+              className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
+              {isActivating ? 'Reactivating...' : 'Reactivate'}
+            </button>
+          )}
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
@@ -139,8 +176,8 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
             onClick={openModal}
             className="w-full flex justify-center items-center mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg"
           >
-            {submitting && <LoadingSpinner className="mr3"/>}
-            {submitting ? 'Cancelling...': 'Cancel Subscription'}
+            {submitting && <LoadingSpinner className="mr3" />}
+            {submitting ? 'Cancelling...' : 'Cancel Subscription'}
           </button>
         ) : (
           <button
@@ -205,6 +242,94 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
           </div>
         </div>
       )}
-    </div>
+
+      {/* Payment History Section */}
+      <div className="mt-12">
+        <h2 className="text-xl font-bold mb-4">Payment History</h2>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {historyData?.transactions?.map((tx) => {
+                const isExpired = new Date(tx.end_date) < new Date();
+                let status = tx.status || (isExpired ? 'completed' : 'active');
+                if (status === 'active' && isExpired) status = 'completed';
+
+                return (
+                  <tr key={tx.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <button
+                        onClick={() => handleDownloadInvoice(tx.t_id)}
+                        disabled={downloadingId === tx.t_id}
+                        className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {downloadingId === tx.t_id ? 'Loading...' : `INV-${tx.t_id}`}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tx.plan_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {tx.currency} {parseFloat(tx.amount).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(tx.start_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(tx.end_date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                     ${status === 'active' ? 'bg-green-100 text-green-800' :
+                          status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'}`}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+              {!historyData?.transactions?.length && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">No transactions found</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          {historyData && historyData.pages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:justify-end gap-2">
+                <button
+                  onClick={() => loadPage(historyData.page - 1)}
+                  disabled={historyData.page === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="self-center text-sm text-gray-700">
+                  Page {historyData.page} of {historyData.pages}
+                </span>
+                <button
+                  onClick={() => loadPage(historyData.page + 1)}
+                  disabled={historyData.page === historyData.pages}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div >
   );
 }
