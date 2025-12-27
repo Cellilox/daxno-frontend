@@ -21,6 +21,7 @@ interface PricingCardProps {
   current_plan: string
   current_txn_amount: number
   current_txn_end_date: string
+  current_plan_id?: string
 }
 
 export function PricingCard({
@@ -38,7 +39,8 @@ export function PricingCard({
   clickedPlanName,
   current_plan,
   current_txn_amount,
-  current_txn_end_date
+  current_txn_end_date,
+  current_plan_id
 }: PricingCardProps) {
   const [proratedAmount, setProratedAmount] = useState<number | undefined>()
 
@@ -171,8 +173,8 @@ export function PricingCard({
         <Link
           href="/contact"
           className={`mt-auto ${isEnterprise
-              ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
             } py-2 rounded-lg text-center transition-colors`}
         >
           {ctaText}
@@ -180,11 +182,11 @@ export function PricingCard({
       ) : (
         <button
           onClick={() => makePayment(planId, proratedAmount)}
-          disabled={current_plan === title || loading || current_plan === 'Professional'}
-          className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed' : ''} ${loading && clickedPlanName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''} ${(current_plan === title) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed' : ''} ${current_plan === 'Professional' ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''}`}
+          disabled={((current_plan_id ? Number(current_plan_id) === planId : current_plan === title)) || loading || current_plan === 'Professional'}
+          className={`mt-auto bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors flex justify-around items-center ${((current_plan_id ? Number(current_plan_id) === planId : current_plan === title)) ? 'disabled bg-green-400 hover:bg-green-500 cursor-not-allowed' : ''} ${loading && clickedPlanName === title ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''} ${current_plan === 'Professional' ? 'disabled bg-gray-400 hover:bg-gray-500 cursor-not-allowed' : ''}`}
         >
           {loading && clickedPlanName === title ? <LoadingSpinner /> : null}
-          {`${current_plan === title ? "Current Plan" : current_plan === "Professional" ? "Downgrade" : ctaText}`}
+          {`${(current_plan_id ? Number(current_plan_id) === planId : current_plan === title) ? "Current Plan" : current_plan === "Professional" ? "Downgrade" : ctaText}`}
         </button>
       )}
     </div>

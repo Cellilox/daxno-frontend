@@ -54,7 +54,6 @@ export async function getProjectsById(projectId: string) {
 }
 
 export async function updateProject(projectId: string | undefined, formData: projectUpdateData) {
-  console.log('FormData', formData)
   try {
     const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
       method: 'PUT',
@@ -70,7 +69,6 @@ export async function updateProject(projectId: string | undefined, formData: pro
 }
 
 export async function regenerateProjectLink(projectId: string | undefined, formData: projectUpdateData) {
-  console.log('FormData', formData)
   try {
     const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${projectId}`, {
       method: 'PUT',

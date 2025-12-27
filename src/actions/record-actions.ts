@@ -10,7 +10,6 @@ export async function revalidate() {
 
 export async function uploadFile(formData: any, projectId: string | undefined) {
   try {
-    console.log(`[Frontend] Uploading file for project ${projectId} to ${apiUrl}/records/upload`);
     const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
       method: 'POST',
       body: formData
@@ -32,7 +31,6 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
 
 export async function queryDocument(projectId: string, fileName: string) {
   try {
-    console.log(`[Frontend] Querying document ${fileName} for project ${projectId}`);
     const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
       method: 'POST',
     });
@@ -41,7 +39,6 @@ export async function queryDocument(projectId: string, fileName: string) {
     // }
 
     const data = await response.json();
-    console.log(`[Frontend] Query result:`, data ? "Success" : "Empty");
     return data;
   } catch (error) {
     console.error('[Frontend] Error in queryDocument:', error)
@@ -51,7 +48,6 @@ export async function queryDocument(projectId: string, fileName: string) {
 
 export async function saveRecord(formData: any, user_id: string) {
   try {
-    console.log(`[Frontend] Saving record for user ${user_id}`);
     const response = await fetchAuthedJson(`${apiUrl}/records/save?user_id=${user_id}`, {
       method: 'POST',
       body: JSON.stringify(formData)
@@ -63,7 +59,6 @@ export async function saveRecord(formData: any, user_id: string) {
       throw new Error('Failed to save a record');
     }
     const data = await response.json();
-    console.log(`[Frontend] Record saved:`, data?.record?.id);
     return data;
   } catch (error) {
     console.error('[Frontend] Error in saveRecord:', error)

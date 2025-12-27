@@ -46,11 +46,11 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
 
   // 2) Fetch existing export history link & (dummy) history
 
-  const getExports = async() => {
+  const getExports = async () => {
     const data = await fetchGoogleExportsHistory(projectId)
     setExports(data);
   }
-  
+
   // 3) Unified response handler
   const handleResponse = useCallback(
     async (payload: { file_id?: string; file_link?: string; error?: string }) => {
@@ -95,7 +95,6 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
           throw new Error('Upload failed');
         }
         const { file_id, file_link } = result;
-        console.log('Direct upload result:', { file_id, file_link });
         // Feed into the same handler
         await handleResponse({ file_id, file_link });
 
@@ -140,20 +139,20 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
     <div className="space-y-4 w-full">
       {error && <ErrorMessage message={error} />}
       <div className="flex items-center justify-between">
-      <h3 className="text-sm font-medium text-gray-900">Export to Google Drive</h3>
-      {isAuthenticated && ( 
-        <>
-        {isDisconnecting ?
-          <div className="flex items-center justify-end">
-          <LoadingSpinner />
-          <span className="text-sm font-medium text-gray-900">
-            Disconnecting...
-          </span>
-        </div>:
-        <h3 onClick= {handleDisconnect} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
-        }
-        </>
-      )}
+        <h3 className="text-sm font-medium text-gray-900">Export to Google Drive</h3>
+        {isAuthenticated && (
+          <>
+            {isDisconnecting ?
+              <div className="flex items-center justify-end">
+                <LoadingSpinner />
+                <span className="text-sm font-medium text-gray-900">
+                  Disconnecting...
+                </span>
+              </div> :
+              <h3 onClick={handleDisconnect} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
+            }
+          </>
+        )}
       </div>
       <div className="flex items-center justify-between space-x-2">
         <button
@@ -186,7 +185,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
           )}
         </button>
 
-        { exports?.length >= 1 && (
+        {exports?.length >= 1 && (
           <button
             onClick={handleOpenInDrive}
             className="

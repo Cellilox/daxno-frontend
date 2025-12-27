@@ -31,8 +31,6 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
     "payment_plan": Number(plan_id),
   }
 
-  console.log('PAYLOAD', payload)
-
   try {
     const response = await fetchAuthedJson(`${apiUrl}/payments/charge-card-and-mobilerwanda`, {
       method: 'POST',
@@ -41,7 +39,6 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
     if (!response.ok) {
       throw new Error("Failed to fet url")
     }
-    console.log('RES', response)
     return response.json();
   } catch (error) {
     console.log('Error', error)
@@ -63,8 +60,6 @@ export async function buyCredits(pathname: string, amount: number) {
     }
   }
 
-  console.log('PAYLOAD', payload)
-
   try {
     const response = await fetchAuthedJson(`${apiUrl}/payments/pay-for-credits`, {
       method: 'POST',
@@ -73,7 +68,6 @@ export async function buyCredits(pathname: string, amount: number) {
     if (!response.ok) {
       throw new Error("Failed to fet url")
     }
-    console.log('RES', response)
     return response.json();
   } catch (error) {
     console.log('Error', error)

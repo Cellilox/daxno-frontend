@@ -41,13 +41,13 @@ const getProxiedUrl = (url: string, isPdf: boolean) => {
 
 const PdfViewer = dynamic(
   () => import('./PdfView'),
-  { 
-    ssr: false, 
+  {
+    ssr: false,
     loading: () => (
       <div className="flex justify-center items-center h-64 bg-gray-100">
         Loading PDF viewer...
       </div>
-    ) 
+    )
   }
 );
 
@@ -63,7 +63,6 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
   const [isLoading, setIsLoading] = useState(false);
   const [pdfDimensions, setPdfDimensions] = useState<{ width: number; height: number } | null>(null);
 
-  console.log('PAGES', selectedRecordForReview?.pages)
   useEffect(() => {
     if (selectedRecordForReview) {
       setEditedAnswers(selectedRecordForReview.answers);
@@ -110,7 +109,7 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
       setIsDirty(false);
       setIsEditMode(false);
     } catch {
-       alert('Error updating')
+      alert('Error updating')
     }
   };
 
@@ -216,11 +215,11 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
           )}
 
           {fileUrl && isPdf && (
-            <PdfViewer 
-            fileUrl={fileUrl} 
-            activeItem={activeItem} 
-            answers={editedAnswers} 
-            totalPages={selectedRecordForReview?.pages}
+            <PdfViewer
+              fileUrl={fileUrl}
+              activeItem={activeItem}
+              answers={editedAnswers}
+              totalPages={selectedRecordForReview?.pages}
             />
           )}
 

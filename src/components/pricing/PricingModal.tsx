@@ -59,13 +59,28 @@ export default function PricingModal({ transactions }: Transactions) {
     setAvailablePlans()
   }, [])
 
+  useEffect(() => {
+    if (plansList && transactions && transactions.length > 0) {
+      const activePlanId = transactions[0].plan_id;
+      // In case plan_id from transaction is string, cast to number for comparison or vice versa
+      const activePlan = plansList.find((p: Plan) => String(p.id) === String(activePlanId));
+
+      if (activePlan) {
+        if (activePlan.interval === 'yearly') {
+          setBillingInterval('annual');
+        } else if (activePlan.interval === 'monthly') {
+          setBillingInterval('monthly');
+        }
+      }
+    }
+  }, [plansList, transactions]);
+
   const monthlyPlans = plansList?.filter((x: Plan) => x.interval === "monthly").sort((a: Plan, b: Plan) => a.amount - b.amount);
   const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
   const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
 
 
   const makePayment = async (planId: number | undefined, proratedAmount: number | undefined) => {
-    console.log('makePayment called with:', { planId, proratedAmount });
     if (!planId) {
       console.error("No planId provided to makePayment");
       return;
@@ -76,7 +91,6 @@ export default function PricingModal({ transactions }: Transactions) {
       let amount;
       // Ensure type compatibility when finding plan
       const pickedPlan = plansList.filter((x: Plan) => Number(x.id) === Number(planId))
-      console.log('pickedPlan found:', pickedPlan);
 
       if (!pickedPlan || pickedPlan.length === 0) {
         console.error("Plan not found in plansList for ID:", planId);
@@ -91,12 +105,9 @@ export default function PricingModal({ transactions }: Transactions) {
         amount = pickedPlan[0].amount
       }
 
-      console.log('Proceeding with payment:', { amount, paymentPlan });
-
       setClickedPlanName(pickedPlan[0].name)
       if (paymentPlan && amount !== undefined) {
         const result = await requestPayment(pathname, amount, paymentPlan)
-        console.log('Payment', result)
         if (result?.data) {
           setClickedPlanName('')
           setLoading(false)
@@ -162,6 +173,7 @@ export default function PricingModal({ transactions }: Transactions) {
                     current_plan={transactions[0]?.plan_name}
                     current_txn_amount={transactions[0]?.amount}
                     current_txn_end_date={transactions[0]?.end_date}
+                    current_plan_id={transactions[0]?.plan_id}
                     monthlyPlans={monthlyPlans}
                     yearlyPlans={yearlyPlans}
                     hourlyPlans={hourlyPlans}

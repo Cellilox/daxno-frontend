@@ -183,12 +183,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleSaveRow = async (rowIndex: number) => {
     const editedRecord = editedRecords[rowIndex];
-    console.log('EditedRec', editedRecord)
     if (!editedRecord) return;
 
     try {
       const result = await updateRecord(editedRecord.id, editedRecord);
-      console.log('TLEWKQE', result)
       setEditingRow(null);
       setEditedRecords((prev) => {
         const newState = { ...prev };

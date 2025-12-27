@@ -75,7 +75,6 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
       reason: reason === 'Other' ? customReason : reason,
     };
     const result = await create_sub_feedback(payload)
-    console.log('RESXL', result)
     setShowModal(false)
     await handleCancelSubscription(sub_id, t_id);
   };
