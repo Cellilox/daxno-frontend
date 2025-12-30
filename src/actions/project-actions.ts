@@ -16,17 +16,25 @@ type projectUpdateData = {
 }
 
 export async function createProject(formData: projectCreateData) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects`, {
-    method: 'POST',
-    body: JSON.stringify(formData),
-  });
+  console.log('Creating project with data:', formData);
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/projects`, {
+      method: 'POST',
+      body: JSON.stringify(formData),
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to create project');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Failed to create project: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(errorText || 'Failed to create project');
+    }
+
+    revalidatePath('/projects');
+    return await response.json();
+  } catch (error) {
+    console.error('Error in createProject action:', error);
+    throw error;
   }
-
-  revalidatePath('/projects');
-  return await response.json();
 }
 
 export async function getProjects() {
