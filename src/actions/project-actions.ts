@@ -30,14 +30,18 @@ export async function createProject(formData: projectCreateData) {
 }
 
 export async function getProjects() {
+  console.log('Fetching projects from:', `${apiUrl}/projects/`);
   try {
     const response = await fetchAuthed(`${apiUrl}/projects/`)
-    // if(!response.ok) {
-    //   throw new Error ("Failed to fetch projects")
-    // }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Failed to fetch projects: ${response.status} ${response.statusText}`, errorText);
+      return [];
+    }
     return await response.json();
   } catch (error) {
-    console.log('Error', error)
+    console.error('Error fetching projects:', error);
+    return [];
   }
 }
 
