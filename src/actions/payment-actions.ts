@@ -16,11 +16,17 @@ export async function getAvailablePlans() {
 }
 
 
+const sanitizePath = (path: string) => {
+  // Remove leading slashes and any scheme/host attempts
+  return path.replace(/^\/+/, '').replace(/[^\w\-\/]/g, '');
+};
+
 export async function requestPayment(pathname: string, amount: number, plan_id: number) {
+  const safePath = sanitizePath(pathname);
   const payload = {
     "amount": Number(amount),
     "currency": "RWF",
-    "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${pathname}`,
+    "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${safePath}`,
     "payment_options": "card",
     "customer": {},
     "customization": {
@@ -47,10 +53,11 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
 
 
 export async function buyCredits(pathname: string, amount: number) {
+  const safePath = sanitizePath(pathname);
   const payload = {
     "amount": Number(amount),
     "currency": "RWF",
-    "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${pathname}`,
+    "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${safePath}`,
     "payment_options": "card",
     "customer": {},
     "customization": {

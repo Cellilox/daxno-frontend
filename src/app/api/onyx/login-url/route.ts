@@ -31,7 +31,35 @@ export async function POST(req: NextRequest) {
         }
 
         const data = await response.json();
-        return NextResponse.json(data);
+
+        // Basic validation of the URL before returning to client
+        if (data && data.url) {
+            try {
+                const url = new URL(data.url);
+                const onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+                const allowedHostname = onyxUrl ? new URL(onyxUrl).hostname : null;
+
+                if (!allowedHostname) {
+                    return NextResponse.json({ error: "Onyx URL not configured" }, { status: 400 });
+                }
+
+                // Normalize localhost and 127.0.0.1 for local dev
+                const isLocal = (host: string) => host === "localhost" || host === "127.0.0.1";
+                const isValid = isLocal(allowedHostname)
+                    ? isLocal(url.hostname)
+                    : url.hostname === allowedHostname;
+
+                if (!isValid) {
+                    console.error("Backend returned untrusted URL:", data.url, "Expected:", allowedHostname);
+                    return NextResponse.json({ error: "Untrusted redirect URL from backend" }, { status: 400 });
+                }
+                return NextResponse.json({ url: data.url });
+            } catch {
+                return NextResponse.json({ error: "Invalid URL from backend" }, { status: 400 });
+            }
+        }
+
+        return NextResponse.json({ error: "Missing URL in backend response" }, { status: 400 });
 
     } catch (e: any) {
         console.error("Login URL Error:", e);
