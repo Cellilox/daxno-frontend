@@ -44,7 +44,7 @@ export type UsageData = {
 
 // Predefined colors for charts
 const CHART_COLORS = [
-  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', 
+  '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
   '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
 ];
 
@@ -102,7 +102,7 @@ function ChartRenderer({ spec }: { spec: any }) {
   }
 
   // Validate that datasets have actual data
-  const hasValidData = spec.data.datasets.some((ds: any) => 
+  const hasValidData = spec.data.datasets.some((ds: any) =>
     Array.isArray(ds.data) && ds.data.length > 0
   );
 
@@ -115,11 +115,6 @@ function ChartRenderer({ spec }: { spec: any }) {
   const { labels, datasets } = data;
 
   try {
-    console.log('Chart spec received:', spec);
-    console.log('Chart type:', chartType);
-    console.log('Data labels:', labels);
-    console.log('Data datasets:', datasets);
-
     // Build chartData merging multiple datasets with validation
     const chartData = labels.map((lbl: string, i: number) => {
       const entry: Record<string, any> = { name: lbl || `Item ${i + 1}` };
@@ -132,11 +127,9 @@ function ChartRenderer({ spec }: { spec: any }) {
     });
 
     // Filter out entries with no data
-    const validChartData = chartData.filter((entry: Record<string, any>) => 
+    const validChartData = chartData.filter((entry: Record<string, any>) =>
       Object.keys(entry).length > 1 // More than just 'name'
     );
-
-    console.log('Processed chart data:', validChartData);
 
     if (validChartData.length === 0) {
       console.log('No valid chart data after processing');
@@ -156,9 +149,9 @@ function ChartRenderer({ spec }: { spec: any }) {
               <Tooltip />
               <Legend />
               {datasets.map((ds: any, idx: number) => (
-                <Bar 
-                  key={idx} 
-                  dataKey={ds.label} 
+                <Bar
+                  key={idx}
+                  dataKey={ds.label}
                   name={ds.label}
                   fill={ds.backgroundColor || CHART_COLORS[idx % CHART_COLORS.length]}
                 />
@@ -179,9 +172,9 @@ function ChartRenderer({ spec }: { spec: any }) {
                 label
               >
                 {validChartData.map((_: any, index: number) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={CHART_COLORS[index % CHART_COLORS.length]}
                   />
                 ))}
               </Pie>
@@ -197,10 +190,10 @@ function ChartRenderer({ spec }: { spec: any }) {
               <Tooltip />
               <Legend />
               {datasets.map((ds: any, idx: number) => (
-                <Line 
-                  key={idx} 
-                  type="monotone" 
-                  dataKey={ds.label} 
+                <Line
+                  key={idx}
+                  type="monotone"
+                  dataKey={ds.label}
                   name={ds.label}
                   stroke={ds.borderColor || CHART_COLORS[idx % CHART_COLORS.length]}
                   strokeWidth={2}
@@ -256,10 +249,10 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
 
     const data = await getCreditUsage()
     if (data) {
-        setCreditUsage(data)
-      }
+      setCreditUsage(data)
+    }
 
-    if(data.remaining_credits <= 0) {
+    if (data.remaining_credits <= 0) {
       setIsLowCredit(true)
       alert('Low credits')
       return;
@@ -279,16 +272,16 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
 
       const aiContent = result.response ?? '';
       setMessages((prev) => [...prev, { role: 'ai', content: aiContent }]);
-      if(aiContent) {
+      if (aiContent) {
         setIsLoading(false)
       }
       chatToSend.push({ role: 'ai', content: aiContent })
       if (chatToSend.length === 2) {
         const conversationData = {
-        project_id: projectId,
-        messages: [...chatToSend]
-      }
-      await storeConversation(conversationData)
+          project_id: projectId,
+          messages: [...chatToSend]
+        }
+        await storeConversation(conversationData)
       }
 
     } catch (error) {
@@ -299,23 +292,23 @@ export default function InsightsAndChat({ projectId, chats, widthClassName = 'w-
     }
   };
 
-useEffect(() => {
-  const handleGetCredits = async () => {
-    try {
-      const data = await getCreditUsage();
-      if (data) {
-        setCreditUsage(data)
+  useEffect(() => {
+    const handleGetCredits = async () => {
+      try {
+        const data = await getCreditUsage();
+        if (data) {
+          setCreditUsage(data)
+        }
+        if (data.remaining_credits <= 0) {
+          setIsLowCredit(true)
+        }
+      } catch (err) {
+        console.error("Failed to fetch credits:", err);
       }
-      if(data.remaining_credits <= 0) {
-        setIsLowCredit(true)
-      }
-    } catch (err) {
-      console.error("Failed to fetch credits:", err);
-    }
-  };
+    };
 
-  handleGetCredits();
-}, []);
+    handleGetCredits();
+  }, []);
 
   return (
     <OverlayPopup
@@ -323,96 +316,95 @@ useEffect(() => {
       buttonLabel="Insights & Chat"
       creditUsage={creditUsage}
     >
-        <div className="relative flex flex-col max-h-[75vh] mx-auto w-full lg:w-3/4">
-          <div
-            ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 pb-24"
-          >
+      <div className="relative flex flex-col max-h-[75vh] mx-auto w-full lg:w-3/4">
+        <div
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4 pb-24"
+        >
           <div className='flex justify-center items-center'>
             <h1 className='text-xl'>Hi, I am your chatbot, what can I help you today?</h1>
           </div>
 
-            {messages.map((msg, i) => {
-              const { narrative, spec } = parseMessage(msg.content);
-              const hasChart = !!spec;
-              
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`max-w-[100%] w-fit px-4 py-2 break-words ${
-                    msg.role === 'user'
-                      ? 'ml-auto bg-gray-100 text-black rounded-2xl shadow-sm max-w-[50%]'
-                      : 'mr-auto text-black'
-                  }`}
-                >
-                  {narrative && (
-                    <div className="prose prose-md max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {narrative}
-                      </ReactMarkdown>
-                    </div>
-                  )}
-                  {spec && (
-                    <div className="mt-5">
-                      <ChartRenderer spec={spec} />
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-            
-            {/* Loading message */}
-            {isLoading && (
+          {messages.map((msg, i) => {
+            const { narrative, spec } = parseMessage(msg.content);
+            const hasChart = !!spec;
+
+            return (
               <motion.div
+                key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-[70%] w-fit mr-auto bg-gray-100 text-gray-800 px-4 py-2 rounded-2xl shadow-sm"
+                className={`max-w-[100%] w-fit px-4 py-2 break-words ${msg.role === 'user'
+                    ? 'ml-auto bg-gray-100 text-black rounded-2xl shadow-sm max-w-[50%]'
+                    : 'mr-auto text-black'
+                  }`}
               >
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
+                {narrative && (
+                  <div className="prose prose-md max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {narrative}
+                    </ReactMarkdown>
                   </div>
-                  <span className="text-gray-600 text-sm">AI thinking...</span>
-                </div>
+                )}
+                {spec && (
+                  <div className="mt-5">
+                    <ChartRenderer spec={spec} />
+                  </div>
+                )}
               </motion.div>
-            )}
-          </div>
+            );
+          })}
 
-          {isLowCredit && (
-            <div className="bg-red-100 text-red-800 p-3 rounded-lg mb-2 text-center font-semibold flex flex-col justify-center items-center">
-              You have run out of credits. Please top up to continue chatting.
-              <BuyCreditsModal/>
-            </div>
-          )}
-
-          <div className="flex items-center">
-            <textarea
-              rows={3}
-              disabled={isLowCredit}
-              className="flex-1 bg-gray-100 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-hidden"
-              placeholder="Ask anything"
-              value={chatInput}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setChatInput(e.target.value)}
-              onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <button 
-              className={`-ml-8 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`} 
-              onClick={handleSend}
-              disabled={isLoading || isLowCredit }
+          {/* Loading message */}
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-[70%] w-fit mr-auto bg-gray-100 text-gray-800 px-4 py-2 rounded-2xl shadow-sm"
             >
-              <Send className={`h-6 w-6 ${isLoading ? 'text-gray-400' : 'text-blue-600'}`} />
-            </button>
-          </div>
+              <div className="flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-300"></div>
+                </div>
+                <span className="text-gray-600 text-sm">AI thinking...</span>
+              </div>
+            </motion.div>
+          )}
         </div>
+
+        {isLowCredit && (
+          <div className="bg-red-100 text-red-800 p-3 rounded-lg mb-2 text-center font-semibold flex flex-col justify-center items-center">
+            You have run out of credits. Please top up to continue chatting.
+            <BuyCreditsModal />
+          </div>
+        )}
+
+        <div className="flex items-center">
+          <textarea
+            rows={3}
+            disabled={isLowCredit}
+            className="flex-1 bg-gray-100 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-hidden"
+            placeholder="Ask anything"
+            value={chatInput}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setChatInput(e.target.value)}
+            onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <button
+            className={`-ml-8 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={handleSend}
+            disabled={isLoading || isLowCredit}
+          >
+            <Send className={`h-6 w-6 ${isLoading ? 'text-gray-400' : 'text-blue-600'}`} />
+          </button>
+        </div>
+      </div>
     </OverlayPopup>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { queryDocument, saveRecord, uploadFile} from '@/actions/record-actions';
+import { queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
 import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
@@ -29,7 +29,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false)
   const router = useRouter();
   useEffect(() => {
-    if(plan === "Professional" || plan === "Team") {
+    if (plan === "Professional" || plan === "Team") {
       setIsBulkUploadAllowed(true)
     }
   }, [plan])
@@ -58,21 +58,20 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     if (file.size > MAX_FILE_SIZE) {
-    onMessageChange({
-      type: messageTypeEnum.ERROR,
-      text: `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 1 MB.`,
-    });
-    setIsLoading(false);
-    return;
-  }
+      onMessageChange({
+        type: messageTypeEnum.ERROR,
+        text: `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 1 MB.`,
+      });
+      setIsLoading(false);
+      return;
+    }
     const formData = new FormData();
     formData.append('file', file);
     try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Uploading file...',});
+      onMessageChange({ type: messageTypeEnum.INFO, text: 'Uploading file...', });
       const result = await uploadFile(formData, projectId);
-      console.log('RE', JSON.stringify(result.detail))
-      if(result.detail) {
-        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}`})
+      if (result.detail) {
+        onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}` })
         setIsLoading(false)
         return;
       }
@@ -87,26 +86,24 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
   const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Optical Character Recognition...',});
+      onMessageChange({ type: messageTypeEnum.INFO, text: 'Optical Character Recognition...', });
       setTimeout(() => {
-        onMessageChange({type: messageTypeEnum.INFO, text: 'AI Model Thinking....',});
+        onMessageChange({ type: messageTypeEnum.INFO, text: 'AI Model Thinking....', });
       }, 4000)
       const response = await queryDocument(projectId, fileName);
-      const recordPayload = {...response, orginal_file_name: orginal_file_name, file_key: file_key};
-      console.log('Record Payload:', recordPayload)
+      const recordPayload = { ...response, orginal_file_name: orginal_file_name, file_key: file_key };
       await saveData(recordPayload);
     } catch (error) {
       setIsLoading(false);
-      onMessageChange({type: messageTypeEnum.NONE, text: '',});
+      onMessageChange({ type: messageTypeEnum.NONE, text: '', });
     }
   };
 
   const saveData = async (data: any) => {
     try {
-      onMessageChange({type: messageTypeEnum.INFO, text: 'Saving Record...',});
-      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
+      onMessageChange({ type: messageTypeEnum.INFO, text: 'Saving Record...', });
+      const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
       const response = await saveRecord(data, user_id);
-      console.log('Saved Record:', response)
       const doc_data = {
         filename: response.record.filename,
         page_number: response.record.pages
@@ -114,15 +111,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       await saveDocument(doc_data);
     } catch (error) {
       setIsLoading(false);
-      onMessageChange({type: messageTypeEnum.NONE, text: '',});
+      onMessageChange({ type: messageTypeEnum.NONE, text: '', });
     }
   };
   const saveDocument = async (data: any) => {
-    const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
+    const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
     try {
       await createDocument(data, user_id, projectId);
       setIsVisible(false);
-      onMessageChange({type: messageTypeEnum.NONE, text: '',});
+      onMessageChange({ type: messageTypeEnum.NONE, text: '', });
     } catch (error) {
       console.log('Error saving document', error);
     }
@@ -138,7 +135,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       });
       return;
     }
-    
+
     const newFiles = acceptedFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file),
@@ -150,30 +147,30 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
   const processSingleFile = async (fileStatus: FileStatus) => {
     const updateFileStatus = (update: Partial<FileStatus>) => {
-      setFiles(prev => prev.map(f => 
+      setFiles(prev => prev.map(f =>
         f.file === fileStatus.file ? { ...f, ...update } : f
       ));
     };
 
     try {
       const { file } = fileStatus;
-      const user_id = `${linkOwner? linkOwner : await loggedInUserId()}`
+      const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
       // Upload File
       updateFileStatus({ status: 'uploading', progress: 25 });
       const formData = new FormData();
       formData.append('file', file);
       const uploadResult = await uploadFile(formData, projectId);
-      if(uploadResult.detail) {
-        onMessageChange({type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}`})
+      if (uploadResult.detail) {
+        onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}` })
         setIsLoading(false)
         return;
       }
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
-      
+
       // Save Record
-      updateFileStatus({ status: 'saving', progress:  80});
+      updateFileStatus({ status: 'saving', progress: 80 });
       const recordPayload = {
         ...analysisResult,
         orginal_file_name: uploadResult.original_filename,
@@ -185,7 +182,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         page_number: savedResult.record.pages
       }
       await createDocument(db_data, user_id, projectId);
-      
+
       // Finalize
       updateFileStatus({
         status: 'complete',
@@ -208,12 +205,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     if (files.length > 0) {
       const allComplete = files.every(f => f.status === 'complete');
       const hasErrors = files.some(f => f.status === 'error');
-      
+
       if (allComplete && !isProcessing) {
         // Close the dropzone after a short delay to allow users to see the completion
         setTimeout(() => {
           setIsVisible(false);
-          onMessageChange({type: messageTypeEnum.NONE, text: '',});
+          onMessageChange({ type: messageTypeEnum.NONE, text: '', });
         }, 1500);
       }
     }
@@ -279,22 +276,20 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <button
           type="button"
           onClick={() => setIsBulkMode(false)}
-          className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
-            !isBulkMode 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-l-lg ${!isBulkMode
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
         >
           Single Upload
         </button>
         <button
           type="button"
           onClick={() => setIsBulkMode(true)}
-          className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
-            isBulkMode 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-white text-gray-700 hover:bg-gray-100'
-          }`}
+          className={`px-4 py-2 text-sm font-medium rounded-r-lg ${isBulkMode
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
           disabled={!isBulkUploadAllowed}
         >
           Bulk Upload
@@ -327,13 +322,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
                 </div>
               </div>
             ) : (
-              <img 
-                src={preview} 
-                alt="Selected file preview" 
-                className="max-h-[50vh] object-contain rounded-md" 
+              <img
+                src={preview}
+                alt="Selected file preview"
+                className="max-h-[50vh] object-contain rounded-md"
               />
             )}
-            
+
             <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
               {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
             </div>
@@ -354,7 +349,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           </div>
         )}
       </div>
-      
+
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">
           {isLoading ? (
@@ -451,14 +446,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
                       </span>
                       {getStatusIcon(fileStatus.status)}
                     </div>
-                    
+
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className="bg-blue-600 h-2.5 rounded-full" 
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
                         style={{ width: `${fileStatus.progress}%` }}
                       ></div>
                     </div>
-                    
+
                     <div className="flex justify-between mt-2 text-sm">
                       <span className="text-gray-500">
                         {getStatusLabel(fileStatus.status)}

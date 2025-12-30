@@ -41,40 +41,39 @@ export default function BuyCreditsModal() {
   }, [timeoutIds])
 
 
-    const [plansList, setPlansList] = useState<any>()
-    const setAvailablePlans = async () => {
-      const plans = await getAvailablePlans();
-       setPlansList(plans?.data)
-    }
-  
-    useEffect(() => {
-       setAvailablePlans()
-    }, [])
+  const [plansList, setPlansList] = useState<any>()
+  const setAvailablePlans = async () => {
+    const plans = await getAvailablePlans();
+    setPlansList(plans?.data)
+  }
 
-  
-    const makePayment = async (amount: number) => {
-      if (!amount) return;
-      
-      try {
-        setLoading(true)
-        const result = await requestPayment (pathname, amount, 224396)
-        console.log('Payment', result)
-        if(result?.data) {
+  useEffect(() => {
+    setAvailablePlans()
+  }, [])
+
+
+  const makePayment = async (amount: number) => {
+    if (!amount) return;
+
+    try {
+      setLoading(true)
+      const result = await requestPayment(pathname, amount, 224396)
+      if (result?.data) {
         setClickedPlanName('')
         setLoading(false)
         router.push(result?.data?.link)
-        }
-      } catch (error) {
-        setClickedPlanName('')
-        setLoading(false)
-        console.log('Error', error)
-        alert('Error requesting to pay')
       }
+    } catch (error) {
+      setClickedPlanName('')
+      setLoading(false)
+      console.log('Error', error)
+      alert('Error requesting to pay')
     }
+  }
 
   return (
     <div>
-      <div 
+      <div
         onClick={toggleExpand}
         className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
       >
@@ -82,9 +81,8 @@ export default function BuyCreditsModal() {
       </div>
 
       <div
-        className={`fixed inset-0 bg-white z-50 transition-opacity duration-500 ${
-          isOuterExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-white z-50 transition-opacity duration-500 ${isOuterExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         <div className="relative w-full h-full flex flex-col items-center justify-start pt-16">
           <button
@@ -104,17 +102,15 @@ export default function BuyCreditsModal() {
           </div>
 
           <div
-            className={`mt-3 bg-white w-11/12 flex justify-center transform origin-top transition-transform duration-500 overflow-y-auto ${
-              isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
-            }`}
+            className={`mt-3 bg-white w-11/12 flex justify-center transform origin-top transition-transform duration-500 overflow-y-auto ${isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
+              }`}
           >
             <div className="py-8 bg-gray-100">
               <div className="mx-auto px-4">
-                <div className={`transition-opacity duration-300 ${
-                  areCardsVisible ? 'opacity-100' : 'opacity-0'
-                }`}>
-                  <BuyCreditsForm 
-                  makePayment={makePayment} 
+                <div className={`transition-opacity duration-300 ${areCardsVisible ? 'opacity-100' : 'opacity-0'
+                  }`}>
+                  <BuyCreditsForm
+                    makePayment={makePayment}
                   />
                 </div>
               </div>

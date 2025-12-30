@@ -36,8 +36,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ className = '' }) => (
   </svg>
 );
 
-const HubSpotExport: React.FC<HubSpotExportProps> = ({ 
-  projectId, 
+const HubSpotExport: React.FC<HubSpotExportProps> = ({
+  projectId,
   className = '',
   fields = [],
   records = []
@@ -61,8 +61,6 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     isCheckingConnection: true
   });
 
-  console.log('AVAILABLE records', records)
-
   useEffect(() => {
     const initConnection = async () => {
       try {
@@ -78,15 +76,15 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'HUBSPOT_AUTH_SUCCESS') {
-        setStatus(prev => ({ 
-          ...prev, 
+        setStatus(prev => ({
+          ...prev,
           isConnected: true,
           error: null,
           isCheckingConnection: false
         }));
       } else if (event.data.type === 'HUBSPOT_AUTH_ERROR') {
-        setStatus(prev => ({ 
-          ...prev, 
+        setStatus(prev => ({
+          ...prev,
           error: event.data.data.error || 'Failed to connect to HubSpot',
           isConnected: false,
           isCheckingConnection: false
@@ -121,51 +119,49 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       setValidationError('No records to export or type not selected');
       return;
     }
-  
+
     setStatus(prev => ({ ...prev, isLoading: true, error: null }));
     setValidationError(null);
-    
+
     try {
       // Create mapping from field name to hidden_id
       const fieldNameToHiddenId = new Map(
         fields.map(field => [field.name, field.hidden_id])
       );
-  
+
       const mappedRecords = records.map(record => {
         if (!record.id) {
           throw new Error('Record ID is required for export');
         }
-  
+
         const properties: Record<string, string> = {};
-        
+
         propertyMappings.forEach((hubspotProperty, ourFieldName) => {
           // Get the hidden_id for this field name
           const hiddenId = fieldNameToHiddenId.get(ourFieldName);
-          
+
           if (hiddenId) {
             // Access answers using hidden_id
             const answer = record.answers[hiddenId];
             properties[hubspotProperty] = answer?.text || '';
           }
         });
-  
+
         properties['recordidd'] = record.id;
-  
+
         return {
           id: record.id,
           id_property: 'recordidd',
           properties: properties
         };
       });
-  
+
       const payload = {
         [selectedType]: mappedRecords
       };
-  
-      console.log('Sending payload:', JSON.stringify(payload, null, 2));
-      
+
       await exportToHubSpot(selectedType, mappedRecords);
-  
+
       setStatus(prev => ({
         ...prev,
         isLoading: false,
@@ -174,9 +170,9 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       }));
     } catch (error) {
       console.error('Error exporting to HubSpot:', error);
-      
+
       let errorMessage = 'Failed to export to HubSpot';
-      
+
       if (error instanceof Error) {
         try {
           if (error.message.includes('HubSpot API Error:')) {
@@ -210,14 +206,14 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
         const height = 600;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        
+
         const popup = window.open(
           //@ts-ignore
           data.auth_url,
           'Connect to HubSpot',
           `width=${width},height=${height},left=${left},top=${top}`
         );
-        
+
         if (popup) {
           const checkPopup = setInterval(() => {
             if (popup.closed) {
@@ -226,8 +222,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
           }, 1000);
         }
       } catch (error) {
-        setStatus(prev => ({ 
-          ...prev, 
+        setStatus(prev => ({
+          ...prev,
           error: error instanceof Error ? error.message : 'Failed to connect to HubSpot'
         }));
       }
@@ -235,46 +231,46 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
   };
 
   // Filter HubSpot properties based on search query
-  const filteredProperties = availableProperties.filter(property => 
+  const filteredProperties = availableProperties.filter(property =>
     property.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
     property.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const disconnectHubspot = async () => {
-  try {
-    setIsDisconnecting(true)
-    await DisconnectHubspot();
-    setStatus(prev => ({
-      ...prev,
-      isConnected: false,
-    }))
-    setIsDisconnecting(false)
-  } catch (error) {
-    alert('Error disconnecting from HubSpot');
-  }
+    try {
+      setIsDisconnecting(true)
+      await DisconnectHubspot();
+      setStatus(prev => ({
+        ...prev,
+        isConnected: false,
+      }))
+      setIsDisconnecting(false)
+    } catch (error) {
+      alert('Error disconnecting from HubSpot');
+    }
   }
 
   return (
     <div className={`space-y-4 ${className}`}>
-       <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-            <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
-            <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+          <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
+          <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
         </div>
-        {status.isConnected &&(
+        {status.isConnected && (
           <>
             {isDisconnecting ?
               <div className="flex items-center justify-end">
-              <DisconnectingSpinner />
-              <span className="text-sm font-medium text-gray-900">
-                Disconnecting...
-              </span>
-            </div>:
-            <h3 onClick ={disconnectHubspot} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
+                <DisconnectingSpinner />
+                <span className="text-sm font-medium text-gray-900">
+                  Disconnecting...
+                </span>
+              </div> :
+              <h3 onClick={disconnectHubspot} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
             }
-            </>
+          </>
         )}
-        </div>
+      </div>
 
       {(status.error || validationError) && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
@@ -319,8 +315,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
             disabled={status.isLoading || status.isCheckingConnection}
             className={`
               w-full flex items-center justify-between px-4 py-2 rounded-lg
-              ${status.isConnected 
-                ? 'bg-[#FF7A59] hover:bg-[#FF8A69] text-white' 
+              ${status.isConnected
+                ? 'bg-[#FF7A59] hover:bg-[#FF8A69] text-white'
                 : 'bg-[#FF7A59] hover:bg-[#FF8A69] text-white'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
@@ -336,9 +332,9 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                 </div>
               ) : (
                 <span>
-                  {status.isConnected 
-                    ? selectedType 
-                      ? `Export as ${selectedType}` 
+                  {status.isConnected
+                    ? selectedType
+                      ? `Export as ${selectedType}`
                       : 'Select export type'
                     : 'Connect HubSpot'}
                 </span>
@@ -374,13 +370,13 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       {status.isConnected && selectedType && (
         <div className="mt-6 relative flex flex-col h-[calc(100vh-16rem)]">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Map Your Fields to HubSpot</h3>
-          
+
           {isLoadingProperties || !records.length ? (
             <div className="flex flex-col items-center justify-center py-8">
               <LoadingSpinner className="w-8 h-8 text-[#FF7A59]" />
               <p className="mt-4 text-sm text-gray-500">
-                {isLoadingProperties 
-                  ? "Loading HubSpot properties..." 
+                {isLoadingProperties
+                  ? "Loading HubSpot properties..."
                   : "Loading your data..."}
               </p>
             </div>
@@ -407,8 +403,8 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                           }}
                           className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59] truncate"
                         >
-                          {propertyMappings.get(field.name) 
-                            ? availableProperties.find(p => p.name === propertyMappings.get(field.name))?.label 
+                          {propertyMappings.get(field.name)
+                            ? availableProperties.find(p => p.name === propertyMappings.get(field.name))?.label
                             : 'Select HubSpot field'}
                         </button>
                       </div>
@@ -437,12 +433,12 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                        </button>           
+                        </button>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
                         Select a HubSpot property to map "{selectedOurField}" to
                       </p>
-                      
+
                       {/* Search input */}
                       <div className="mt-4 relative">
                         <input
@@ -464,7 +460,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="p-4 flex-1 overflow-y-auto">
                       <div className="space-y-2">
                         {filteredProperties.length > 0 ? (
@@ -479,11 +475,10 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                                   setSearchQuery(''); // Clear search after selection
                                 }
                               }}
-                              className={`p-3 rounded-md cursor-pointer hover:bg-gray-50 ${
-                                propertyMappings.get(selectedOurField || '') === property.name
-                                  ? 'bg-[#FF7A59] bg-opacity-10 border border-[#FF7A59]'
-                                  : 'border border-gray-200'
-                              }`}
+                              className={`p-3 rounded-md cursor-pointer hover:bg-gray-50 ${propertyMappings.get(selectedOurField || '') === property.name
+                                ? 'bg-[#FF7A59] bg-opacity-10 border border-[#FF7A59]'
+                                : 'border border-gray-200'
+                                }`}
                             >
                               <div className="flex items-center justify-between">
                                 <div>

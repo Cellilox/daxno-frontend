@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Footer from "@/components/Footer";
 import Header from "@/components/header/header";
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -32,15 +33,16 @@ export default function RootLayout({
   return (
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_CLIENT_ID!}>
       <ClerkProvider>
-          <html lang="en">
-            <body
-              className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-            >
-              <Header/>
-              {children}
-              <Footer/>
-            </body>
-          </html>
+        <html lang="en">
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            <Header />
+            {children}
+            <Footer />
+
+          </body>
+        </html>
       </ClerkProvider>
     </GoogleOAuthProvider>
   );

@@ -30,19 +30,20 @@ export default function TableRow({
   onCancelEdit,
   onEditRow,
   onDeleteRow,
-  handleReviewRecord
-}: TableRowProps) {
+  handleReviewRecord,
+  columnWidths
+}: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isEditing = editingRow === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
 
   return (
     <tr
       key={row.id}
-      className="border-b hover:bg-gray-50"
+      className="border-b hover:bg-gray-50 bg-white"
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="z-10 px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r">
+      <td className="z-10 px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r" style={{ width: `${columnWidths['__actions__'] || 100}px` }}>
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
@@ -84,13 +85,13 @@ export default function TableRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-2 text-sm text-gray-900 min-w-[200px] relative border-r">
+      <td className="px-4 py-2 text-sm text-gray-900 relative border-r overflow-hidden" style={{ width: `${columnWidths['__filename__'] || 250}px` }}>
         <div className="flex items-center gap-4">
-          <span className="relative z-0">{row.orginal_file_name}</span>
+          <span className="relative z-0 truncate block w-full">{row.orginal_file_name}</span>
           {/* <span className="relative z-0 text-blue-500 underline cursor-pointer">View</span> */}
           {/* Floating actions for larger screens */}
           {hoveredRow === rowIndex && (
-            <div className="hidden md:flex items-center gap-2 absolute bg-white shadow-md rounded-md px-2 py-1 z-20">
+            <div className="hidden md:flex items-center gap-2 absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-md rounded-md px-2 py-1 z-20 border border-gray-100">
               {isEditing ? (
                 <>
                   <button
@@ -141,7 +142,11 @@ export default function TableRow({
         </div>
       </td>
       {columns.map((column) => (
-        <td key={column.hidden_id} className="px-4 py-2 text-sm text-gray-900 min-w-[200px] border-r">
+        <td
+          key={column.hidden_id}
+          className="px-4 py-2 text-sm text-gray-900 border-r overflow-hidden"
+          style={{ width: `${columnWidths[column.hidden_id]}px` }}
+        >
           {isEditing ? (
             <textarea
               value={editedRow.answers[column.hidden_id]?.text ?? ''}
@@ -149,10 +154,14 @@ export default function TableRow({
               className="w-full p-1 border rounded min-h-[200px]"
             />
           ) : (
-            <span>{editedRow.answers[column.hidden_id]?.text ?? ''}</span>
+            <div className="line-clamp-3">
+              {editedRow.answers[column.hidden_id]?.text ?? ''}
+            </div>
           )}
         </td>
       ))}
+      {/* Empty spacer cell to match "Add Column" header */}
+      <td className="border-r border-gray-100 bg-gray-50/30"></td>
     </tr>
   );
 } 
