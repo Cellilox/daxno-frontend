@@ -31,8 +31,28 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
 
 
+  const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+
   useEffect(() => {
     setLocalColumns(columns || []);
+    // Initialize widths if new columns appear
+    setColumnWidths(prev => {
+      const newWidths: { [key: string]: number } = {
+        '__actions__': 100,
+        '__filename__': 250,
+        ...prev
+      };
+
+      if (columns) {
+        columns.forEach(col => {
+          if (!newWidths[col.hidden_id]) {
+            newWidths[col.hidden_id] = 200; // Default width
+          }
+        });
+      }
+      return newWidths;
+    });
+
     if (records) {
       // Convert ApiRecord to Record (they now have matching answer structures)
       const convertedRecords = records.map(apiRecord => ({
@@ -44,12 +64,19 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   }, [records, columns]);
 
   // Column handlers
+  const handleColumnResize = (columnId: string, newWidth: number) => {
+    setColumnWidths(prev => ({
+      ...prev,
+      [columnId]: Math.max(50, newWidth) // Min width 50px
+    }));
+  };
+
   const handleShowColumnUpdatePopup = (column: Field) => {
     setSelectedColumnToUpdate(column);
     setIsPopupVisible(true);
   };
 
-  
+
   const handleCloseColumnUpdatePopup = () => {
     setIsPopupVisible(false);
     setSelectedColumnToUpdate(null);
@@ -122,7 +149,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     }
   };
 
-  const handleDeleteFileUrl = async(file_key: string, proj_id: string) => {
+  const handleDeleteFileUrl = async (file_key: string, proj_id: string) => {
     await deleteFileUrl(file_key, proj_id);
   };
 
@@ -133,11 +160,11 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
     setEditedRecords((prev) => {
       const currentRecord = prev[rowIndex] || localRecords[rowIndex];
-      const currentAnswer = currentRecord.answers[columnId] || { 
-        text: '', 
-        geometry: { left: 0, top: 0, width: 0, height: 0 } 
+      const currentAnswer = currentRecord.answers[columnId] || {
+        text: '',
+        geometry: { left: 0, top: 0, width: 0, height: 0 }
       };
-      
+
       return {
         ...prev,
         [rowIndex]: {
@@ -156,12 +183,10 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleSaveRow = async (rowIndex: number) => {
     const editedRecord = editedRecords[rowIndex];
-    console.log('EditedRec', editedRecord)
     if (!editedRecord) return;
 
     try {
       const result = await updateRecord(editedRecord.id, editedRecord);
-      console.log('TLEWKQE', result)
       setEditingRow(null);
       setEditedRecords((prev) => {
         const newState = { ...prev };
@@ -219,7 +244,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   return (
     <div className="bg-gray-50 border border-1 border-gray relative overflow-x-auto min-h-[calc(100vh-30rem)]">
-      <table className="min-w-full bg-white border border-gray-200">
+      <table className="min-w-full w-max bg-white border border-gray-200" style={{ tableLayout: 'fixed' }}>
         <TableHeader
           columns={localColumns}
           records={records}
@@ -228,6 +253,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           onEditColumn={handleShowColumnUpdatePopup}
           onDeleteColumn={handleShowDeleteColumnAlert}
           projectId={projectId}
+          columnWidths={columnWidths}
+          onColumnResize={handleColumnResize}
         />
         <tbody>
           {localRecords.map((row, rowIndex) => (
@@ -246,7 +273,24 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               onEditRow={handleEditRow}
               onDeleteRow={handleShowDeleteRecordAlert}
               handleReviewRecord={handleReviewRecord}
+              columnWidths={columnWidths}
             />
+          ))}
+
+          {/* Ghost Rows to fill screen */}
+          {Array.from({ length: Math.max(0, 20 - localRecords.length) }).map((_, i) => (
+            <tr key={`ghost-${i}`} className="h-12 border-b border-gray-100/50">
+              {/* Actions Ghost */}
+              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10 md:hidden" style={{ width: `${columnWidths['__actions__'] || 100}px` }}></td>
+              {/* Filename Ghost */}
+              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10" style={{ width: `${columnWidths['__filename__'] || 250}px` }}></td>
+              {/* Columns Ghost */}
+              {localColumns.map(col => (
+                <td key={`ghost-${i}-${col.hidden_id}`} className="border-r border-gray-100" style={{ width: `${columnWidths[col.hidden_id]}px` }}></td>
+              ))}
+              {/* Spacer Ghost */}
+              <td className="border-r border-gray-100 bg-gray-50/30"></td>
+            </tr>
           ))}
         </tbody>
       </table>

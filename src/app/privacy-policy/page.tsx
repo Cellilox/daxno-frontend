@@ -88,8 +88,8 @@ export default function PrivacyPolicyPage() {
             <li>To send newsletters, promotional materials, or targeted advertisements about new features, events, or other news we think may interest you.</li>
             <li>
               You can opt out of marketing communications at any time by following the unsubscribe link in those emails or contacting us:{' '}
-              <a href="mailto:privacy@yourcompany.com" className="text-blue-600 hover:underline">
-                privacy@yourcompany.com
+              <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+                hello@support.cellilox.com
               </a>.
             </li>
           </ul>
@@ -197,8 +197,8 @@ export default function PrivacyPolicyPage() {
       <p>
         Our Services are not directed at children under the age of 13 (or the applicable age in jurisdictions where higher). We do not knowingly collect Personal Information from children under the age of 13. If you become aware that a child has provided us with
         Personal Information, please contact us immediately at{' '}
-        <a href="mailto:privacy@cellilox.com" className="text-blue-600 hover:underline">
-          privacy@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>, and we will take steps to delete such information promptly.
       </p>
 
@@ -229,8 +229,8 @@ export default function PrivacyPolicyPage() {
       </ul>
       <p>
         To exercise any of these rights, please contact us at{' '}
-        <a href="mailto:privacy@cellilox.com" className="text-blue-600 hover:underline">
-          privacy@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>. We may request reasonable information to confirm your identity before fulfilling your request. Note that certain legal obligations or legitimate
         business interests may prevent us from fully honoring your request, in which case we will inform you.
       </p>
@@ -260,7 +260,7 @@ export default function PrivacyPolicyPage() {
       <p>If you have questions, concerns, or complaints regarding this Privacy Policy or our privacy practices, please contact us:</p>
       <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
 Support
-Email: privacy@cellilox.com
+Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

@@ -57,35 +57,29 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         };
 
         const handleRecordCreated = (data: { record: ApiRecord; fields: Field[] }) => {
-            console.log('New record created:', data);
             setRowData(prev => [...prev, data.record]);
             setColumns(data.fields);
         };
 
         const handleRecordUpdated = (data: { record: ApiRecord; fields: Field[] }) => {
-            console.log('New record updated:', data);
             setRowData(prev => prev.map(x => x.id === data.record.id ? data.record : x));
             setColumns(data.fields);
         };
 
         const handleRecordDeleted = (data: { id: string; fields: Field[] }) => {
-            console.log('New record deleted:', data);
             setRowData(prev => prev.filter(x => x.id !== data.id));
             setColumns(data.fields);
         };
 
         const handleColumnCreated = (data: { records: ApiRecord[]; field: Field }) => {
-            console.log('New Column created:', data);
             setRowData(data.records);
             setColumns(prev => [...prev, data.field]);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
-            console.log('New Column updated:', data);
             setColumns(prev => prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x));
         };
 
         const handleColumnDeleted = (data: { field_id: string }) => {
-            console.log('New record deleted:', data);
             setColumns(prev => prev.filter(x => x.hidden_id !== data.field_id));
         };
 
@@ -116,23 +110,23 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [projectId]); 
+    }, [projectId]);
 
     return (
         <div>
             <div className="flex justify-between items-center">
-            {isConnected && (<p className='mb-4'>Status: <span className='text-green-500'>Connected</span></p>)}
-            {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Disconnected</span></p>)}
-            {initialFields.length >=2 && 
-                        <div
-                className="text-right"
-                onClick={() => setIsReorderPopupVisible(true)}
-            >
-                <button onClick={() => setIsReorderPopupVisible(true)} className="text-md mb-4 underline sticky right-0 ">
-                    Order columns
-                </button>
-            </div>
-            }
+                {isConnected && (<p className='mb-4'>Status: <span className='text-green-500'>Connected</span></p>)}
+                {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Connecting...</span></p>)}
+                {initialFields.length >= 2 &&
+                    <div
+                        className="text-right"
+                        onClick={() => setIsReorderPopupVisible(true)}
+                    >
+                        <button onClick={() => setIsReorderPopupVisible(true)} className="text-blue-600 hover:text-blue-700 text-md mb-4 underline sticky right-0 ">
+                            Reorder Columns
+                        </button>
+                    </div>
+                }
             </div>
             <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
             <ColumnReorderPopup

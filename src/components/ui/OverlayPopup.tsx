@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
-import { Plug2 } from 'lucide-react';
+import { Bot, Plug2 } from 'lucide-react';
 import { UsageData } from '../chat';
 import CreditsToolTip from './CreditToolTip';
 
@@ -38,7 +38,8 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                 className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 onClick={() => setIsOptionVisible(true)}
             >
-                <Plug2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+               {buttonLabel === "Integrations" && <Plug2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />}
+               {buttonLabel !== "Integrations" && <Bot className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />}
                 {buttonLabel}
             </button>
             {isOptionVisible &&

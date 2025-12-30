@@ -23,46 +23,22 @@ type Conversation = {
   messages: Message[]
 }
 
-export default async function ProjectView({ params }: { params: Promise<{id: string}>}) {
+export default async function ProjectView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const project = await getProjectsById(id)
-  console.log('P2', project)
   const fields = await getColumns(project.id)
   const linkOwner = ""
   const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
   const recordsResponse = await fetchAuthed(recordsUrl)
   const records = await recordsResponse.json()
-  console.log('RECORDS', records)
-  console.log('FIELDS', fields)
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
   const aiModels = await getModels()
   const tenantModel = await getSelectedModel()
 
   const allProjectConvesation = await getConversations(project.id)
-  const chats = allProjectConvesation?.flatMap((conv: Conversation)=> conv.messages);
-  // trusted providers you care about (lowercased)
-  const trustedProviders = [
-    'mistralai',
-    'openai',
-    'deepseek',
-    'anthropic',
-  ]
+  const chats = allProjectConvesation?.flatMap((conv: Conversation) => conv.messages);
 
-  // build two lists with provider filtering
-  const freeModels = aiModels.filter((m: Model) => {
-    const isFree = m.id.endsWith(':free')
-    const provider = m.id.split(':')[0].split('/')[0].toLowerCase()
-    const isTrusted = trustedProviders.includes(provider)
-    return isFree && isTrusted
-  })
-
-  const paidModels = aiModels.filter((m: Model) => {
-    const provider = m.id.split('/')[0].toLowerCase()
-    const isTrusted = trustedProviders.includes(provider)
-    const isFree = m.id.endsWith(':free')
-    return isTrusted && !isFree
-  })
 
   return (
     <>
@@ -77,28 +53,24 @@ export default async function ProjectView({ params }: { params: Promise<{id: str
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
-              <div className="w-full sm:w-auto sm:min-w-[250px] sm:max-w-[300px] flex-shrink-0">
-              <CreateColumn projectId={id} />
             </div>
-            </div>
-            
+
             {/* Action Buttons */}
-              <CollapsibleActions 
-                projectId={id}
-                project={project}
-                shareableLink={project.shareable_link}
-                isLinkActive={project.link_is_active}
-                address={project.address_domain}
-                is_project_owner={is_project_owner}
-                linkOwner={linkOwner} 
-                fields={fields}
-                records={records}
-                plan={plan?.plan_name}
-                freeModels={freeModels}
-                paidModels={paidModels}
-                tenantModal = {tenantModel.selected_model}
-                chats={chats}
-              />
+            <CollapsibleActions
+              projectId={id}
+              project={project}
+              shareableLink={project.shareable_link}
+              isLinkActive={project.link_is_active}
+              address={project.address_domain}
+              is_project_owner={is_project_owner}
+              linkOwner={linkOwner}
+              fields={fields}
+              records={records}
+              plan={plan?.plan_name}
+              models={aiModels}
+              tenantModal={tenantModel.selected_model}
+              chats={chats}
+            />
           </div>
         </div>
 

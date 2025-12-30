@@ -62,7 +62,7 @@ export default function Footer() {
           <div>
             <h3 className="text-white text-lg font-medium mb-3">Get in Touch</h3>
             <p>Email: hello@support.cellilox.com</p>
-            <p>Address: Rwanda - Kigali - Gasabo</p>
+            <p>Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga</p>
           </div>
         </div>
 

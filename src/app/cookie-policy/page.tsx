@@ -264,7 +264,7 @@ export default function CookiePolicyPage() {
       <p>If you have any questions, concerns, or requests regarding this Cookie Policy, please contact us at:</p>
       <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
 Support
-Email: support@cellilox.com
+Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

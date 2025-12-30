@@ -163,7 +163,7 @@
 //                   </div>
 //                   <div>
 //                     <h3 className="font-semibold mb-1">Headquarters</h3>
-//                     <p className="text-gray-600">Gasabo<br/>Kigali, Rwanda</p>
+//                     <p className="text-gray-600">Gasabo - Rusororo - Kabuga<br/>Kigali, Rwanda</p>
 //                   </div>
 //                 </div>
 

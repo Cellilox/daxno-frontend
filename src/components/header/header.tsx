@@ -35,7 +35,7 @@ const Header = async () => {
             <div className='flex justify-between'>
               <CurrentPlan transactions={transactions} />
               <div className="md:hidden -mt-2 ml-3">
-                <MobileMenu userId={userId!}/>
+                <MobileMenu userId={userId!} />
               </div>
             </div>
           </SignedIn>
@@ -45,7 +45,7 @@ const Header = async () => {
             <SignInButton mode="modal" />
           </SignedOut>
           <SignedIn>
-            <UserButton />
+            <UserButton afterSignOutUrl={`${process.env.NEXT_PUBLIC_ONYX_URL}/auth/logout-bridge?next=${process.env.NEXT_PUBLIC_CLIENT_URL}`} />
           </SignedIn>
         </div>
       </div>

@@ -1,17 +1,14 @@
 'use client'
 import React from 'react';
 import {QRCodeSVG} from 'qrcode.react';
-import { useRouter } from 'next/navigation';
-import { usePathname } from 'next/navigation';
 
-const ProductQRCode = () => {
-  const router = useRouter()
-  const path = usePathname()
-  const qrData = `${process.env.NEXT_PUBLIC_CLIENT_URL}/${path}`
-
+type ProductQRCodeProps = {
+  projectUrl: string;
+}
+const ProductQRCode = ({projectUrl}: ProductQRCodeProps) => {
   return (
     <div>
-      <QRCodeSVG value={qrData} height={300} width={300}/>
+      <QRCodeSVG value={projectUrl} height={200} width={200}/>
     </div>
   );
 };

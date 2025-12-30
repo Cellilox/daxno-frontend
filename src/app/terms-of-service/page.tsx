@@ -269,8 +269,8 @@ export default function TermsOfServicePage() {
       <h3>15.1 Termination by You</h3>
       <p>
         You may terminate your Account at any time by canceling your subscription through your Account dashboard or by contacting{' '}
-        <a href="mailto:support@cellilox.com" className="text-blue-600 hover:underline">
-          support@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>. Termination takes effect at the end of your current billing period. After termination, your access to the Services will be suspended, and we may delete Your Content in accordance with Section 7.3 of the Privacy Policy.
       </p>
 
@@ -301,8 +301,8 @@ export default function TermsOfServicePage() {
       <h3>16.2 Informal Resolution</h3>
       <p>
         Before bringing any formal dispute, you agree to contact us at{' '}
-        <a href="mailto:disputes@cellilox.com" className="text-blue-600 hover:underline">
-          disputes@cellilox.com
+        <a href="mailto:hello@support.cellilox.com" className="text-blue-600 hover:underline">
+          hello@support.cellilox.com
         </a>{' '}
         to attempt to informally resolve the issue. We will endeavor to respond within thirty (30) days of receipt.
       </p>
@@ -353,8 +353,8 @@ export default function TermsOfServicePage() {
           <pre className="bg-gray-100 p-4 text-black rounded text-sm overflow-x-auto">
 Cellilox Limited
 Attn: Legal Department
-Email: legal@cellilox.com
-Address: Kigali - Gasabo
+Email: hello@support.cellilox.com
+Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga
           </pre>
         </li>
       </ul>
@@ -369,7 +369,7 @@ Address: Kigali - Gasabo
       <p>If you have any questions, concerns, or requests regarding these Terms of Service, please contact us:</p>
   <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
 Support
-Email: support@cellilox.com
+Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

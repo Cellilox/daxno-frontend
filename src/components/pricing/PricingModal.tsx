@@ -8,13 +8,13 @@ import { PricingContent } from "./PricingContent"
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
 import { usePathname } from "next/navigation"
 import { useRouter } from "next/navigation"
-import { Transaction, Plan} from "./types"
+import { Transaction, Plan } from "./types"
 
 type Transactions = {
   transactions: Transaction[]
 }
 
-export default function PricingModal({transactions}: Transactions) {
+export default function PricingModal({ transactions }: Transactions) {
   const [isOuterExpanded, setIsOuterExpanded] = useState(false)
   const [isInnerVisible, setIsInnerVisible] = useState(false)
   const [areCardsVisible, setAreCardsVisible] = useState(false)
@@ -48,63 +48,83 @@ export default function PricingModal({transactions}: Transactions) {
   }, [timeoutIds])
 
 
-    const [plansList, setPlansList] = useState<any>()
-    console.log('Available Plans', plansList)
+  const [plansList, setPlansList] = useState<any>()
 
-    const setAvailablePlans = async () => {
-      const plans = await getAvailablePlans();
-      console.log("PlansFetch", plans)
-       setPlansList(plans?.data)
-    }
-  
-    useEffect(() => {
-       setAvailablePlans()
-    }, [])
+  const setAvailablePlans = async () => {
+    const plans = await getAvailablePlans();
+    setPlansList(plans?.data)
+  }
 
-    const monthlyPlans = plansList?.filter((x: Plan) => x.interval === "monthly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('MONTLY_PLANS', monthlyPlans)
+  useEffect(() => {
+    setAvailablePlans()
+  }, [])
 
-    const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('Yearly_PLANS', yearlyPlans)
+  useEffect(() => {
+    if (plansList && transactions && transactions.length > 0) {
+      const activePlanId = transactions[0].plan_id;
+      // In case plan_id from transaction is string, cast to number for comparison or vice versa
+      const activePlan = plansList.find((p: Plan) => String(p.id) === String(activePlanId));
 
-     const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
-    console.log('HOURLY_PLANS', hourlyPlans)
-  
-  
-    const makePayment = async (planId: number | undefined, proratedAmount: number | undefined) => {
-      if (!planId) return;
-      
-      try {
-        setLoading(true)
-        let amount;
-        const pickedPlan = plansList.filter((x: Plan) => x.id === planId)
-        const paymentPlan = pickedPlan[0].id
-        if(proratedAmount) {
-          amount = proratedAmount
-        } else {
-          amount = pickedPlan[0].amount
+      if (activePlan) {
+        if (activePlan.interval === 'yearly') {
+          setBillingInterval('annual');
+        } else if (activePlan.interval === 'monthly') {
+          setBillingInterval('monthly');
         }
-        setClickedPlanName(pickedPlan[0].name)
-        if(paymentPlan && amount) {
-              const result = await requestPayment (pathname, amount, paymentPlan)
-              console.log('Payment', result)
-              if(result?.data) {
-              setClickedPlanName('')
-              setLoading(false)
-              router.push(result?.data?.link)
-              }
-        }
-      } catch (error) {
-        setClickedPlanName('')
-        setLoading(false)
-        console.log('Error', error)
-        alert('Error requesting to pay')
       }
     }
+  }, [plansList, transactions]);
+
+  const monthlyPlans = plansList?.filter((x: Plan) => x.interval === "monthly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+  const yearlyPlans = plansList?.filter((x: Plan) => x.interval === "yearly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+  const hourlyPlans = plansList?.filter((x: Plan) => x.interval === "hourly").sort((a: Plan, b: Plan) => a.amount - b.amount);
+
+
+  const makePayment = async (planId: number | undefined, proratedAmount: number | undefined) => {
+    if (!planId) {
+      console.error("No planId provided to makePayment");
+      return;
+    }
+
+    try {
+      setLoading(true)
+      let amount;
+      // Ensure type compatibility when finding plan
+      const pickedPlan = plansList.filter((x: Plan) => Number(x.id) === Number(planId))
+
+      if (!pickedPlan || pickedPlan.length === 0) {
+        console.error("Plan not found in plansList for ID:", planId);
+        setLoading(false);
+        return;
+      }
+
+      const paymentPlan = pickedPlan[0].id
+      if (proratedAmount !== undefined && proratedAmount !== null) {
+        amount = proratedAmount
+      } else {
+        amount = pickedPlan[0].amount
+      }
+
+      setClickedPlanName(pickedPlan[0].name)
+      if (paymentPlan && amount !== undefined) {
+        const result = await requestPayment(pathname, amount, paymentPlan)
+        if (result?.data) {
+          setClickedPlanName('')
+          setLoading(false)
+          router.push(result?.data?.link)
+        }
+      }
+    } catch (error) {
+      setClickedPlanName('')
+      setLoading(false)
+      console.log('Error', error)
+      alert('Error requesting to pay')
+    }
+  }
 
   return (
     <div>
-      <div 
+      <div
         onClick={toggleExpand}
         className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
       >
@@ -113,9 +133,8 @@ export default function PricingModal({transactions}: Transactions) {
       </div>
 
       <div
-        className={`fixed inset-0 bg-white z-50 transition-opacity duration-500 ${
-          isOuterExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-white z-50 transition-opacity duration-500 ${isOuterExpanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
       >
         <div className="relative w-full h-full flex flex-col items-center justify-start pt-16">
           <button
@@ -132,7 +151,7 @@ export default function PricingModal({transactions}: Transactions) {
             <p className="text-gray-600 max-w-xl mx-auto">
               No hidden fees, cancel anytime.
             </p>
-            
+
             <BillingToggle
               billingInterval={billingInterval}
               setBillingInterval={setBillingInterval}
@@ -140,25 +159,24 @@ export default function PricingModal({transactions}: Transactions) {
           </div>
 
           <div
-            className={`mt-3 bg-white w-11/12 flex justify-center transform origin-top transition-transform duration-500 overflow-y-auto ${
-              isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
-            }`}
+            className={`mt-3 bg-white w-11/12 flex justify-center transform origin-top transition-transform duration-500 overflow-y-auto ${isInnerVisible ? 'scale-y-100 max-h-[80vh]' : 'scale-y-0 max-h-0'
+              }`}
           >
             <div className="py-8 bg-gray-100 w-11/12">
               <div className="mx-auto px-4">
-                <div className={`transition-opacity duration-300 ${
-                  areCardsVisible ? 'opacity-100' : 'opacity-0'
-                }`}>
-                  <PricingContent 
-                  billingInterval={billingInterval} 
-                  makePayment={makePayment} 
-                  loading={loading} clickedPlanName={clickedPlanName}
-                  current_plan={transactions[0]?.plan_name}
-                  current_txn_amount={transactions[0]?.amount}
-                  current_txn_end_date={transactions[0]?.end_date}
-                  monthlyPlans={monthlyPlans}
-                  yearlyPlans={yearlyPlans}
-                  hourlyPlans={hourlyPlans}
+                <div className={`transition-opacity duration-300 ${areCardsVisible ? 'opacity-100' : 'opacity-0'
+                  }`}>
+                  <PricingContent
+                    billingInterval={billingInterval}
+                    makePayment={makePayment}
+                    loading={loading} clickedPlanName={clickedPlanName}
+                    current_plan={transactions[0]?.plan_name}
+                    current_txn_amount={transactions[0]?.amount}
+                    current_txn_end_date={transactions[0]?.end_date}
+                    current_plan_id={transactions[0]?.plan_id}
+                    monthlyPlans={monthlyPlans}
+                    yearlyPlans={yearlyPlans}
+                    hourlyPlans={hourlyPlans}
                   />
                 </div>
               </div>
