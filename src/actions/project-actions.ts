@@ -18,7 +18,7 @@ type projectUpdateData = {
 export async function createProject(formData: projectCreateData) {
   console.log('Creating project with data:', formData);
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects`, {
+    const response = await fetchAuthedJson(`${apiUrl}/projects/`, {
       method: 'POST',
       body: JSON.stringify(formData),
     });
@@ -38,14 +38,10 @@ export async function createProject(formData: projectCreateData) {
 }
 
 export async function getProjects() {
-  console.log('Fetching projects from:', `${apiUrl}/projects/`);
   try {
-    const response = await fetchAuthed(`${apiUrl}/projects/`)
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Failed to fetch projects: ${response.status} ${response.statusText}`, errorText);
-      return [];
-    }
+    const response = await fetchAuthedJson(`${apiUrl}/projects/`, {
+      method: 'GET',
+    });
     return await response.json();
   } catch (error) {
     console.error('Error fetching projects:', error);
@@ -53,16 +49,11 @@ export async function getProjects() {
   }
 }
 
-export async function getProjectsById(projectId: string) {
-  try {
-    const response = await fetchAuthed(`${apiUrl}/projects/${projectId}`)
-    if (!response.ok) {
-      throw new Error("Failed to fetch projects")
-    }
-    return await response.json();
-  } catch (error) {
-    console.log(error)
-  }
+export async function getProjectsById(id: string) {
+  const response = await fetchAuthedJson(`${apiUrl}/projects/${id}`, {
+    method: 'GET',
+  });
+  return await response.json();
 }
 
 export async function updateProject(projectId: string | undefined, formData: projectUpdateData) {
@@ -80,6 +71,15 @@ export async function updateProject(projectId: string | undefined, formData: pro
 
 }
 
+export async function updateProjectById(id: string, formData: projectCreateData) {
+  const response = await fetchAuthedJson(`${apiUrl}/projects/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(formData),
+  });
+  revalidatePath('/projects');
+  return await response.json();
+}
+
 export async function regenerateProjectLink(projectId: string | undefined, formData: projectUpdateData) {
   try {
     const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${projectId}`, {
@@ -93,6 +93,15 @@ export async function regenerateProjectLink(projectId: string | undefined, formD
     console.log(error)
   }
 
+}
+
+export async function regenerateLink(id: string, formData: projectCreateData) {
+  const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(formData),
+  });
+  revalidatePath('/projects');
+  return await response.json();
 }
 
 export async function deleteProject(projectId: string) {
