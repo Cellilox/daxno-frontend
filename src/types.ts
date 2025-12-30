@@ -16,14 +16,17 @@ export enum messageTypeEnum {
 export type Project = {
   id: string;
   name: string;
-  description: string;
-  owner: string;
-  is_owner: string;
-  address_domain: string;
-  owner_email: string;
-  shareable_link: string;
-  link_is_active: boolean; // Adding missing field
+  description?: string;
+  owner?: string;
+  is_owner: boolean;
+  is_shared: boolean;
+  address_domain?: string;
+  owner_email?: string;
+  shareable_link?: string;
+  link_is_active: boolean;
   onyx_project_id?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 

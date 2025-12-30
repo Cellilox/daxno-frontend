@@ -7,21 +7,11 @@ import FormModal from './ui/Popup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 import ExpandableDescription from './ExpandableDescription';
+import { Project } from '@/types';
 
 type CardProps = {
   project: Project
 };
-
-type Project = {
-  id: string;
-  name: string;
-  description: string;
-  owner: string;
-  is_owner: boolean;
-  is_shared?: boolean;
-  address_domain: string;
-  owner_email: string;
-}
 
 export default function Card({ project }: CardProps) {
   const router = useRouter()
@@ -100,7 +90,7 @@ export default function Card({ project }: CardProps) {
               <div>
                 <button
                   className="text-blue-500 hover:text-blue-700 text-sm"
-                  title="Edit column"
+                  title="Edit project"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectUpdateForm(project)
@@ -110,7 +100,7 @@ export default function Card({ project }: CardProps) {
                 </button>
                 <button
                   className="ml-3 text-red-500 hover:text-red-700 text-sm"
-                  title="Delete column"
+                  title="Delete project"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectDeleteAlert(project)
@@ -122,7 +112,7 @@ export default function Card({ project }: CardProps) {
             }
           </div>
           <div className="mt-2">
-            <ExpandableDescription description={project.description} maxLength={100} />
+            <ExpandableDescription description={project.description || ''} maxLength={100} />
           </div>
         </div>
       </div>
