@@ -36,6 +36,8 @@ ENV NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED 1
+# Increase memory limit for the build process
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 RUN npm run build
 
 # 3. Production image, copy all the files and run next
