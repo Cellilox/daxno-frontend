@@ -45,7 +45,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   }, []);
 
-  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB in bytes
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
