@@ -26,7 +26,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isBulkMode, setIsBulkMode] = useState(false);
-  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false)
+  const [isBulkUploadAllowed, setIsBulkUploadAllowed] = useState<boolean>(false);
+  // New state for local feedback
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const router = useRouter();
   useEffect(() => {
     if (plan === "Professional" || plan === "Team") {
@@ -40,16 +44,30 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     if (selectedFile) {
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      // Reset states on new file drop
+      setUploadError(null);
+      setUploadStatus('');
     }
   }, []);
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
 
+  const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO) => {
+    if (type === messageTypeEnum.ERROR) {
+      setUploadError(text);
+      setUploadStatus(''); // Clear status on error
+    } else {
+      setUploadStatus(text);
+      setUploadError(null);
+    }
+    onMessageChange({ type, text });
+  };
+
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
+    setUploadError(null);
+
     if (!file) {
       setIsLoading(false);
       setIsVisible(false);
@@ -58,20 +76,20 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      onMessageChange({
-        type: messageTypeEnum.ERROR,
-        text: `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 1 MB.`,
-      });
+      const msg = `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 50 MB.`;
+      updateStatus(msg, messageTypeEnum.ERROR);
       setIsLoading(false);
       return;
     }
+
     const formData = new FormData();
     formData.append('file', file);
     try {
-      onMessageChange({ type: messageTypeEnum.INFO, text: 'Uploading file...', });
+      updateStatus('Uploading file...');
       const result = await uploadFile(formData, projectId);
+
       if (result.detail) {
-        onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(result.detail)}` })
+        updateStatus(`${JSON.stringify(result.detail)}`, messageTypeEnum.ERROR);
         setIsLoading(false)
         return;
       }
@@ -79,29 +97,36 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       const orginal_file_name = result.original_filename;
       const file_key = result.Key;
       await handlequeryDocument(filename, orginal_file_name, file_key);
-    } catch (error) {
-      alert('Error uploading a file');
+    } catch (error: any) {
+      setIsLoading(false);
+      const errMsg = error.message || 'Error uploading a file';
+      updateStatus(errMsg, messageTypeEnum.ERROR);
     }
   };
 
   const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      onMessageChange({ type: messageTypeEnum.INFO, text: 'Optical Character Recognition...', });
+      updateStatus('Optical Character Recognition...');
+
+      // Artificial delay for UI feedback if needed, but risky to rely on timeouts for messages
       setTimeout(() => {
-        onMessageChange({ type: messageTypeEnum.INFO, text: 'AI Model Thinking....', });
-      }, 4000)
+        // Only update if still loading and no error
+        if (isLoading) updateStatus('AI Model Thinking....');
+      }, 4000);
+
       const response = await queryDocument(projectId, fileName);
       const recordPayload = { ...response, orginal_file_name: orginal_file_name, file_key: file_key };
       await saveData(recordPayload);
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      onMessageChange({ type: messageTypeEnum.NONE, text: '', });
+      const errMsg = error.message || 'Error processing document';
+      updateStatus(errMsg, messageTypeEnum.ERROR);
     }
   };
 
   const saveData = async (data: any) => {
     try {
-      onMessageChange({ type: messageTypeEnum.INFO, text: 'Saving Record...', });
+      updateStatus('Saving Record...');
       const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
       const response = await saveRecord(data, user_id);
       const doc_data = {
@@ -109,19 +134,24 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         page_number: response.record.pages
       };
       await saveDocument(doc_data);
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      onMessageChange({ type: messageTypeEnum.NONE, text: '', });
+      const errMsg = error.message || 'Error saving record';
+      updateStatus(errMsg, messageTypeEnum.ERROR);
     }
   };
+
   const saveDocument = async (data: any) => {
     const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
     try {
       await createDocument(data, user_id, projectId);
       setIsVisible(false);
+      // Clear messages on success
       onMessageChange({ type: messageTypeEnum.NONE, text: '', });
-    } catch (error) {
+    } catch (error: any) {
       console.log('Error saving document', error);
+      setIsLoading(false);
+      updateStatus('Error finalizing document', messageTypeEnum.ERROR);
     }
   };
 
@@ -352,9 +382,19 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">
+          {uploadError && (
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm">
+              <XCircle className="w-4 h-4" />
+              {uploadError}
+            </div>
+          )}
+
           {isLoading ? (
-            <div className='flex justify-center items-center'>
+            <div className='flex flex-col justify-center items-center gap-2'>
               <div className="loader"></div>
+              {uploadStatus && (
+                <p className="text-sm text-gray-600 animate-pulse">{uploadStatus}</p>
+              )}
             </div>
           ) : (
             <button
