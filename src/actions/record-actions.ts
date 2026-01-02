@@ -16,9 +16,26 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error(`[Frontend] Upload failed: ${response.status} ${response.statusText}`, text);
-      throw new Error(`Failed to upload file: ${response.statusText} - ${text}`);
+      let errorMessage = response.statusText;
+      let errorDetail = '';
+      try {
+        const errorData = await response.json();
+        // If the backend sends { detail: "..." }
+        if (errorData?.detail) {
+          errorDetail = typeof errorData.detail === 'string'
+            ? errorData.detail
+            : JSON.stringify(errorData.detail);
+        } else {
+          errorDetail = JSON.stringify(errorData);
+        }
+      } catch (e) {
+        // If not JSON, try text
+        errorDetail = await response.text();
+      }
+
+      console.error(`[Frontend] Upload failed: ${response.status}`, errorDetail);
+      // Return a structured error object that Dropzone can check
+      return { detail: errorDetail || errorMessage };
     }
     return await response.json()
   } catch (error) {
