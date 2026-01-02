@@ -43,5 +43,6 @@ jobs:
             NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
             NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/projects
             NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/projects
+            NEXT_PUBLIC_CLIENT_URL=https://cellilox.com
           cache-from: type=gha
           cache-to: type=gha,mode=max
