@@ -56,11 +56,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     if (type === messageTypeEnum.ERROR) {
       setUploadError(text);
       setUploadStatus(''); // Clear status on error
+      // Do NOT bubble up errors to the parent (avoid duplicate top banner)
     } else {
       setUploadStatus(text);
       setUploadError(null);
+      // Propagate INFO messages (for the top progress banner)
+      onMessageChange({ type, text });
     }
-    onMessageChange({ type, text });
   };
 
   const handleUpload = async (event: React.FormEvent) => {
