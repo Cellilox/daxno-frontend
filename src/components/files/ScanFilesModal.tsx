@@ -40,7 +40,7 @@ export default function ScanFilesModal({ linkOwner, projectId, plan }: ScanFiles
       <FormModal
         visible={isVisible}
         title="Scan Your Files"
-        message={message}
+        // message={message} // Removed to avoid duplicate errors (Dropzone handles it internally now)
         onSubmit={async (e) => {
           e.preventDefault();
         }}
