@@ -33,7 +33,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
-  const aiModels = await getModels()
+  const aiModels = await getModels(id)
   const tenantModel = await getSelectedModel()
 
   const allProjectConvesation = await getConversations(project.id)

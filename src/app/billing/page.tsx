@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: 'Manage your billing information, view invoices, and update your payment methods securely with Daxno.'
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function BillingPage() {
   const activeTransactions = await getTransactions();
   const paymentHistory = await getPaymentHistory(1, 10);

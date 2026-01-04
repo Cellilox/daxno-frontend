@@ -5,10 +5,14 @@ import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 
-export async function getModels() {
-  const response = await fetchAuthed(`${apiUrl}/models/available`, { cache: 'no-store' })
+export async function getModels(projectId?: string) {
+  const url = projectId
+    ? `${apiUrl}/models/available?project_id=${projectId}`
+    : `${apiUrl}/models/available`;
+
+  const response = await fetchAuthed(url, { cache: 'no-store' })
   if (!response.ok) {
-    throw new Error("Failed to fetch columns")
+    throw new Error("Failed to fetch models")
   }
   return await response.json();
 }

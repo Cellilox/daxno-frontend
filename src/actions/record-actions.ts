@@ -51,15 +51,25 @@ export async function queryDocument(projectId: string, fileName: string) {
     const response = await fetchAuthedJson(`${apiUrl}/records/query-doc?project_id=${projectId}&filename=${fileName}`, {
       method: 'POST',
     });
-    // if (!response.ok) {
-    //   throw new Error('Failed to query document');
-    // }
+
+    if (!response.ok) {
+      let errorDetail = '';
+      try {
+        const errorData = await response.json();
+        errorDetail = errorData?.detail ? JSON.stringify(errorData.detail) : JSON.stringify(errorData);
+      } catch (e) {
+        errorDetail = await response.text();
+      }
+      console.error(`[Frontend] queryDocument failed: ${response.status}`, errorDetail);
+      throw new Error(`Query failed: ${errorDetail}`);
+    }
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('[Frontend] Error in queryDocument:', error)
-    throw error;
+  } catch (error: any) {
+    console.error('[Frontend] Error in queryDocument:', error);
+    // Re-throw with message to be caught by UI
+    throw new Error(error.message || 'Failed to analyze document');
   }
 }
 
