@@ -15,13 +15,13 @@ type InviteCreateData = {
     email: string;
 }
 
-export default function CreateInvite({ projectId, setIsInvitePopupVisible}: CreateColumnProps) {
-    const {register, handleSubmit, resetField, formState: {errors}} = useForm<InviteCreateData>()
+export default function CreateInvite({ projectId, setIsInvitePopupVisible }: CreateColumnProps) {
+    const { register, handleSubmit, resetField, formState: { errors } } = useForm<InviteCreateData>()
     const [isLoading, setIsLoading] = useState(false)
     const [message, setMessage] = useState<messageType | null>()
     async function createInvite(data: InviteCreateData) {
         data.email = data.email
-    
+
         setIsLoading(true)
         try {
             const result = await create_project_invite(data.email, projectId)
@@ -33,30 +33,38 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                     text: `Invitation was sent successfully (${result.status})`
                 }
                 setMessage(message)
-                setTimeout(()=>{
+                setTimeout(() => {
                     setIsInvitePopupVisible(false)
                 }, 3000)
             } else if (result?.detail) {
                 setIsLoading(false)
+                let errorText = result.detail
+                if (typeof result.detail === 'object') {
+                    // Handle Pydantic validation errors (array of objects) or generic error dicts
+                    errorText = Array.isArray(result.detail)
+                        ? result.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
+                        : JSON.stringify(result.detail)
+                }
+
                 const message = {
                     type: messageTypeEnum.ERROR,
-                    text: result.detail
+                    text: String(errorText)
                 }
                 setMessage(message)
-                setTimeout(()=>{
+                setTimeout(() => {
                     setIsInvitePopupVisible(false)
                 }, 3000)
             }
         } catch (error) {
             setIsLoading(false)
-                const message = {
-                    type: messageTypeEnum.ERROR,
-                    text: 'Server Error'
-                }
-                setMessage(message)
-                setTimeout(()=>{
-                    setIsInvitePopupVisible(false)
-                }, 3000)
+            const message = {
+                type: messageTypeEnum.ERROR,
+                text: 'Server Error'
+            }
+            setMessage(message)
+            setTimeout(() => {
+                setIsInvitePopupVisible(false)
+            }, 3000)
         }
     }
 
@@ -66,7 +74,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
 
     return (
         <div className="w-full">
-            {message && <Alert message={message} onClose={onClose}/>}
+            {message && <Alert message={message} onClose={onClose} />}
             <div className="w-full">
                 <form onSubmit={handleSubmit(createInvite)} className="mt-4 sm:mt-0 w-full">
                     <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-2">
@@ -74,7 +82,7 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible}: Crea
                             <input
                                 type="text"
                                 id="email"
-                                {...register('email', {required: 'Email is required'})}
+                                {...register('email', { required: 'Email is required' })}
                                 className="w-full p-3 rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
                                 placeholder="Add email"
                             />
