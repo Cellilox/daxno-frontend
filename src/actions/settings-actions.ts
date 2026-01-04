@@ -110,7 +110,7 @@ export async function getByokUsage() {
 
 export async function getManagedByokActivity() {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/byok-activity`);
+        const response = await fetchAuthed(`${apiUrl}/tenants/byok-activity`, { cache: 'no-store' });
         if (!response.ok) throw new Error("Failed to fetch BYOK activity");
         return response.json();
     } catch (error) {

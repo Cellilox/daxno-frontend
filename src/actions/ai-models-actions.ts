@@ -40,7 +40,7 @@ export async function getSelectedModel(projectId?: string) {
       ? `${apiUrl}/tenants/selected-model?project_id=${projectId}`
       : `${apiUrl}/tenants/selected-model`;
 
-    const response = await fetchAuthed(url)
+    const response = await fetchAuthed(url, { cache: 'no-store' })
     // if(!response.ok) {
     //     throw new Error ("Failed to fetch user specific ai model")
     // }
