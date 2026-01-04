@@ -70,3 +70,51 @@ export async function updateBillingConfig(subscription_type: string, byok_api_ke
         throw error;
     }
 }
+
+export async function provisionManagedByok(limit: number = 0.02) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/provision-byok?limit=${limit}`, {
+            method: "POST"
+        });
+        if (!response.ok) throw new Error("Failed to provision Managed BYOK key");
+        return response.json();
+    } catch (error) {
+        console.error("Error provisioning managed BYOK:", error);
+        throw error;
+    }
+}
+
+export async function rotateManagedByok() {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/rotate-byok`, {
+            method: "POST"
+        });
+        if (!response.ok) throw new Error("Failed to rotate Managed BYOK key");
+        return response.json();
+    } catch (error) {
+        console.error("Error rotating managed BYOK:", error);
+        throw error;
+    }
+}
+
+export async function getByokUsage() {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/byok-usage`);
+        if (!response.ok) throw new Error("Failed to fetch BYOK usage");
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching BYOK usage:", error);
+        return null;
+    }
+}
+
+export async function getManagedByokActivity() {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/byok-activity`);
+        if (!response.ok) throw new Error("Failed to fetch BYOK activity");
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching BYOK activity:", error);
+        return [];
+    }
+}
