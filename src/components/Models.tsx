@@ -10,9 +10,11 @@ type ModelSelectorProps = {
   models: Model[];
   tenantModal: string;
   plan: string;
+  disabled?: boolean;
+  projectId?: string;
 };
 
-export default function ModelSelector({ models, tenantModal, plan }: ModelSelectorProps): JSX.Element {
+export default function ModelSelector({ models, tenantModal, plan, disabled = false, projectId }: ModelSelectorProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>();
   const [userHasSelected, setUserHasSelected] = useState(false);
@@ -29,7 +31,7 @@ export default function ModelSelector({ models, tenantModal, plan }: ModelSelect
   const handleSelectModal = async (selectedModal: string) => {
     setPickedModal(selectedModal)
     setIsLoading(true)
-    await selecte_model(selectedModal)
+    await selecte_model(selectedModal, projectId)
     setIsLoading(false)
   }
 
@@ -101,6 +103,7 @@ export default function ModelSelector({ models, tenantModal, plan }: ModelSelect
   };
 
   const handleButtonClick = () => {
+    if (disabled) return;
     if (autoEnabled && !userHasSelected) {
       setShowTooltip(true);
     } else {
@@ -109,13 +112,17 @@ export default function ModelSelector({ models, tenantModal, plan }: ModelSelect
   };
 
 
-
   return (
     <div className="relative inline-block text-left">
       <button
         ref={selectorRef}
         onClick={handleButtonClick}
-        className="w-48 text-left border border-blue-400 rounded-md shadow-sm hover:border-blue-500 focus:ring-2 focus:ring-blue-500 p-2 flex items-center justify-between relative"
+        disabled={disabled}
+        className={`w-48 text-left border rounded-md shadow-sm p-2 flex items-center justify-between relative transition-colors
+          ${disabled
+            ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+            : 'border-blue-400 hover:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white'
+          }`}
       >
         <div className="flex items-center overflow-hidden">
           {autoEnabled && !userHasSelected && (

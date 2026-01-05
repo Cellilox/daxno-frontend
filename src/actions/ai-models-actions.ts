@@ -17,9 +17,13 @@ export async function getModels(projectId?: string) {
   return await response.json();
 }
 
-export async function selecte_model(selectedModal: string) {
+export async function selecte_model(selectedModal: string, projectId?: string) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/models/select?selected_model=${selectedModal}`, {
+    const url = projectId
+      ? `${apiUrl}/models/select?selected_model=${selectedModal}&project_id=${projectId}`
+      : `${apiUrl}/models/select?selected_model=${selectedModal}`;
+
+    const response = await fetchAuthedJson(url, {
       method: 'PATCH'
     });
 
