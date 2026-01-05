@@ -59,7 +59,10 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
     const [isModelsOpen, setIsModelsOpen] = useState(false);
     const [isActivityOpen, setIsActivityOpen] = useState(true);
     const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const ACTIVITY_LIMIT = 20;
 
     // Fetch usage and activity on mount if BYOK
     useEffect(() => {
@@ -67,12 +70,28 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
             getByokUsage().then(u => setUsage(u));
 
             setIsLoadingActivity(true);
-            getManagedByokActivity().then(a => {
+            // Fetch first page
+            getManagedByokActivity(ACTIVITY_LIMIT, 0).then(a => {
                 setActivity(a);
+                setHasMore(a.length === ACTIVITY_LIMIT);
                 setIsLoadingActivity(false);
             }).catch(() => setIsLoadingActivity(false));
         }
     }, [subscriptionType, apiKey]);
+
+    const handleLoadMore = async () => {
+        setIsLoadingMore(true);
+        const currentOffset = activity.length;
+        try {
+            const more = await getManagedByokActivity(ACTIVITY_LIMIT, currentOffset);
+            setActivity(prev => [...prev, ...more]);
+            setHasMore(more.length === ACTIVITY_LIMIT);
+        } catch (e) {
+            console.error("Failed to load more activity", e);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     const handleProvision = async () => {
         setIsProvisioning(true);
@@ -434,21 +453,36 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
                                                         </tr>
                                                     </thead>
                                                     <tbody className="bg-white divide-y divide-gray-100">
-                                                        {activity.slice(0, 15).map((row, idx) => (
+                                                        {activity.map((row, idx) => (
                                                             <tr key={idx} className="hover:bg-gray-50">
                                                                 <td className="px-3 py-2 text-gray-900 font-medium truncate max-w-[120px]" title={row.model}>{row.model.split('/').pop()}</td>
                                                                 <td className="px-3 py-2 text-right text-gray-600">
                                                                     {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
                                                                 </td>
                                                                 <td className="px-3 py-2 text-right text-customBlue font-bold">
-                                                                    ${(row.usage || 0).toFixed(4)}
+                                                                    ${(row.usage || 0).toFixed(6)}
                                                                 </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
                                                 </table>
                                             </div>
-                                            <p className="text-[10px] text-gray-400 mt-2 text-center italic">Showing last 15 requests. Data refreshes on page reload.</p>
+
+                                            {hasMore && (
+                                                <div className="mt-3 text-center">
+                                                    <button
+                                                        onClick={handleLoadMore}
+                                                        disabled={isLoadingMore}
+                                                        className="text-xs text-customBlue hover:text-blue-700 font-medium flex items-center justify-center mx-auto disabled:opacity-50"
+                                                    >
+                                                        {isLoadingMore ? <LoadingSpinner className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                                                        Load More Activity
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <p className="text-[10px] text-gray-400 mt-2 text-center italic">
+                                                Showing {activity.length} requests. Data refreshes on interaction.
+                                            </p>
                                         </>
                                     ) : (
                                         <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">

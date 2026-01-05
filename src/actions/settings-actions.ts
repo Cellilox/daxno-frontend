@@ -108,9 +108,9 @@ export async function getByokUsage() {
     }
 }
 
-export async function getManagedByokActivity() {
+export async function getManagedByokActivity(limit: number = 50, offset: number = 0) {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/byok-activity`, { cache: 'no-store' });
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/byok-activity?limit=${limit}&offset=${offset}`);
         if (!response.ok) throw new Error("Failed to fetch BYOK activity");
         return response.json();
     } catch (error) {
