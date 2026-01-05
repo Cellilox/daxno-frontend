@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const getBackendUrl = () => {
+    let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    return url.replace(/\/$/, ""); // Remove trailing slash
+};
+const BACKEND_URL = getBackendUrl();
 
 export async function POST(req: NextRequest) {
     try {
@@ -45,7 +49,10 @@ export async function POST(req: NextRequest) {
         if (data && data.url) {
             try {
                 const url = new URL(data.url);
-                const onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+                let onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+                if (onyxUrl) {
+                    onyxUrl = onyxUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+                }
                 const allowedHostname = onyxUrl ? new URL(onyxUrl).hostname : null;
 
                 if (!allowedHostname) {

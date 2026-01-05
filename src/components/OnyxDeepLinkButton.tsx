@@ -13,7 +13,10 @@ interface OnyxDeepLinkButtonProps {
 const isValidOnyxUrl = (urlString: string) => {
     try {
         const url = new URL(urlString);
-        const onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+        let onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+        if (onyxUrl) {
+            onyxUrl = onyxUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+        }
         if (!onyxUrl) return false;
 
         const allowedHostname = new URL(onyxUrl).hostname;
