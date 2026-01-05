@@ -17,7 +17,17 @@ export async function getBillingConfig() {
             if (response.status === 404) return null;
             throw new Error("Failed to fetch billing config");
         }
-        return response.json();
+        const data = await response.json();
+
+        // SECURITY: Redact sensitive fields before returning to client
+        return {
+            subscription_type: data.subscription_type,
+            has_byok_key: !!data.byok_api_key && data.byok_api_key !== "••••••••",
+            // Do NOT return byok_api_key (raw or masked) if not needed for display.
+            // If strictly needed for UI "masked state", ensure it is "••••••••" from backend.
+            byok_api_key: data.byok_api_key ? "••••••••" : undefined,
+            preferred_models: data.preferred_models
+        };
     } catch (error) {
         console.error("Error fetching billing config:", error);
         return null;

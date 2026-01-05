@@ -38,17 +38,9 @@ export default function CreateInvite({ projectId, setIsInvitePopupVisible }: Cre
                 }, 3000)
             } else if (result?.detail) {
                 setIsLoading(false)
-                let errorText = result.detail
-                if (typeof result.detail === 'object') {
-                    // Handle Pydantic validation errors (array of objects) or generic error dicts
-                    errorText = Array.isArray(result.detail)
-                        ? result.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ')
-                        : JSON.stringify(result.detail)
-                }
-
                 const message = {
                     type: messageTypeEnum.ERROR,
-                    text: String(errorText)
+                    text: typeof result.detail === 'string' ? result.detail : "Failed to send invite. Please check the email and try again."
                 }
                 setMessage(message)
                 setTimeout(() => {

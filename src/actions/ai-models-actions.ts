@@ -6,8 +6,11 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 
 export async function getModels(projectId?: string) {
-  const url = projectId
-    ? `${apiUrl}/models/available?project_id=${projectId}`
+  const params = new URLSearchParams();
+  if (projectId) params.append("project_id", projectId);
+  const queryString = params.toString();
+  const url = queryString
+    ? `${apiUrl}/models/available?${queryString}`
     : `${apiUrl}/models/available`;
 
   const response = await fetchAuthed(url, { cache: 'no-store' })
@@ -17,11 +20,12 @@ export async function getModels(projectId?: string) {
   return await response.json();
 }
 
-export async function selecte_model(selectedModal: string, projectId?: string) {
+export async function selectModel(selectedModel: string, projectId?: string) {
   try {
-    const url = projectId
-      ? `${apiUrl}/models/select?selected_model=${selectedModal}&project_id=${projectId}`
-      : `${apiUrl}/models/select?selected_model=${selectedModal}`;
+    const params = new URLSearchParams({ selected_model: selectedModel });
+    if (projectId) params.append("project_id", projectId);
+
+    const url = `${apiUrl}/models/select?${params.toString()}`;
 
     const response = await fetchAuthedJson(url, {
       method: 'PATCH'
@@ -40,8 +44,12 @@ export async function selecte_model(selectedModal: string, projectId?: string) {
 
 export async function getSelectedModel(projectId?: string) {
   try {
-    const url = projectId
-      ? `${apiUrl}/tenants/selected-model?project_id=${projectId}`
+    const params = new URLSearchParams();
+    if (projectId) params.append("project_id", projectId);
+    const queryString = params.toString();
+
+    const url = queryString
+      ? `${apiUrl}/tenants/selected-model?${queryString}`
       : `${apiUrl}/tenants/selected-model`;
 
     const response = await fetchAuthed(url, { cache: 'no-store' })

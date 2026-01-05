@@ -33,7 +33,9 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
         errorDetail = await response.text();
       }
 
-      console.error(`[Frontend] Upload failed: ${response.status}`, errorDetail);
+      console.error(`[Frontend] Upload failed: ${response.status}`);
+      // SECURITY: Do NOT log full error detail to client console to prevent leaking backend secrets.
+
       // Return a structured error object that Dropzone can check
       return { detail: errorDetail || errorMessage };
     }
@@ -60,8 +62,8 @@ export async function queryDocument(projectId: string, fileName: string) {
       } catch (e) {
         errorDetail = await response.text();
       }
-      console.error(`[Frontend] queryDocument failed: ${response.status}`, errorDetail);
-      throw new Error(`Query failed: ${errorDetail}`);
+      console.error(`[Frontend] queryDocument failed: ${response.status}`);
+      throw new Error(`Analysis failed. Please try again.`);
     }
 
     const data = await response.json();
@@ -69,7 +71,7 @@ export async function queryDocument(projectId: string, fileName: string) {
   } catch (error: any) {
     console.error('[Frontend] Error in queryDocument:', error);
     // Re-throw with message to be caught by UI
-    throw new Error(error.message || 'Failed to analyze document');
+    throw new Error('Failed to analyze document');
   }
 }
 

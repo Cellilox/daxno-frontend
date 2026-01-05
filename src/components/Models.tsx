@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { Model } from '@/types';
-import { selecte_model } from '@/actions/ai-models-actions';
+import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 
 type ModelSelectorProps = {
@@ -31,7 +31,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
   const handleSelectModal = async (selectedModal: string) => {
     setPickedModal(selectedModal)
     setIsLoading(true)
-    await selecte_model(selectedModal, projectId)
+    await selectModel(selectedModal, projectId)
     setIsLoading(false)
   }
 
