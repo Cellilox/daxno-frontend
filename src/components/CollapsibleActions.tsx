@@ -98,7 +98,7 @@ export default function CollapsibleActions({ projectId, project, shareableLink, 
 
               {/* Right Action Group */}
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 justify-center sm:justify-end">
-                <ModelSelector models={models} tenantModal={tenantModal} plan={plan} />
+                <ModelSelector models={models} tenantModal={tenantModal} plan={plan} disabled={!is_project_owner} projectId={projectId} />
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <OnyxDeepLinkButton

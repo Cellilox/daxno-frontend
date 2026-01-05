@@ -15,13 +15,22 @@ export async function POST(req: NextRequest) {
         }
 
         // Endpoint: /onyx-proxy/generate-login-url
+        const body = await req.json().catch(() => ({}));
+
+        // SECURITY: Validate body - Only allow expected fields
+        const safeBody = {
+            redirect: body.redirect || "",
+            project_id: body.project_id
+        };
+
         const response = await fetch(`${BACKEND_URL}/onyx-proxy/generate-login-url`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`,
                 "sessionId": sessionId
-            }
+            },
+            body: JSON.stringify(safeBody)
         });
 
         if (!response.ok) {

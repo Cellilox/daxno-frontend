@@ -1,0 +1,130 @@
+'use server';
+
+import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+export interface BillingConfig {
+    subscription_type: string;
+    byok_api_key?: string;
+    has_byok_key?: boolean; // In case we use flag logic later
+}
+
+export async function getBillingConfig() {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/me`);
+        if (!response.ok) {
+            if (response.status === 404) return null;
+            throw new Error("Failed to fetch billing config");
+        }
+        const data = await response.json();
+
+        // SECURITY: Redact sensitive fields before returning to client
+        return {
+            subscription_type: data.subscription_type,
+            has_byok_key: !!data.byok_api_key && data.byok_api_key !== "••••••••",
+            // Do NOT return byok_api_key (raw or masked) if not needed for display.
+            // If strictly needed for UI "masked state", ensure it is "••••••••" from backend.
+            byok_api_key: data.byok_api_key ? "••••••••" : undefined,
+            preferred_models: data.preferred_models
+        };
+    } catch (error) {
+        console.error("Error fetching billing config:", error);
+        return null;
+    }
+}
+export async function getTrustedModels() {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/models/trusted`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch trusted models");
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching trusted models:", error);
+        return null;
+    }
+}
+
+export async function getAllModels() {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/models/available`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch available models");
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching available models:", error);
+        return null;
+    }
+}
+
+export async function updateBillingConfig(subscription_type: string, byok_api_key?: string, preferred_models?: any) {
+    try {
+        const payload = {
+            subscription_type,
+            byok_api_key,
+            preferred_models
+        };
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/billing-config`, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to update billing config");
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error updating billing config:", error);
+        throw error;
+    }
+}
+
+export async function provisionManagedByok(limit: number = 0.02) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/provision-byok?limit=${limit}`, {
+            method: "POST"
+        });
+        if (!response.ok) throw new Error("Failed to provision Managed BYOK key");
+        return response.json();
+    } catch (error) {
+        console.error("Error provisioning managed BYOK:", error);
+        throw error;
+    }
+}
+
+export async function rotateManagedByok() {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/rotate-byok`, {
+            method: "POST"
+        });
+        if (!response.ok) throw new Error("Failed to rotate Managed BYOK key");
+        return response.json();
+    } catch (error) {
+        console.error("Error rotating managed BYOK:", error);
+        throw error;
+    }
+}
+
+export async function getByokUsage() {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/byok-usage`);
+        if (!response.ok) throw new Error("Failed to fetch BYOK usage");
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching BYOK usage:", error);
+        return null;
+    }
+}
+
+export async function getManagedByokActivity(limit: number = 50, offset: number = 0) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/byok-activity?limit=${limit}&offset=${offset}`);
+        if (!response.ok) throw new Error("Failed to fetch BYOK activity");
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching BYOK activity:", error);
+        return [];
+    }
+}

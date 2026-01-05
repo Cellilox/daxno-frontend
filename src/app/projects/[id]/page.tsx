@@ -33,8 +33,8 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   const records = await recordsResponse.json()
   const is_project_owner = project.is_owner;
   const plan = await get_project_plan(project.owner)
-  const aiModels = await getModels()
-  const tenantModel = await getSelectedModel()
+  const aiModels = await getModels(id)
+  const tenantModel = await getSelectedModel(id)
 
   const allProjectConvesation = await getConversations(project.id)
   const chats = allProjectConvesation?.flatMap((conv: Conversation) => conv.messages);
