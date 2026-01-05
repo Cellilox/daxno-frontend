@@ -62,7 +62,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const ACTIVITY_LIMIT = 20;
+    const ACTIVITY_LIMIT = 10;
 
     // Fetch usage and activity on mount if BYOK
     useEffect(() => {
@@ -441,7 +441,12 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
 
                             {isActivityOpen && (
                                 <div className="animate-in fade-in duration-500">
-                                    {activity.length > 0 ? (
+                                    {isLoadingActivity && activity.length === 0 ? (
+                                        <div className="flex justify-center items-center py-8">
+                                            <LoadingSpinner className="h-6 w-6 text-customBlue" />
+                                            <span className="ml-2 text-sm text-gray-500">Loading activity...</span>
+                                        </div>
+                                    ) : activity.length > 0 ? (
                                         <>
                                             <div className="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
                                                 <table className="min-w-full divide-y divide-gray-200 text-xs text-black">
@@ -485,11 +490,13 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels 
                                             </p>
                                         </>
                                     ) : (
-                                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                            <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                                            <p className="text-sm text-gray-500">No recent activity found.</p>
-                                            <p className="text-[10px] text-gray-400 mt-1">Activity logs appear here after your first few requests.</p>
-                                        </div>
+                                        !isLoadingActivity && (
+                                            <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                                                <p className="text-sm text-gray-500">No recent activity found.</p>
+                                                <p className="text-[10px] text-gray-400 mt-1">Activity logs appear here after your first few requests.</p>
+                                            </div>
+                                        )
                                     )}
                                 </div>
                             )}
