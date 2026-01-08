@@ -49,7 +49,10 @@ export default async function BillingPage() {
     initialConfig: billingConfig,
     trustedModels: trustedModels,
     allModels: allModels,
-    currentPlan: subscriptionProps?.subPlan || (firstTx?.plan_name as string) // Fallback to transaction plan name if available
+    currentPlan: subscriptionProps?.subPlan || (firstTx?.plan_name as string), // Fallback to transaction plan name if available
+    currentInterval: subscriptionProps?.subInterval,
+    currentAmount: subscriptionProps?.subAmount ? Number(subscriptionProps.subAmount) : (firstTx?.amount ? Number(firstTx.amount) : 0),
+    currentEndDate: subscriptionProps?.nextBillingDate || firstTx?.end_date,
   };
 
   return (

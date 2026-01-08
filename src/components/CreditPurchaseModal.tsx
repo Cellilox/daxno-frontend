@@ -7,6 +7,9 @@ import LoadingSpinner from "./ui/LoadingSpinner"
 import { ShieldCheck, CreditCard, AlertCircle } from 'lucide-react'
 
 // Mock action for now, replaced by actual prop later
+import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
+import { usePathname, useRouter } from "next/navigation"
+
 const mockPurchaseAction = async (_amount: number) => {
     return new Promise((resolve) => setTimeout(resolve, 2000));
 }
@@ -22,6 +25,9 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
     const [feeDetails, setFeeDetails] = useState<FeeResult>(calculateServiceFee(30));
     const [loading, setLoading] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+
+    const pathname = usePathname().slice(1);
+    const router = useRouter();
 
     useEffect(() => {
         if (isOpen) {
@@ -39,10 +45,29 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
         if (amount < 5) return;
         setLoading(true);
         try {
-            // TODO: Replace with actual payment logic
-            await mockPurchaseAction(amount);
-            onPurchaseSuccess(amount);
-            onClose();
+            // 1. Fetch Plans
+            const plansResponse = await getAvailablePlans();
+            const plans = plansResponse?.data || [];
+
+            // 2. Find 'gyok' plan
+            const gyokPlan = plans.find((p: any) => p.name.toLowerCase() === 'gyok'); // eslint-disable-line @typescript-eslint/no-explicit-any
+
+            if (!gyokPlan) {
+                throw new Error("GYOK Plan not found in system.");
+            }
+
+            // 3. Initiate Payment with Custom Amount
+            // requestPayment(pathname, amount, plan_id)
+            const result = await requestPayment('billing?tier=managed', amount, gyokPlan.id);
+
+            if (result?.data?.link) {
+                onPurchaseSuccess(amount);
+                // Redirect
+                router.push(result.data.link);
+                onClose();
+            } else {
+                throw new Error("Failed to get payment link.");
+            }
         } catch (error) {
             console.error("Purchase failed", error);
         } finally {

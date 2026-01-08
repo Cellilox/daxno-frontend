@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { updateBillingConfig, provisionManagedByok, rotateManagedByok, getByokUsage, getManagedByokActivity } from '@/actions/settings-actions';
+import { getAvailablePlans, requestPayment } from '@/actions/payment-actions';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from './ui/LoadingSpinner';
 import CreditPurchaseModal from './CreditPurchaseModal';
 import { RefreshCcw, ShieldCheck, CreditCard, Activity, BarChart3, ChevronDown, ChevronUp, Lock, CheckCircle2 } from 'lucide-react';
@@ -30,9 +32,12 @@ export interface BillingConfigProps {
     } | null;
     allModels: ModelInfo[] | null;
     currentPlan?: string;
+    currentInterval?: string;
+    currentAmount?: number;
+    currentEndDate?: string | Date;
 }
 
-export default function BillingConfig({ initialConfig, trustedModels, allModels, currentPlan }: BillingConfigProps) {
+export default function BillingConfig({ initialConfig, trustedModels, allModels, currentPlan, currentInterval, currentAmount, currentEndDate }: BillingConfigProps) {
     // 3 Modes: 'standard', 'byok' (Own Key), 'managed' (GYOMK)
     // Map initialConfig.subscription_type (standard/byok) to one of these.
     // Ideally backend should support 'managed', but for now we might infer or keep 'byok' for both backend-side but separating UI.
@@ -44,10 +49,26 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     // If byok_api_key is present and we know it's managed (maybe we don't know easily without a flag), default to 'managed'.
     // Let's default to standard or what's in config.
 
-    const [billingType, setBillingType] = useState<'standard' | 'byok' | 'managed'>(
-        initialConfig?.subscription_type === 'byok' ? (initialConfig?.byok_api_key?.startsWith('sk-or-daxno') ? 'managed' : 'byok') : 'standard'
-    );
+    const pathname = usePathname().slice(1);
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
+    // Determine initial billing type based on URL param 'tier' or config
+    // Priority: URL Param > Config > Default
+    const initialBillingType = useMemo(() => {
+        const tier = searchParams.get('tier');
+        if (tier === 'managed') return 'managed';
+        if (tier === 'byok') return 'byok';
+        if (tier === 'standard') return 'standard';
+
+        // Fallback to config logic
+        if (initialConfig?.subscription_type === 'byok') {
+            return initialConfig?.byok_api_key?.startsWith('sk-or-daxno') ? 'managed' : 'byok';
+        }
+        return 'standard';
+    }, [searchParams, initialConfig]);
+
+    const [billingType, setBillingType] = useState<'standard' | 'byok' | 'managed'>(initialBillingType);
     const [apiKey, setApiKey] = useState(initialConfig?.byok_api_key || '');
 
     // BYOK Subscription State
@@ -55,6 +76,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [isByokSubscribed, setIsByokSubscribed] = useState(
         currentPlan?.toLowerCase() === 'byok' || initialConfig?.subscription_type === 'byok'
     );
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
 
     // Credit Modal State
     const [isCreditModalOpen, setIsCreditModalOpen] = useState(false);
@@ -84,6 +107,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [defaultModel, setDefaultModel] = useState<string>(initialDefault);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isSubscribing, setIsSubscribing] = useState(false);
     const [isProvisioning, setIsProvisioning] = useState(false);
     const [usage, setUsage] = useState<{ usage: number; limit: number; status: string; tokens?: number; requests?: number } | null>(null);
     const [activity, setActivity] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -189,14 +213,62 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         }
     };
 
-    const handleByokSubscribe = async () => {
-        // Mock BYOK Subscription
-        setIsSaving(true);
-        setTimeout(() => {
-            setIsByokSubscribed(true);
-            setIsSaving(false);
-            setMessage({ type: 'success', text: 'BYOK Subscription Active!' });
-        }, 1500);
+    const handleByokSubscribe = async (cycleOverride?: 'monthly' | 'yearly') => {
+        setIsSubscribing(true);
+        setMessage(null);
+
+        const targetCycle = cycleOverride || billingCycle;
+
+        try {
+            // 1. Fetch Plans
+            const plansResponse = await getAvailablePlans();
+            const plans = plansResponse?.data || [];
+
+            // 2. Find 'byok' plan matching the cycle
+            const byokPlan = plans.find((p: any) =>
+                p.name.toLowerCase() === 'byok' &&
+                p.interval === targetCycle
+            );
+
+            let targetPlan;
+
+            if (!byokPlan) {
+                // Fallback: If yearly requested but not found, maybe allow forcing standard plan? 
+                // For now, assume plan exists or warn
+                const anyByok = plans.find((p: any) => p.name.toLowerCase() === 'byok');
+                if (!anyByok) throw new Error("BYOK Plan not found.");
+
+                // If we found a monthly plan but want yearly, we can't just switch interval client-side easily 
+                // without backend support or existing plan. 
+                // However, we can TRY to send the ID and override amount if safe.
+                // Backend now supports amount override.
+                // BUT interval remains monthly on FW side.
+                // So we warn if exact match not found.
+                if (targetCycle === 'yearly' && anyByok.interval !== 'yearly') {
+                    throw new Error("Yearly BYOK plan not configured in payment provider.");
+                }
+                // Use the found one
+                targetPlan = anyByok;
+            } else {
+                targetPlan = byokPlan;
+            }
+
+            // 3. Initiate Payment
+            // Pass redirect path explicitly
+            const result = await requestPayment('billing?tier=byok', targetCycle === 'yearly' ? 100 : 10, targetPlan.id);
+
+            if (result?.data?.link) {
+                // Redirect
+                router.push(result.data.link);
+            } else {
+                throw new Error("Failed to get payment link.");
+            }
+
+        } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+            console.error(error);
+            setMessage({ type: 'error', text: error.message || 'Failed to initiate BYOK subscription.' });
+            setIsSubscribing(false);
+        }
     };
 
     const toggleModel = (modelId: string) => {
@@ -452,14 +524,31 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                     <p className="text-sm text-yellow-700 max-w-sm mx-auto mt-2">
                                         To use your own API Key, a small platform service fee is required.
                                     </p>
+
+                                    {/* Billing Cycle Toggle */}
+                                    <div className="flex justify-center gap-3 mt-4 mb-2">
+                                        <button
+                                            onClick={() => setBillingCycle('monthly')}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+                                        >
+                                            Monthly ($10)
+                                        </button>
+                                        <button
+                                            onClick={() => setBillingCycle('yearly')}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${billingCycle === 'yearly' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
+                                        >
+                                            Yearly ($100)
+                                            <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Save $20</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="flex justify-center gap-4">
                                     <button
-                                        onClick={handleByokSubscribe}
-                                        disabled={isSaving}
-                                        className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg shadow-sm w-full max-w-xs transition-transform active:scale-95"
+                                        onClick={() => handleByokSubscribe()}
+                                        disabled={isSubscribing}
+                                        className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg shadow-sm w-full max-w-xs transition-transform active:scale-95 disabled:opacity-75 disabled:scale-100"
                                     >
-                                        {isSaving ? 'Processing...' : 'Subscribe ($10/mo)'}
+                                        {isSubscribing ? 'Processing...' : 'Subscribe ($10/mo)'}
                                     </button>
                                 </div>
                                 <p className="text-xs text-yellow-600">
@@ -473,12 +562,72 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">OpenRouter API Key</label>
+                                        <div className="flex flex-col">
+                                            <label className="block text-sm font-medium text-gray-700">OpenRouter API Key</label>
+                                            {currentInterval !== 'yearly' && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 uppercase">
+                                                        Active: {currentInterval || 'Monthly'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <span className="flex items-center text-xs text-green-600 font-medium">
                                             <CheckCircle2 className="w-3 h-3 mr-1" />
                                             Subscription Active
                                         </span>
                                     </div>
+
+                                    {/* Upgrade UI for Non-Yearly Users */}
+                                    {currentInterval !== 'yearly' && (
+                                        <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between animate-in fade-in zoom-in-95 duration-300">
+                                            <div>
+                                                <p className="text-xs font-bold text-blue-800">Switch to Yearly & Save $20</p>
+                                                {(() => {
+                                                    // Simple Frontend Proration Check
+                                                    const upgradeBasePrice = 100;
+                                                    let displayPrice = 100;
+                                                    let isProrated = false;
+
+                                                    if (currentEndDate && currentAmount) {
+                                                        const now = new Date();
+                                                        const end = new Date(currentEndDate);
+                                                        if (end > now) {
+                                                            const diffTime = Math.abs(end.getTime() - now.getTime());
+                                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                                                            // Assume monthly/hourly basis (30 days) to match backend heuristic
+                                                            const intervalDays = 30;
+                                                            const dailyRate = currentAmount / intervalDays;
+                                                            const credit = dailyRate * diffDays;
+
+                                                            // Cap credit at currentAmount (optional, backend logic handles it too)
+                                                            // and ensure price doesn't go below 0
+                                                            displayPrice = Math.max(0, upgradeBasePrice - credit);
+                                                            isProrated = true;
+                                                        }
+                                                    }
+
+                                                    return (
+                                                        <p className="text-[10px] text-blue-600">
+                                                            {isProrated ? (
+                                                                <>Pay <span className="font-bold">${displayPrice.toFixed(2)}</span> (Prorated) instead of $100</>
+                                                            ) : (
+                                                                <>Pay $100/year instead of $120</>
+                                                            )}
+                                                        </p>
+                                                    );
+                                                })()}
+                                            </div>
+                                            <button
+                                                onClick={() => handleByokSubscribe('yearly')}
+                                                disabled={isSubscribing}
+                                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded shadow-sm transition-colors disabled:opacity-50"
+                                            >
+                                                {isSubscribing ? 'Processing...' : 'Upgrade'}
+                                            </button>
+                                        </div>
+                                    )}
                                     <input
                                         type="password"
                                         value={apiKey}

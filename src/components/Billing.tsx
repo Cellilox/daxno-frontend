@@ -168,23 +168,27 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
         </div>
         <div className="flex justify-between">
           <span className="font-medium">Next Billing Date:</span>
-          <span className="capitalize">{readableDate}</span>
+          <span className="capitalize">
+            {['gyok', 'topup'].includes(subPlan?.toLowerCase()) ? 'One-time' : readableDate}
+          </span>
         </div>
-        {isActive ? (
-          <button
-            onClick={openModal}
-            className="w-full flex justify-center items-center mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg"
-          >
-            {submitting && <LoadingSpinner className="mr3" />}
-            {submitting ? 'Cancelling...' : 'Cancel Subscription'}
-          </button>
-        ) : (
-          <button
-            disabled
-            className="w-full mt-4 bg-gray-400 text-white font-medium py-2 rounded-lg cursor-not-allowed"
-          >
-            Subscription Cancelled
-          </button>
+        {!['gyok', 'topup'].includes(subPlan?.toLowerCase()) && (
+          isActive ? (
+            <button
+              onClick={openModal}
+              className="w-full flex justify-center items-center mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg"
+            >
+              {submitting && <LoadingSpinner className="mr3" />}
+              {submitting ? 'Cancelling...' : 'Cancel Subscription'}
+            </button>
+          ) : (
+            <button
+              disabled
+              className="w-full mt-4 bg-gray-400 text-white font-medium py-2 rounded-lg cursor-not-allowed"
+            >
+              Subscription Cancelled
+            </button>
+          )
         )}
       </div>
 
