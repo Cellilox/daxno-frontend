@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Billing, { BillingProps } from "./Billing";
 import BillingConfig, { BillingConfigProps } from "./BillingConfig";
 
@@ -10,7 +10,33 @@ interface BillingTabsProps {
 }
 
 export default function BillingTabs({ billingConfigProps, billingProps }: BillingTabsProps) {
-    const [activeTab, setActiveTab] = useState<'config' | 'billing'>('config');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // Determine active tab purely from URL or smart default
+    // Single Source of Truth: The URL (or props fallback)
+    const tabParam = searchParams.get('tab');
+    let activeTab: 'config' | 'billing';
+
+    if (tabParam === 'configuration') {
+        activeTab = 'config';
+    } else if (tabParam === 'subscriptions-history' || tabParam === 'billing') {
+        activeTab = 'billing';
+    } else {
+        // Smart Fallback if no param
+        activeTab = billingProps?.isActive ? 'billing' : 'config';
+    }
+
+    const handleTabChange = (tab: 'config' | 'billing') => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (tab === 'config') {
+            params.set('tab', 'configuration');
+        } else {
+            params.set('tab', 'subscriptions-history');
+        }
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    };
 
     return (
         <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -18,7 +44,7 @@ export default function BillingTabs({ billingConfigProps, billingProps }: Billin
             <div className="border-b border-gray-200 mb-8 overflow-x-auto scrollbar-hide">
                 <nav className="-mb-px flex space-x-8 min-w-max px-2" aria-label="Tabs">
                     <button
-                        onClick={() => setActiveTab('config')}
+                        onClick={() => handleTabChange('config')}
                         className={`
                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base transition-colors duration-200
                ${activeTab === 'config'
@@ -29,7 +55,7 @@ export default function BillingTabs({ billingConfigProps, billingProps }: Billin
                         Configuration
                     </button>
                     <button
-                        onClick={() => setActiveTab('billing')}
+                        onClick={() => handleTabChange('billing')}
                         className={`
                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-base transition-colors duration-200
                ${activeTab === 'billing'

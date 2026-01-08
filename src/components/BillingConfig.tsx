@@ -255,7 +255,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
             // 3. Initiate Payment
             // Pass redirect path explicitly
-            const result = await requestPayment('billing?tier=byok', targetCycle === 'yearly' ? 100 : 10, targetPlan.id);
+            const result = await requestPayment('billing?tab=configuration&tier=byok', targetCycle === 'yearly' ? 100 : 10, targetPlan.id);
 
             if (result?.data?.link) {
                 // Redirect

@@ -58,7 +58,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
 
             // 3. Initiate Payment with Custom Amount
             // requestPayment(pathname, amount, plan_id)
-            const result = await requestPayment('billing?tier=managed', amount, gyokPlan.id);
+            const result = await requestPayment('billing?tab=configuration&tier=managed', amount, gyokPlan.id);
 
             if (result?.data?.link) {
                 onPurchaseSuccess(amount);
