@@ -48,7 +48,8 @@ export default async function BillingPage() {
   const billingConfigProps = {
     initialConfig: billingConfig,
     trustedModels: trustedModels,
-    allModels: allModels
+    allModels: allModels,
+    currentPlan: subscriptionProps?.subPlan || (firstTx?.plan_name as string) // Fallback to transaction plan name if available
   };
 
   return (

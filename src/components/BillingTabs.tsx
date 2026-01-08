@@ -64,7 +64,7 @@ export default function BillingTabs({ billingConfigProps, billingProps }: Billin
                                     </svg>
                                 </div>
                                 <h1 className="text-2xl font-bold mb-2 text-gray-900">No Active Subscription</h1>
-                                <p className="text-gray-500 mb-6 max-w-md">It looks like you don't have an active subscription yet. Check out our pricing plans to get started.</p>
+                                <p className="text-gray-500 mb-6 max-w-md">It looks like you don&apos;t have an active subscription yet. Check out our pricing plans to get started.</p>
                                 <a href="/pricing" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
                                     View Pricing Plans
                                 </a>
