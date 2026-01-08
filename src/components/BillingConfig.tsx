@@ -16,7 +16,7 @@ interface ModelInfo {
     context_length?: number;
 }
 
-interface BillingConfigProps {
+export interface BillingConfigProps {
     initialConfig: {
         subscription_type: string;
         byok_api_key?: string;

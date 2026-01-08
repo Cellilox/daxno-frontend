@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { create_sub_feedback } from "@/actions/cancel-feedback-actions";
 import { usePathname } from "next/navigation";
 
-type BillingProps = {
+export type BillingProps = {
   sub_id: number;
   t_id: number;
   subPlan: string;
@@ -138,7 +138,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-2xl font-bold">Billing & Subscription</h1>
         {isActive ?
           (
