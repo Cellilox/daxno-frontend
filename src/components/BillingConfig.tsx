@@ -24,6 +24,7 @@ export interface BillingConfigProps {
         subscription_type: string;
         byok_api_key?: string;
         preferred_models?: { default?: string; visible: string[] } | string[];
+        byok_provider?: string;
     } | null;
     trustedModels: {
         professional: string[];
@@ -70,6 +71,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
     const [billingType, setBillingType] = useState<'standard' | 'byok' | 'managed'>(initialBillingType);
     const [apiKey, setApiKey] = useState(initialConfig?.byok_api_key || '');
+    const [provider, setProvider] = useState(initialConfig?.byok_provider || 'openrouter');
 
     // BYOK Subscription State
     // Check if the actual current plan is 'byok' (case-insensitive)
@@ -188,10 +190,10 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             };
 
             // Map UI billingType to backend subscription_type
-            // 'managed' is just 'byok' with a managed key effectively
-            const backendSubType = billingType === 'standard' ? 'standard' : 'byok';
+            // 'managed' is strictly separated now
+            const backendSubType = billingType;
 
-            await updateBillingConfig(backendSubType, apiKey, payload);
+            await updateBillingConfig(backendSubType, apiKey, payload, provider);
             setMessage({ type: 'success', text: 'Configuration updated successfully.' });
         } catch {
             setMessage({ type: 'error', text: 'Failed to update configuration.' });
@@ -290,11 +292,42 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     };
 
     const sortedAndFilteredModels = useMemo(() => {
-        if (!allModels) return [];
+        // Native Model Lists for Direct Providers
+        const PROVIDER_MODELS: Record<string, ModelInfo[]> = {
+            openai: [
+                { id: 'gpt-4o', name: 'GPT-4o', description: 'Flagship high-intelligence model' },
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: 'Fast, affordable small model' },
+                { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'High-capability model' },
+                { id: 'o1-preview', name: 'o1-preview', description: 'Advanced reasoning model' },
+                { id: 'o1-mini', name: 'o1-mini', description: 'Fast reasoning model' }
+            ],
+            anthropic: [
+                { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Most intelligent Claude model' },
+                { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'Fastest Claude model' },
+                { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', description: 'Legacy powerful model' }
+            ],
+            google_vertex: [
+                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Mid-sized multimodal model' },
+                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Fast and versatile model' },
+                { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Exp)', description: 'Next-gen experimental model' }
+            ],
+            deepseek: [
+                { id: 'deepseek-chat', name: 'DeepSeek V3', description: 'High performance open model' },
+                { id: 'deepseek-reasoner', name: 'DeepSeek R1', description: 'Reasoning model' }
+            ]
+        };
 
-        let filtered = allModels;
+        // Determine source list
+        let sourceList = allModels || [];
+
+        if (billingType === 'byok' && provider !== 'openrouter' && PROVIDER_MODELS[provider]) {
+            sourceList = PROVIDER_MODELS[provider];
+        }
+
+        let filtered = sourceList;
+
         if (searchTerm) {
-            filtered = allModels.filter(m =>
+            filtered = sourceList.filter(m =>
                 m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 m.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -309,7 +342,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             if (!aSelected && bSelected) return 1;
             return a.name.localeCompare(b.name);
         });
-    }, [allModels, searchTerm, preferredModels]);
+    }, [allModels, searchTerm, preferredModels, billingType, provider]);
 
     return (
         <div className="max-w-2xl mx-auto mb-8 px-4">
@@ -628,15 +661,44 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                             </button>
                                         </div>
                                     )}
-                                    <input
-                                        type="password"
-                                        value={apiKey}
-                                        onChange={(e) => setApiKey(e.target.value)}
-                                        placeholder="sk-or-..."
-                                        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-customBlue focus:border-customBlue"
-                                    />
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">AI Provider</label>
+                                        <select
+                                            value={provider}
+                                            onChange={(e) => setProvider(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-customBlue focus:border-customBlue bg-white"
+                                        >
+                                            <option value="openrouter">OpenRouter (Recommended)</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic (Claude)</option>
+                                            <option value="google_vertex">Google Gemini (Vertex AI)</option>
+                                            <option value="deepseek">DeepSeek</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="mb-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {provider === 'openrouter' ? 'OpenRouter API Key' :
+                                                provider === 'openai' ? 'OpenAI API Key' :
+                                                    provider === 'anthropic' ? 'Anthropic API Key' :
+                                                        provider === 'google_vertex' ? 'Google Cloud/Gemini Key' :
+                                                            'API Key'}
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={apiKey}
+                                            onChange={(e) => setApiKey(e.target.value)}
+                                            placeholder={
+                                                provider === 'openrouter' ? "sk-or-..." :
+                                                    provider === 'openai' ? "sk-..." :
+                                                        provider === 'anthropic' ? "sk-ant-..." :
+                                                            "API Key"
+                                            }
+                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-customBlue focus:border-customBlue"
+                                        />
+                                    </div>
                                     <p className="text-xs text-gray-500 mt-2">
-                                        Enter your OpenRouter key. We will validate it on save.
+                                        Enter your {provider === 'openrouter' ? 'OpenRouter' : provider.charAt(0).toUpperCase() + provider.slice(1)} key. We will validate it on save.
                                     </p>
                                 </div>
                             </div>

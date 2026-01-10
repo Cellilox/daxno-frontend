@@ -26,6 +26,7 @@ export async function getBillingConfig() {
             // Do NOT return byok_api_key (raw or masked) if not needed for display.
             // If strictly needed for UI "masked state", ensure it is "••••••••" from backend.
             byok_api_key: data.byok_api_key ? "••••••••" : undefined,
+            byok_provider: data.byok_provider,
             preferred_models: data.preferred_models
         };
     } catch (error) {
@@ -59,12 +60,13 @@ export async function getAllModels() {
     }
 }
 
-export async function updateBillingConfig(subscription_type: string, byok_api_key?: string, preferred_models?: any) {
+export async function updateBillingConfig(subscription_type: string, byok_api_key?: string, preferred_models?: any, byok_provider?: string) {
     try {
         const payload = {
             subscription_type,
             byok_api_key,
-            preferred_models
+            preferred_models,
+            byok_provider
         };
         const response = await fetchAuthedJson(`${apiUrl}/tenants/billing-config`, {
             method: "POST",
