@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Search } from 'lucide-react';
+import { ChevronDown, Check, Search, Plus } from 'lucide-react';
 import { Model } from '@/types';
 import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
@@ -196,6 +197,17 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
                 </li>
               ))}
             </ul>
+            {!disabled && (
+              <div className="border-t border-gray-100 mt-2 pt-2 px-1">
+                <Link
+                  href="/billing?tab=configuration"
+                  className="flex items-center gap-2 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2 rounded transition-colors w-full"
+                >
+                  <Plus size={14} />
+                  Add more models
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
