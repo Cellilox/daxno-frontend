@@ -176,12 +176,15 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
             <ul>
               {filteredModels.map((model) => {
                 const tier = model.tier || 'free';
+                const isSpecialPlan = ['gyok', 'byok', 'managed'].includes(plan?.toLowerCase());
 
                 let isDisabled = false;
-                if (tier === 'starter') {
-                  isDisabled = !['Starter', 'Professional'].includes(plan);
-                } else if (tier === 'professional') {
-                  isDisabled = plan !== 'Professional';
+                if (!isSpecialPlan) {
+                  if (tier === 'starter') {
+                    isDisabled = !['Starter', 'Professional'].includes(plan);
+                  } else if (tier === 'professional') {
+                    isDisabled = plan !== 'Professional';
+                  }
                 }
 
                 return (
@@ -195,8 +198,8 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
                   >
                     <div className="flex items-center">
                       <span>{extractLabel(model.name)}</span>
-                      {tier === 'starter' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1 rounded font-bold">STARTER</span>}
-                      {tier === 'professional' && <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded font-bold">PRO</span>}
+                      {!isSpecialPlan && tier === 'starter' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1 rounded font-bold">STARTER</span>}
+                      {!isSpecialPlan && tier === 'professional' && <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded font-bold">PRO</span>}
                     </div>
                     {selectedModel === model.id && (
                       <Check size={16} className="text-green-600 ml-2" />

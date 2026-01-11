@@ -302,14 +302,19 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 { id: 'o1-mini', name: 'o1-mini', description: 'Fast reasoning model' }
             ],
             anthropic: [
-                { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Most intelligent Claude model' },
-                { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'Fastest Claude model' },
-                { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', description: 'Legacy powerful model' }
+                { id: 'claude-sonnet-4-5-20250929', name: 'Claude 4.5 Sonnet', description: 'Smart, efficient model for everyday use' },
+                { id: 'claude-opus-4-5-20251101', name: 'Claude 4.5 Opus', description: 'Powerful, large model for complex challenges' },
+                { id: 'claude-haiku-4-5-20251001', name: 'Claude 4.5 Haiku', description: 'Fastest model for daily tasks' },
+                { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Legacy)', description: 'Older high-intelligence model' },
+                { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', description: 'Legacy fast model' }
             ],
             google_vertex: [
+                { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Preview)', description: 'Next-gen frontier model' },
+                { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Preview)', description: 'Next-gen fast model' },
+                { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', description: 'Advanced multimodal model' },
+                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Fast, high-fidelity multimodal model' },
                 { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Mid-sized multimodal model' },
-                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Fast and versatile model' },
-                { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (Exp)', description: 'Next-gen experimental model' }
+                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Fast and versatile model' }
             ],
             deepseek: [
                 { id: 'deepseek-chat', name: 'DeepSeek V3', description: 'High performance open model' },
