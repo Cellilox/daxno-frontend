@@ -101,6 +101,8 @@ export default function BYOKConfig({
                             setApiKey('');
                             setProviderModels([]);
                             setIsVerified(false);
+                            setPreferredModels([]);
+                            setDefaultModel('');
                         }}
                         className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-customBlue focus:border-customBlue bg-white"
                     >

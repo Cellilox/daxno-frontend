@@ -200,6 +200,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         }
     };
 
+    const handleBillingTypeChange = (type: 'standard' | 'byok' | 'managed') => {
+        setBillingType(type);
+        // Clear previous model selections when switching types
+        setPreferredModels([]);
+        setDefaultModel('');
+        setProviderModels([]);
+        setModelsFetchError(null);
+        // Reset search term for fresh start
+        setSearchTerm('');
+    };
+
     const handleProvision = async () => {
         setIsProvisioning(true);
         setMessage(null);
@@ -343,17 +354,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     };
 
     const sortedAndFilteredModels = useMemo(() => {
-        // Determine source list based on billing type and provider
-        let sourceList = allModels || [];
+        // Determine source list: dynamcially fetched provider models take priority
+        let sourceList = providerModels.length > 0 ? providerModels : (allModels || []);
 
-        if (billingType === 'byok' && provider !== 'openrouter') {
-            // Use dynamically fetched provider models if available
-            if (providerModels.length > 0) {
-                sourceList = providerModels;
-            } else if (provider && !isLoadingModels) {
-                // Provider selected but no models fetched yet (likely an error or no provider configured)
-                sourceList = [];
-            }
+        // Specialized gating for BYOK to prevent mixing in OpenRouter models before fetch
+        if (billingType === 'byok' && provider && provider !== 'openrouter' && providerModels.length === 0) {
+            sourceList = [];
+        }
+
+        // While loading, show empty to avoid flicker or stale data
+        if (isLoadingModels) {
+            sourceList = [];
         }
 
         let filtered = sourceList;
@@ -387,7 +398,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 <div className="flex flex-col space-y-4">
                     {/* Option 1: Standard */}
                     <div
-                        onClick={() => setBillingType('standard')}
+                        onClick={() => handleBillingTypeChange('standard')}
                         className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'standard' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                     >
                         <input
@@ -395,7 +406,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             name="billing_type"
                             value="standard"
                             checked={billingType === 'standard'}
-                            onChange={() => setBillingType('standard')}
+                            onChange={() => handleBillingTypeChange('standard')}
                             className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
                         />
                         <div className="ml-3">
@@ -406,7 +417,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
                     {/* Option 2: GYOMK (Generate Your Own Managed Key) */}
                     <div
-                        onClick={() => setBillingType('managed')}
+                        onClick={() => handleBillingTypeChange('managed')}
                         className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'managed' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                     >
                         <input
@@ -414,7 +425,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             name="billing_type"
                             value="managed"
                             checked={billingType === 'managed'}
-                            onChange={() => setBillingType('managed')}
+                            onChange={() => handleBillingTypeChange('managed')}
                             className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
                         />
                         <div className="ml-3">
@@ -433,7 +444,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
                     {/* Option 3: BYOK */}
                     <div
-                        onClick={() => setBillingType('byok')}
+                        onClick={() => handleBillingTypeChange('byok')}
                         className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'byok' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
                     >
                         <input
@@ -441,7 +452,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             name="billing_type"
                             value="byok"
                             checked={billingType === 'byok'}
-                            onChange={() => setBillingType('byok')}
+                            onChange={() => handleBillingTypeChange('byok')}
                             className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
                         />
                         <div className="ml-3">
@@ -748,26 +759,38 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                         {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && (
                             <button
                                 onClick={async () => {
-                                    setIsModelsOpen(!isModelsOpen);
+                                    const isOpening = !isModelsOpen;
+                                    setIsModelsOpen(isOpening);
 
-                                    // If opening, BYOK, and no models yet, try fetching
-                                    if (!isModelsOpen && billingType === 'byok' && providerModels.length === 0 && apiKey && provider && provider !== 'openrouter') {
-                                        setIsLoadingModels(true);
-                                        setModelsFetchError(null);
-                                        try {
-                                            const { getProviderModels } = await import('@/actions/settings-actions');
-                                            const models = await getProviderModels(provider);
-                                            if (models && models.length > 0) {
-                                                setProviderModels(models);
-                                            } else {
-                                                // Handle empty or null response (error swallowed in action)
-                                                setModelsFetchError(`Failed to fetch models from ${provider}. Please verify your key.`);
+                                    // Fetch models if we're opening the section and don't have them yet
+                                    if (isOpening && providerModels.length === 0) {
+                                        let fetchProvider = null;
+
+                                        if (billingType === 'standard') {
+                                            fetchProvider = 'openrouter';
+                                        } else if (billingType === 'managed' && apiKey) {
+                                            fetchProvider = 'openrouter';
+                                        } else if (billingType === 'byok' && apiKey && provider) {
+                                            fetchProvider = provider;
+                                        }
+
+                                        if (fetchProvider) {
+                                            setIsLoadingModels(true);
+                                            setModelsFetchError(null);
+                                            try {
+                                                const { getProviderModels } = await import('@/actions/settings-actions');
+                                                const models = await getProviderModels(fetchProvider);
+                                                if (models && models.length > 0) {
+                                                    setProviderModels(models);
+                                                } else {
+                                                    setModelsFetchError(`No models found for ${fetchProvider}.`);
+                                                }
+                                            } catch (error) {
+                                                console.error("Failed to fetch models on open:", error);
+                                                setModelsFetchError("Failed to load models. Please check your connection.");
+                                            } finally {
+                                                setIsLoadingModels(false);
                                             }
-                                        } catch (error) {
-                                            console.error("Failed to fetch models on open:", error);
-                                            setModelsFetchError("Failed to load models. Please check your connection.");
-                                        } finally {
-                                            setIsLoadingModels(false);
                                         }
                                     }
                                 }}
@@ -809,7 +832,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
                                         <div className="max-h-80 overflow-y-auto pr-2 border border-blue-50 rounded-lg p-2 bg-white">
                                             <div className="grid grid-cols-1 gap-2">
-                                                {sortedAndFilteredModels.slice(0, 50).map((model: ModelInfo) => {
+                                                {sortedAndFilteredModels.map((model: ModelInfo) => {
                                                     // Determine Tier for Standard Plan
                                                     let tierTag = null;
                                                     let isDisabled = false;
