@@ -6,6 +6,12 @@ import { Model } from '@/types';
 import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 type ModelSelectorProps = {
   models: Model[];
   tenantModal: string;

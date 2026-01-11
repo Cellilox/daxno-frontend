@@ -7,17 +7,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from './ui/LoadingSpinner';
 import CreditPurchaseModal from './CreditPurchaseModal';
 import { RefreshCcw, ShieldCheck, CreditCard, Activity, BarChart3, ChevronDown, ChevronUp, Lock, CheckCircle2 } from 'lucide-react';
-
-interface ModelInfo {
-    id: string;
-    name: string;
-    description?: string;
-    pricing?: {
-        prompt: string;
-        completion: string;
-    };
-    context_length?: number;
-}
+import BYOKConfig from './billing/BYOKConfig';
+import { ModelInfo } from './Models';
 
 export interface BillingConfigProps {
     initialConfig: {
@@ -121,6 +112,13 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    // Provider-specific model fetching states
+    const [isLoadingModels, setIsLoadingModels] = useState(false);
+    const [providerModels, setProviderModels] = useState<ModelInfo[]>([]);
+    const [modelsFetchError, setModelsFetchError] = useState<string | null>(null);
+    const [isConnectingKey, setIsConnectingKey] = useState(false);
+
     const ACTIVITY_LIMIT = 10;
 
 
@@ -138,6 +136,55 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             }).catch(() => setIsLoadingActivity(false));
         }
     }, [billingType, apiKey]);
+
+    // Auto-fetch provider-specific models when provider and API key are configured (for BYOK)
+    useEffect(() => {
+        const fetchProviderModels = async () => {
+            // Only fetch for BYOK with valid provider and non-masked API key
+            if (billingType !== 'byok' || !provider || !apiKey || apiKey === '••••••••') {
+                // Reset provider models if not applicable
+                if (providerModels.length > 0) {
+                    setProviderModels([]);
+                }
+                return;
+            }
+
+            // Skip OpenRouter - use existing allModels
+            if (provider === 'openrouter') {
+                setProviderModels([]);
+                return;
+            }
+
+            // Only fetch for direct providers
+            const directProviders = ['openai', 'anthropic', 'deepseek', 'google_vertex'];
+            if (!directProviders.includes(provider)) {
+                return;
+            }
+
+            setIsLoadingModels(true);
+            setModelsFetchError(null);
+
+            try {
+                const { getProviderModels } = await import('@/actions/settings-actions');
+                const models = await getProviderModels(provider);
+
+                if (models && models.length > 0) {
+                    setProviderModels(models);
+                    console.log(`[BillingConfig] Fetched ${models.length} models for provider: ${provider}`);
+                } else {
+                    throw new Error('No models returned from provider');
+                }
+            } catch (error) {
+                console.error(`[ERROR] Failed to fetch models for ${provider}:`, error);
+                setModelsFetchError(`Unable to fetch models from ${provider}. Please check your API key and try again.`);
+                setProviderModels([]);
+            } finally {
+                setIsLoadingModels(false);
+            }
+        };
+
+        fetchProviderModels();
+    }, []); // DISABLED: was [billingType, provider, apiKey] - now fetch happens in handleSave after key is saved
 
     const handleLoadMore = async () => {
         setIsLoadingMore(true);
@@ -180,6 +227,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             setIsProvisioning(false);
         }
     };
+
+
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -294,41 +343,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     };
 
     const sortedAndFilteredModels = useMemo(() => {
-        // Native Model Lists for Direct Providers
-        const PROVIDER_MODELS: Record<string, ModelInfo[]> = {
-            openai: [
-                { id: 'gpt-4o', name: 'GPT-4o', description: 'Flagship high-intelligence model' },
-                { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: 'Fast, affordable small model' },
-                { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'High-capability model' },
-                { id: 'o1-preview', name: 'o1-preview', description: 'Advanced reasoning model' },
-                { id: 'o1-mini', name: 'o1-mini', description: 'Fast reasoning model' }
-            ],
-            anthropic: [
-                { id: 'claude-sonnet-4-5-20250929', name: 'Claude 4.5 Sonnet', description: 'Smart, efficient model for everyday use' },
-                { id: 'claude-opus-4-5-20251101', name: 'Claude 4.5 Opus', description: 'Powerful, large model for complex challenges' },
-                { id: 'claude-haiku-4-5-20251001', name: 'Claude 4.5 Haiku', description: 'Fastest model for daily tasks' },
-                { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Legacy)', description: 'Older high-intelligence model' },
-                { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', description: 'Legacy fast model' }
-            ],
-            google_vertex: [
-                { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Preview)', description: 'Next-gen frontier model' },
-                { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Preview)', description: 'Next-gen fast model' },
-                { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', description: 'Advanced multimodal model' },
-                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Fast, high-fidelity multimodal model' },
-                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Mid-sized multimodal model' },
-                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Fast and versatile model' }
-            ],
-            deepseek: [
-                { id: 'deepseek-chat', name: 'DeepSeek V3', description: 'High performance open model' },
-                { id: 'deepseek-reasoner', name: 'DeepSeek R1', description: 'Reasoning model' }
-            ]
-        };
-
-        // Determine source list
+        // Determine source list based on billing type and provider
         let sourceList = allModels || [];
 
-        if (billingType === 'byok' && provider !== 'openrouter' && PROVIDER_MODELS[provider]) {
-            sourceList = PROVIDER_MODELS[provider];
+        if (billingType === 'byok' && provider !== 'openrouter') {
+            // Use dynamically fetched provider models if available
+            if (providerModels.length > 0) {
+                sourceList = providerModels;
+            } else if (provider && !isLoadingModels) {
+                // Provider selected but no models fetched yet (likely an error or no provider configured)
+                sourceList = [];
+            }
         }
 
         let filtered = sourceList;
@@ -349,7 +374,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             if (!aSelected && bSelected) return 1;
             return a.name.localeCompare(b.name);
         });
-    }, [allModels, searchTerm, preferredModels, billingType, provider]);
+    }, [allModels, searchTerm, preferredModels, billingType, provider, providerModels, isLoadingModels]);
 
     return (
         <div className="max-w-2xl mx-auto mb-8 px-4">
@@ -669,44 +694,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                         </div>
                                     )}
                                     <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">AI Provider</label>
-                                        <select
-                                            value={provider}
-                                            onChange={(e) => setProvider(e.target.value)}
-                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-customBlue focus:border-customBlue bg-white"
-                                        >
-                                            <option value="openrouter">OpenRouter (Recommended)</option>
-                                            <option value="openai">OpenAI</option>
-                                            <option value="anthropic">Anthropic (Claude)</option>
-                                            <option value="google_vertex">Google Gemini (Vertex AI)</option>
-                                            <option value="deepseek">DeepSeek</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="mb-1">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            {provider === 'openrouter' ? 'OpenRouter API Key' :
-                                                provider === 'openai' ? 'OpenAI API Key' :
-                                                    provider === 'anthropic' ? 'Anthropic API Key' :
-                                                        provider === 'google_vertex' ? 'Google Cloud/Gemini Key' :
-                                                            'API Key'}
-                                        </label>
-                                        <input
-                                            type="password"
-                                            value={apiKey}
-                                            onChange={(e) => setApiKey(e.target.value)}
-                                            placeholder={
-                                                provider === 'openrouter' ? "sk-or-..." :
-                                                    provider === 'openai' ? "sk-..." :
-                                                        provider === 'anthropic' ? "sk-ant-..." :
-                                                            "API Key"
-                                            }
-                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-customBlue focus:border-customBlue"
+                                        <BYOKConfig
+                                            apiKey={apiKey}
+                                            setApiKey={setApiKey}
+                                            provider={provider || 'openai'}
+                                            setProvider={setProvider}
+                                            providerModels={providerModels}
+                                            setProviderModels={setProviderModels}
+                                            setPreferredModels={setPreferredModels}
+                                            setDefaultModel={setDefaultModel}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Enter your {provider === 'openrouter' ? 'OpenRouter' : provider.charAt(0).toUpperCase() + provider.slice(1)} key. We will validate it on save.
-                                    </p>
                                 </div>
                             </div>
                         )}
@@ -717,18 +715,73 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 {/* Model Selection - Available for ALL types now (Standard, Managed, BYOK) */}
                 {((billingType === 'standard' || (apiKey && (billingType === 'byok' || billingType === 'managed'))) && allModels) && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-500">
-                        <button
-                            onClick={() => setIsModelsOpen(!isModelsOpen)}
-                            className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors mb-4"
-                        >
-                            <div className="flex items-center">
-                                <h3 className="text-sm font-semibold text-gray-900">Preferred Models</h3>
-                                <span className="ml-2 px-2 py-0.5 bg-customBlue text-white text-[10px] font-bold rounded-full">{preferredModels.length}</span>
-                            </div>
-                            {isModelsOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
-                        </button>
+                        {/* Loading State - when fetching provider models */}
 
-                        {isModelsOpen && (
+
+                        {/* Error State - when fetching fails */}
+                        {billingType === 'byok' && modelsFetchError && (
+                            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-red-900">Failed to fetch models</p>
+                                        <p className="text-xs text-red-700 mt-1">{modelsFetchError}</p>
+                                        <button
+                                            onClick={() => {
+                                                setModelsFetchError(null);
+                                                setIsLoadingModels(true);
+                                                // Trigger refetch by updating a dependency
+                                                setApiKey(apiKey);
+                                            }}
+                                            className="mt-2 text-xs text-red-800 font-medium hover:text-red-900 underline"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Only show Preferred Models section when not loading and no error */}
+                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && (
+                            <button
+                                onClick={async () => {
+                                    setIsModelsOpen(!isModelsOpen);
+
+                                    // If opening, BYOK, and no models yet, try fetching
+                                    if (!isModelsOpen && billingType === 'byok' && providerModels.length === 0 && apiKey && provider && provider !== 'openrouter') {
+                                        setIsLoadingModels(true);
+                                        setModelsFetchError(null);
+                                        try {
+                                            const { getProviderModels } = await import('@/actions/settings-actions');
+                                            const models = await getProviderModels(provider);
+                                            if (models && models.length > 0) {
+                                                setProviderModels(models);
+                                            } else {
+                                                // Handle empty or null response (error swallowed in action)
+                                                setModelsFetchError(`Failed to fetch models from ${provider}. Please verify your key.`);
+                                            }
+                                        } catch (error) {
+                                            console.error("Failed to fetch models on open:", error);
+                                            setModelsFetchError("Failed to load models. Please check your connection.");
+                                        } finally {
+                                            setIsLoadingModels(false);
+                                        }
+                                    }
+                                }}
+                                className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors mb-4"
+                            >
+                                <div className="flex items-center">
+                                    <h3 className="text-sm font-semibold text-gray-900">Preferred Models</h3>
+                                    <span className="ml-2 px-2 py-0.5 bg-customBlue text-white text-[10px] font-bold rounded-full">{preferredModels.length}</span>
+                                </div>
+                                {isModelsOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                            </button>
+                        )}
+
+                        {isModelsOpen && !modelsFetchError && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                 <p className="text-xs text-gray-500 mb-4">
                                     {billingType === 'standard'
@@ -736,91 +789,102 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                         : "Search and select any OpenRouter models you want to use. You must select a Default Model to save changes."}
                                 </p>
 
-                                {/* Search Bar */}
-                                <input
-                                    type="text"
-                                    placeholder="Search models (e.g. gpt-4, claude, deepseek)..."
-                                    className="w-full border border-gray-300 rounded-lg p-2 mb-4 text-sm focus:ring-customBlue focus:border-customBlue text-black"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-
-                                <div className="max-h-80 overflow-y-auto pr-2 border border-blue-50 rounded-lg p-2 bg-white">
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {sortedAndFilteredModels.slice(0, 50).map((model: ModelInfo) => {
-                                            // Determine Tier for Standard Plan
-                                            let tierTag = null;
-                                            let isDisabled = false;
-
-                                            if (billingType === 'standard') {
-                                                const isPro = trustedModels?.professional?.includes(model.id);
-                                                const isStarter = trustedModels?.starter?.includes(model.id);
-
-                                                // Normalize plan name handling (assuming currentPlan comes as 'Professional', 'Starter', 'Free')
-                                                const userPlan = currentPlan || 'Free';
-
-                                                if (isPro) {
-                                                    if (userPlan !== 'Professional') isDisabled = true;
-                                                    tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-200">PRO</span>;
-                                                } else if (isStarter) {
-                                                    if (!['Starter', 'Professional'].includes(userPlan)) isDisabled = true;
-                                                    tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-blue-100 text-blue-800 border-blue-200">STARTER</span>;
-                                                }
-                                            }
-
-                                            return (
-                                                <div key={model.id} className={`flex items-start p-2 rounded-md border transition-colors ${preferredModels.includes(model.id) ? 'border-customBlue bg-blue-50' : 'border-gray-200'} ${isDisabled ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`}>
-                                                    <div className="flex items-center h-5">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="h-4 w-4 text-customBlue focus:ring-customBlue border-gray-300 rounded"
-                                                            checked={preferredModels.includes(model.id)}
-                                                            onChange={() => !isDisabled && toggleModel(model.id)}
-                                                            disabled={isDisabled}
-                                                        />
-                                                    </div>
-                                                    <div className="ml-3 flex-1 min-w-0">
-                                                        <div className={`flex items-center justify-between ${!isDisabled && 'cursor-pointer'}`} onClick={() => !isDisabled && toggleModel(model.id)}>
-                                                            <div className="flex items-center min-w-0 flex-1 mr-2">
-                                                                <span className="text-sm font-medium text-gray-900 truncate" title={model.name}>
-                                                                    {model.name}
-                                                                </span>
-                                                                {tierTag}
-                                                            </div>
-                                                            <span className="text-xs text-gray-400 font-mono hidden sm:inline-block shrink-0">{model.id}</span>
-                                                        </div>
-                                                        {model.description && <p className="text-xs text-gray-500 truncate max-w-[300px]" title={model.description}>{model.description}</p>}
-
-                                                        {/* Default Model Selector - Only show if selected */}
-                                                        {preferredModels.includes(model.id) && (
-                                                            <div className="mt-2 flex items-center">
-                                                                <input
-                                                                    type="radio"
-                                                                    name="default_model"
-                                                                    checked={defaultModel === model.id}
-                                                                    onChange={() => setDefaultModel(model.id)}
-                                                                    className="h-3 w-3 text-customBlue border-gray-300 focus:ring-customBlue"
-                                                                />
-                                                                <span className="ml-2 text-xs text-gray-600 cursor-pointer" onClick={() => setDefaultModel(model.id)}>Set as Default</span>
-                                                                {defaultModel === model.id && <span className="ml-2 text-xs font-semibold text-customBlue bg-blue-100 px-1.5 rounded">Default</span>}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                        {sortedAndFilteredModels.length > 50 && (
-                                            <div className="text-center text-xs text-gray-500 py-2">
-                                                Showing top 50 matches. Refine search to see more.
-                                            </div>
-                                        )}
-                                        {sortedAndFilteredModels.length === 0 && (
-                                            <div className="text-center text-sm text-gray-500 py-4">
-                                                No models found matching &quot;{searchTerm}&quot;
-                                            </div>
-                                        )}
+                                {isLoadingModels && (
+                                    <div className="flex justify-center py-4">
+                                        <LoadingSpinner className="h-6 w-6 text-customBlue" />
+                                        <span className="ml-2 text-sm text-gray-500">Fetching models...</span>
                                     </div>
-                                </div>
+                                )}
+
+                                {!isLoadingModels && (
+                                    <>
+                                        {/* Search Bar */}
+                                        <input
+                                            type="text"
+                                            placeholder="Search models (e.g. gpt-4, claude, deepseek)..."
+                                            className="w-full border border-gray-300 rounded-lg p-2 mb-4 text-sm focus:ring-customBlue focus:border-customBlue text-black"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+
+                                        <div className="max-h-80 overflow-y-auto pr-2 border border-blue-50 rounded-lg p-2 bg-white">
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {sortedAndFilteredModels.slice(0, 50).map((model: ModelInfo) => {
+                                                    // Determine Tier for Standard Plan
+                                                    let tierTag = null;
+                                                    let isDisabled = false;
+
+                                                    if (billingType === 'standard') {
+                                                        const isPro = trustedModels?.professional?.includes(model.id);
+                                                        const isStarter = trustedModels?.starter?.includes(model.id);
+
+                                                        // Normalize plan name handling (assuming currentPlan comes as 'Professional', 'Starter', 'Free')
+                                                        const userPlan = currentPlan || 'Free';
+
+                                                        if (isPro) {
+                                                            if (userPlan !== 'Professional') isDisabled = true;
+                                                            tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-200">PRO</span>;
+                                                        } else if (isStarter) {
+                                                            if (!['Starter', 'Professional'].includes(userPlan)) isDisabled = true;
+                                                            tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-blue-100 text-blue-800 border-blue-200">STARTER</span>;
+                                                        }
+                                                    }
+
+                                                    return (
+                                                        <div key={model.id} className={`flex items-start p-2 rounded-md border transition-colors ${preferredModels.includes(model.id) ? 'border-customBlue bg-blue-50' : 'border-gray-200'} ${isDisabled ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`}>
+                                                            <div className="flex items-center h-5">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="h-4 w-4 text-customBlue focus:ring-customBlue border-gray-300 rounded"
+                                                                    checked={preferredModels.includes(model.id)}
+                                                                    onChange={() => !isDisabled && toggleModel(model.id)}
+                                                                    disabled={isDisabled}
+                                                                />
+                                                            </div>
+                                                            <div className="ml-3 flex-1 min-w-0">
+                                                                <div className={`flex items-center justify-between ${!isDisabled && 'cursor-pointer'}`} onClick={() => !isDisabled && toggleModel(model.id)}>
+                                                                    <div className="flex items-center min-w-0 flex-1 mr-2">
+                                                                        <span className="text-sm font-medium text-gray-900 truncate" title={model.name}>
+                                                                            {model.name}
+                                                                        </span>
+                                                                        {tierTag}
+                                                                    </div>
+                                                                    <span className="text-xs text-gray-400 font-mono hidden sm:inline-block shrink-0">{model.id}</span>
+                                                                </div>
+                                                                {model.description && <p className="text-xs text-gray-500 truncate max-w-[300px]" title={model.description}>{model.description}</p>}
+
+                                                                {/* Default Model Selector - Only show if selected */}
+                                                                {preferredModels.includes(model.id) && (
+                                                                    <div className="mt-2 flex items-center">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name="default_model"
+                                                                            checked={defaultModel === model.id}
+                                                                            onChange={() => setDefaultModel(model.id)}
+                                                                            className="h-3 w-3 text-customBlue border-gray-300 focus:ring-customBlue"
+                                                                        />
+                                                                        <span className="ml-2 text-xs text-gray-600 cursor-pointer" onClick={() => setDefaultModel(model.id)}>Set as Default</span>
+                                                                        {defaultModel === model.id && <span className="ml-2 text-xs font-semibold text-customBlue bg-blue-100 px-1.5 rounded">Default</span>}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                                {sortedAndFilteredModels.length > 50 && (
+                                                    <div className="text-center text-xs text-gray-500 py-2">
+                                                        Showing top 50 matches. Refine search to see more.
+                                                    </div>
+                                                )}
+                                                {sortedAndFilteredModels.length === 0 && (
+                                                    <div className="text-center text-sm text-gray-500 py-4">
+                                                        No models found matching &quot;{searchTerm}&quot;
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
 
                             </div>
                         )}

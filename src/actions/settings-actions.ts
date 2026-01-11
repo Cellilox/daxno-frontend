@@ -150,3 +150,38 @@ export async function getManagedByokActivity(limit: number = 50, offset: number 
         return [];
     }
 }
+
+export async function getProviderModels(provider: string) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/models/provider-models?provider=${provider}`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch provider models");
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching provider models:", error);
+        return null;
+    }
+}
+
+export async function verifyProviderKey(provider: string, apiKey: string) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/verify-provider-key`, {
+            method: "POST",
+            body: JSON.stringify({
+                provider,
+                api_key: apiKey
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Verification failed");
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error verifying provider key:", error);
+        throw error;
+    }
+}
