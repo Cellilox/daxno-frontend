@@ -34,6 +34,26 @@ export async function getBillingConfig() {
         return null;
     }
 }
+
+export async function getBillingConfigForUser(userId: string) {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/user/${userId}`);
+        if (!response.ok) {
+            if (response.status === 404) return null;
+            throw new Error("Failed to fetch user billing config");
+        }
+        const data = await response.json();
+
+        return {
+            subscription_type: data.subscription_type,
+            byok_provider: data.byok_provider,
+            preferred_models: data.preferred_models
+        };
+    } catch (error) {
+        console.error("Error fetching user billing config:", error);
+        return null;
+    }
+}
 export async function getTrustedModels() {
     try {
         const response = await fetchAuthedJson(`${apiUrl}/models/trusted`);

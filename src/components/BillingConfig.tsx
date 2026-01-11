@@ -63,6 +63,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         if (tier === 'standard') return 'standard';
 
         // Fallback to config logic
+        if (initialConfig?.subscription_type === 'managed') return 'managed';
+        if (initialConfig?.subscription_type === 'standard') return 'standard';
         if (initialConfig?.subscription_type === 'byok') {
             return initialConfig?.byok_api_key?.startsWith('sk-or-daxno') ? 'managed' : 'byok';
         }
@@ -712,8 +714,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 )}
 
 
-                {/* Model Selection - Available for Managed (if key exists) AND BYOK (if key exists) */}
-                {(apiKey && (billingType === 'byok' || billingType === 'managed') && allModels) && (
+                {/* Model Selection - Available for ALL types now (Standard, Managed, BYOK) */}
+                {((billingType === 'standard' || (apiKey && (billingType === 'byok' || billingType === 'managed'))) && allModels) && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-500">
                         <button
                             onClick={() => setIsModelsOpen(!isModelsOpen)}
@@ -728,7 +730,11 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
                         {isModelsOpen && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                <p className="text-xs text-gray-500 mb-4">Search and select any OpenRouter models you want to use. You must select a Default Model to save changes.</p>
+                                <p className="text-xs text-gray-500 mb-4">
+                                    {billingType === 'standard'
+                                        ? "Select the models you want to use. Upgrade your plan to access PRO models."
+                                        : "Search and select any OpenRouter models you want to use. You must select a Default Model to save changes."}
+                                </p>
 
                                 {/* Search Bar */}
                                 <input
@@ -741,40 +747,68 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
                                 <div className="max-h-80 overflow-y-auto pr-2 border border-blue-50 rounded-lg p-2 bg-white">
                                     <div className="grid grid-cols-1 gap-2">
-                                        {sortedAndFilteredModels.slice(0, 50).map((model: ModelInfo) => (
-                                            <div key={model.id} className={`flex items-start p-2 rounded-md border transition-colors ${preferredModels.includes(model.id) ? 'border-customBlue bg-blue-50' : 'border-gray-200'}`}>
-                                                <div className="flex items-center h-5">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="h-4 w-4 text-customBlue focus:ring-customBlue border-gray-300 rounded"
-                                                        checked={preferredModels.includes(model.id)}
-                                                        onChange={() => toggleModel(model.id)}
-                                                    />
-                                                </div>
-                                                <div className="ml-3 flex-1">
-                                                    <div className="flex items-center justify-between cursor-pointer" onClick={() => toggleModel(model.id)}>
-                                                        <span className="text-sm font-medium text-gray-900 truncate max-w-[180px]" title={model.name}>{model.name}</span>
-                                                        <span className="text-xs text-gray-400 font-mono hidden sm:inline-block shrink-0">{model.id}</span>
-                                                    </div>
-                                                    {model.description && <p className="text-xs text-gray-500 truncate max-w-[300px]" title={model.description}>{model.description}</p>}
+                                        {sortedAndFilteredModels.slice(0, 50).map((model: ModelInfo) => {
+                                            // Determine Tier for Standard Plan
+                                            let tierTag = null;
+                                            let isDisabled = false;
 
-                                                    {/* Default Model Selector - Only show if selected */}
-                                                    {preferredModels.includes(model.id) && (
-                                                        <div className="mt-2 flex items-center">
-                                                            <input
-                                                                type="radio"
-                                                                name="default_model"
-                                                                checked={defaultModel === model.id}
-                                                                onChange={() => setDefaultModel(model.id)}
-                                                                className="h-3 w-3 text-customBlue border-gray-300 focus:ring-customBlue"
-                                                            />
-                                                            <span className="ml-2 text-xs text-gray-600 cursor-pointer" onClick={() => setDefaultModel(model.id)}>Set as Default</span>
-                                                            {defaultModel === model.id && <span className="ml-2 text-xs font-semibold text-customBlue bg-blue-100 px-1.5 rounded">Default</span>}
+                                            if (billingType === 'standard') {
+                                                const isPro = trustedModels?.professional?.includes(model.id);
+                                                const isStarter = trustedModels?.starter?.includes(model.id);
+
+                                                // Normalize plan name handling (assuming currentPlan comes as 'Professional', 'Starter', 'Free')
+                                                const userPlan = currentPlan || 'Free';
+
+                                                if (isPro) {
+                                                    if (userPlan !== 'Professional') isDisabled = true;
+                                                    tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-200">PRO</span>;
+                                                } else if (isStarter) {
+                                                    if (!['Starter', 'Professional'].includes(userPlan)) isDisabled = true;
+                                                    tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-blue-100 text-blue-800 border-blue-200">STARTER</span>;
+                                                }
+                                            }
+
+                                            return (
+                                                <div key={model.id} className={`flex items-start p-2 rounded-md border transition-colors ${preferredModels.includes(model.id) ? 'border-customBlue bg-blue-50' : 'border-gray-200'} ${isDisabled ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`}>
+                                                    <div className="flex items-center h-5">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="h-4 w-4 text-customBlue focus:ring-customBlue border-gray-300 rounded"
+                                                            checked={preferredModels.includes(model.id)}
+                                                            onChange={() => !isDisabled && toggleModel(model.id)}
+                                                            disabled={isDisabled}
+                                                        />
+                                                    </div>
+                                                    <div className="ml-3 flex-1 min-w-0">
+                                                        <div className={`flex items-center justify-between ${!isDisabled && 'cursor-pointer'}`} onClick={() => !isDisabled && toggleModel(model.id)}>
+                                                            <div className="flex items-center min-w-0 flex-1 mr-2">
+                                                                <span className="text-sm font-medium text-gray-900 truncate" title={model.name}>
+                                                                    {model.name}
+                                                                </span>
+                                                                {tierTag}
+                                                            </div>
+                                                            <span className="text-xs text-gray-400 font-mono hidden sm:inline-block shrink-0">{model.id}</span>
                                                         </div>
-                                                    )}
+                                                        {model.description && <p className="text-xs text-gray-500 truncate max-w-[300px]" title={model.description}>{model.description}</p>}
+
+                                                        {/* Default Model Selector - Only show if selected */}
+                                                        {preferredModels.includes(model.id) && (
+                                                            <div className="mt-2 flex items-center">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="default_model"
+                                                                    checked={defaultModel === model.id}
+                                                                    onChange={() => setDefaultModel(model.id)}
+                                                                    className="h-3 w-3 text-customBlue border-gray-300 focus:ring-customBlue"
+                                                                />
+                                                                <span className="ml-2 text-xs text-gray-600 cursor-pointer" onClick={() => setDefaultModel(model.id)}>Set as Default</span>
+                                                                {defaultModel === model.id && <span className="ml-2 text-xs font-semibold text-customBlue bg-blue-100 px-1.5 rounded">Default</span>}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                         {sortedAndFilteredModels.length > 50 && (
                                             <div className="text-center text-xs text-gray-500 py-2">
                                                 Showing top 50 matches. Refine search to see more.

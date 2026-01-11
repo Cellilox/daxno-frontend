@@ -174,40 +174,21 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
               />
             </div>
             <ul>
-              {filteredModels.map((model) => {
-                const tier = model.tier || 'free';
-                const isSpecialPlan = ['gyok', 'byok', 'managed'].includes(plan?.toLowerCase());
-
-                let isDisabled = false;
-                if (!isSpecialPlan) {
-                  if (tier === 'starter') {
-                    isDisabled = !['Starter', 'Professional'].includes(plan);
-                  } else if (tier === 'professional') {
-                    isDisabled = plan !== 'Professional';
-                  }
-                }
-
-                return (
-                  <li
-                    key={model.id}
-                    className={`flex justify-between items-center p-2 rounded ${isDisabled
-                      ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                      : 'hover:bg-gray-100 cursor-pointer'
-                      }`}
-                    onClick={() => !isDisabled && handleSelect(model.id)}
-                  >
-                    <div className="flex items-center">
-                      <span>{extractLabel(model.name)}</span>
-                      {!isSpecialPlan && tier === 'starter' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1 rounded font-bold">STARTER</span>}
-                      {!isSpecialPlan && tier === 'professional' && <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded font-bold">PRO</span>}
-                    </div>
-                    {selectedModel === model.id && (
-                      <Check size={16} className="text-green-600 ml-2" />
-                    )}
-                    {model.id === pickedModel && isLoading ? <LoadingSpinner /> : null}
-                  </li>
-                )
-              })}
+              {filteredModels.map((model) => (
+                <li
+                  key={model.id}
+                  className="flex justify-between items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleSelect(model.id)}
+                >
+                  <div className="flex items-center">
+                    <span>{extractLabel(model.name)}</span>
+                  </div>
+                  {selectedModel === model.id && (
+                    <Check size={16} className="text-green-600 ml-2" />
+                  )}
+                  {model.id === pickedModel && isLoading ? <LoadingSpinner /> : null}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
