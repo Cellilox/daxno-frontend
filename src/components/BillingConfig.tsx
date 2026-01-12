@@ -429,7 +429,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
                         />
                         <div className="ml-3">
-                            <span className={`block text-sm font-bold ${billingType === 'managed' ? 'text-customBlue' : 'text-gray-900'}`}>Generate Managed Key (GYOMK)</span>
+                            <span className={`block text-sm font-bold ${billingType === 'managed' ? 'text-customBlue' : 'text-gray-900'}`}>Get Your Own Key (GYOK)</span>
                             <span className="block text-sm text-gray-500 mt-1">Pre-pay for credits. We manage the key and rotation. Ideal for high volume or fluctuating usage.</span>
                             <div className="flex gap-2 mt-2">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
@@ -457,7 +457,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                         />
                         <div className="ml-3">
                             <span className={`block text-sm font-bold ${billingType === 'byok' ? 'text-customBlue' : 'text-gray-900'}`}>Bring Your Own Key (BYOK)</span>
-                            <span className="block text-sm text-gray-500 mt-1">Use your own OpenRouter API key. Direct billing with OpenRouter + small service fee.</span>
+                            <span className="block text-sm text-gray-500 mt-1">Use your own API key from supported providers (OpenAI, Anthropic, OpenRouter, etc.). Direct billing with the provider + small service fee.</span>
                             <div className="flex gap-2 mt-2">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                                     $10/mo Service Fee
@@ -639,7 +639,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                 <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex flex-col">
-                                            <label className="block text-sm font-medium text-gray-700">OpenRouter API Key</label>
+                                            <label className="block text-sm font-medium text-gray-700">Provider API Key</label>
                                             {currentInterval !== 'yearly' && (
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 uppercase">
