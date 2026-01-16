@@ -39,11 +39,11 @@ export default function TableRow({
   return (
     <tr
       key={row.id}
-      className="border-b hover:bg-gray-50 bg-white"
+      className="border-b hover:bg-gray-50 bg-white transition-colors"
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="z-10 px-4 py-2 sticky left-0 bg-white shadow-r md:hidden border-r" style={{ width: `${columnWidths['__actions__'] || 100}px` }}>
+      <td className="z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-0 bg-white shadow-r md:hidden border-r" style={{ width: `${columnWidths['__actions__'] || 100}px` }}>
         <div className="flex items-center gap-2">
           {isEditing ? (
             <>
@@ -85,7 +85,7 @@ export default function TableRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-2 text-sm text-gray-900 relative border-r overflow-hidden" style={{ width: `${columnWidths['__filename__'] || 250}px` }}>
+      <td className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-xs sm:text-sm md:text-base text-gray-900 relative border-r overflow-hidden leading-relaxed" style={{ width: `${columnWidths['__filename__'] || 250}px` }}>
         <div className="flex items-center gap-4">
           <span className="relative z-0 truncate block w-full">{row.orginal_file_name}</span>
           {/* <span className="relative z-0 text-blue-500 underline cursor-pointer">View</span> */}
@@ -144,7 +144,7 @@ export default function TableRow({
       {columns.map((column) => (
         <td
           key={column.hidden_id}
-          className="px-4 py-2 text-sm text-gray-900 border-r overflow-hidden"
+          className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-xs sm:text-sm md:text-base text-gray-900 border-r overflow-hidden leading-relaxed"
           style={{ width: `${columnWidths[column.hidden_id]}px` }}
         >
           {isEditing ? (

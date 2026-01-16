@@ -9,9 +9,9 @@ type ExportCSVProps = {
     projectId: string
 }
 
-export default function DownLoadCSV({projectId}: ExportCSVProps) {
-     const [isLoading, setIsLoading] = useState(false)
-     async function downloadCSV () {
+export default function DownLoadCSV({ projectId }: ExportCSVProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    async function downloadCSV() {
         setIsLoading(true)
         try {
             const blob = await download(projectId)
@@ -30,17 +30,17 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
             <div className="flex flex-col items-center gap-3">
                 <div className="w-full">
                     {isLoading ? (
-                        <div className="w-full flex justify-center items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+                        <div className="w-full flex justify-center items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
                             <LoadingSpinner />
-                            <span className="text-sm">Preparing CSV...</span>
+                            <span className="text-base">Preparing CSV...</span>
                         </div>
                     ) : (
                         <button
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
                             onClick={downloadCSV}
                         >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            <span className="text-sm">Export as CSV</span>
+                            <FileSpreadsheet className="w-5 h-5 mr-3" />
+                            <span className="text-base text-gray-600 font-medium">Export as CSV</span>
                         </button>
                     )}
                 </div>

@@ -93,35 +93,57 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
         <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg">
           <div className="flex flex-col space-y-4 sm:space-y-6">
             {/* Header Section */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start w-full">
-              <div className="flex flex-col gap-1 min-w-0 flex-shrink">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 truncate">
+            <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
+              <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 break-words">
                   Project: {project.name}
                 </p>
                 <ExpandableDescription description={project.description} />
               </div>
+
+              {/* Mobile: 3-dot menu next to title */}
+              {/* Desktop: Actions below (rendered by CollapsibleActions) */}
+              <div className="flex-shrink-0 md:hidden">
+                <CollapsibleActions
+                  projectId={id}
+                  project={project}
+                  shareableLink={project.shareable_link}
+                  isLinkActive={project.link_is_active}
+                  address={project.address_domain}
+                  is_project_owner={is_project_owner}
+                  linkOwner={linkOwner}
+                  fields={fields}
+                  records={records}
+                  plan={plan?.plan_name}
+                  models={displayedModels}
+                  tenantModal={tenantModel.selected_model}
+                  chats={chats}
+                />
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <CollapsibleActions
-              projectId={id}
-              project={project}
-              shareableLink={project.shareable_link}
-              isLinkActive={project.link_is_active}
-              address={project.address_domain}
-              is_project_owner={is_project_owner}
-              linkOwner={linkOwner}
-              fields={fields}
-              records={records}
-              plan={plan?.plan_name}
-              models={displayedModels}
-              tenantModal={tenantModel.selected_model}
-              chats={chats}
-            />
+            {/* Desktop: Full action buttons row */}
+            <div className="hidden md:block">
+              <CollapsibleActions
+                projectId={id}
+                project={project}
+                shareableLink={project.shareable_link}
+                isLinkActive={project.link_is_active}
+                address={project.address_domain}
+                is_project_owner={is_project_owner}
+                linkOwner={linkOwner}
+                fields={fields}
+                records={records}
+                plan={plan?.plan_name}
+                models={displayedModels}
+                tenantModal={tenantModel.selected_model}
+                chats={chats}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Records Section */}
+        {/* Records Section - Outside the white card */}
         <div className="mt-4 sm:mt-6 lg:mt-8">
           <Records
             projectId={id}

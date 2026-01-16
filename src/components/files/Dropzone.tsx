@@ -1,13 +1,16 @@
 'use client'
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
+import { useAuth } from '@clerk/nextjs';
 import { queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
 import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
+import UsageLimitModal from '../modals/UsageLimitModal';
 import { FileStatus } from './types';
 import { getTransactions } from '@/actions/transaction-actions';
 
@@ -20,6 +23,8 @@ type MyDropzoneProps = {
 };
 
 export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan }: MyDropzoneProps) {
+  const { getToken, sessionId } = useAuth();
+  const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -31,11 +36,35 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  // Limit Modal State
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [limitModalMessage, setLimitModalMessage] = useState('');
+  const [limitModalType, setLimitModalType] = useState<'AI_EXHAUSTED' | 'DAILY_LIMIT'>('DAILY_LIMIT');
+
   const router = useRouter();
-  useEffect(() => {
-    if (plan === "Professional" || plan === "Team") {
-      setIsBulkUploadAllowed(true)
+
+  const checkLimitError = (errorMsg: string) => {
+    const cleanMsg = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+
+    if (cleanMsg.includes('AI_CREDITS_EXHAUSTED')) {
+      setLimitModalType('AI_EXHAUSTED');
+      setLimitModalMessage("All available platform credits are currently exhausted. Please try again later or Bring Your Own Key to continue instantly.");
+      setLimitModalOpen(true);
+      setIsLoading(false);
+      return true;
     }
+    if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
+      setLimitModalType('DAILY_LIMIT');
+      setLimitModalMessage(cleanMsg.replace(/"/g, ''));
+      setLimitModalOpen(true);
+      setIsLoading(false);
+      return true;
+    }
+    return false;
+  };
+  useEffect(() => {
+    // Enabled for testing on all plans
+    setIsBulkUploadAllowed(true)
   }, [plan])
 
   // Single file upload handlers
@@ -50,9 +79,43 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   }, []);
 
+  useEffect(() => {
+    // Initialize Socket.IO connection for real-time feedback
+    if (!socketRef.current && projectId) {
+      socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
+        path: '/ws/records/sockets',
+        auth: { projectId },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        withCredentials: true
+      });
+
+      const socket = socketRef.current;
+
+      socket.on('ocr_start', (data: { status: string }) => {
+        updateStatus('OCR Processing...', messageTypeEnum.INFO, 'Starting OCR...');
+      });
+
+      socket.on('ocr_progress', (data: { current: number; total: number }) => {
+        updateStatus('OCR Processing...', messageTypeEnum.INFO, `Page ${data.current} of ${data.total}`);
+      });
+
+      socket.on('ai_start', (data: { status: string }) => {
+        updateStatus('AI Analysis...', messageTypeEnum.INFO, 'Thinking...');
+      });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [projectId]);
+
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
 
-  const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO) => {
+  const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO, rightText?: string) => {
     if (type === messageTypeEnum.ERROR) {
       setUploadError(text);
       setUploadStatus(''); // Clear status on error
@@ -61,7 +124,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setUploadStatus(text);
       setUploadError(null);
       // Propagate INFO messages (for the top progress banner)
-      onMessageChange({ type, text });
+      onMessageChange({ type, text, rightText });
     }
   };
 
@@ -84,14 +147,58 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      updateStatus('Uploading file...');
-      const result = await uploadFile(formData, projectId);
+      updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
+
+      const token = await getToken();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${apiUrl}/records/upload?project_id=${projectId}`);
+
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          if (sessionId) {
+            xhr.setRequestHeader('sessionId', sessionId);
+          }
+        }
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            updateStatus('Uploading file...', messageTypeEnum.INFO, `${percentComplete}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          let responseBody;
+          try {
+            responseBody = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+          } catch (e) {
+            responseBody = { detail: xhr.responseText || xhr.statusText };
+          }
+
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(responseBody);
+          } else {
+            // For 429/402, sometimes we want the body more than the status text
+            const errorMsg = responseBody?.detail || xhr.statusText;
+            reject(new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg)));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+
+        const formData = new FormData();
+        formData.append('file', file);
+        xhr.send(formData);
+      });
 
       if (result.detail) {
-        updateStatus(`${JSON.stringify(result.detail)}`, messageTypeEnum.ERROR);
+        if (!checkLimitError(result.detail)) {
+          updateStatus(`${JSON.stringify(result.detail)}`, messageTypeEnum.ERROR);
+        }
         setIsLoading(false)
         return;
       }
@@ -102,19 +209,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     } catch (error: any) {
       setIsLoading(false);
       const errMsg = error.message || 'Error uploading a file';
-      updateStatus(errMsg, messageTypeEnum.ERROR);
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
     }
   };
 
   const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
     try {
-      updateStatus('Optical Character Recognition...');
-
-      // Artificial delay for UI feedback if needed, but risky to rely on timeouts for messages
-      setTimeout(() => {
-        // Only update if still loading and no error
-        if (isLoading) updateStatus('AI Model Thinking....');
-      }, 4000);
+      updateStatus('Initializing processing...');
 
       const response = await queryDocument(projectId, fileName);
       const recordPayload = { ...response, orginal_file_name: orginal_file_name, file_key: file_key };
@@ -122,7 +225,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     } catch (error: any) {
       setIsLoading(false);
       const errMsg = error.message || 'Error processing document';
-      updateStatus(errMsg, messageTypeEnum.ERROR);
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
     }
   };
 
@@ -193,13 +298,16 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       formData.append('file', file);
       const uploadResult = await uploadFile(formData, projectId);
       if (uploadResult.detail) {
-        onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}` })
+        if (!checkLimitError(uploadResult.detail)) {
+          onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}` })
+        }
         setIsLoading(false)
         return;
       }
       // Analyze Content
       updateFileStatus({ status: 'analyzing', progress: 50 });
       const analysisResult = await queryDocument(projectId, uploadResult.filename);
+      updateFileStatus({ status: 'analyzed', progress: 70 });
 
       // Save Record
       updateFileStatus({ status: 'saving', progress: 80 });
@@ -224,11 +332,21 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     } catch (error) {
       console.error(`Error processing ${fileStatus.file.name}:`, error);
-      updateFileStatus({
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Processing failed',
-        progress: 100
-      });
+      const errMsg = error instanceof Error ? error.message : 'Processing failed';
+
+      if (!checkLimitError(errMsg)) {
+        updateFileStatus({
+          status: 'error',
+          error: errMsg,
+          progress: 100
+        });
+      } else {
+        updateFileStatus({
+          status: 'error',
+          error: 'Limit Reached',
+          progress: 100
+        });
+      }
     }
   };
 
@@ -294,6 +412,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       case 'uploading': return 'Uploading...';
       case 'extracting': return 'Extracting text...';
       case 'analyzing': return 'Analyzing content...';
+      case 'analyzed': return 'Analysis complete';
       case 'saving': return 'Saving record...';
       case 'complete': return 'Completed';
       case 'error': return 'Error occurred';
@@ -517,9 +636,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   );
 
   return (
-    <div className="space-y-4">
-      {renderUploadModeToggle()}
-      {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
-    </div>
+    <>
+      <div className="space-y-4">
+        {renderUploadModeToggle()}
+        {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
+      </div>
+
+      <UsageLimitModal
+        isOpen={limitModalOpen}
+        onClose={() => {
+          setLimitModalOpen(false);
+          setIsVisible(false); // Close the parent dropzone modal
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' }); // Clear the status message
+          setUploadStatus(''); // Clear local status
+        }}
+        message={limitModalMessage}
+        type={limitModalType}
+      />
+    </>
   );
 }

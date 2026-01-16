@@ -51,13 +51,13 @@ export default function TableHeader({
   };
 
   return (
-    <thead className="bg-gray-50 border-b-2 border-gray-200">
+    <thead className="bg-gray-50 border-b-2 border-gray-300 sticky top-0 z-20">
       <tr>
         {hasRecords && (
           <>
             <th
               key="actions"
-              className={`px-4 ${hasRecords ? 'py-3' : 'py-0'} text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
+              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
               style={{ width: `${columnWidths['__actions__'] || 100}px` }}
             >
               Actions
@@ -71,7 +71,7 @@ export default function TableHeader({
             </th>
             <th
               key="filename"
-              className={`px-4 ${hasRecords ? 'py-3' : 'py-0'} text-left text-sm font-semibold text-gray-700 relative border-r border-gray-200 group`}
+              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 group`}
               style={{ width: `${columnWidths['__filename__'] || 250}px` }}
             >
               Filename
@@ -88,7 +88,7 @@ export default function TableHeader({
         {columns.map((column) => (
           <th
             key={`column-${column.hidden_id}`}
-            className="px-4 py-3 text-left text-sm font-semibold text-gray-700 relative border-r border-gray-200 bg-gray-50 group"
+            className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors"
             style={{ width: `${columnWidths[column.hidden_id]}px` }}
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
@@ -124,7 +124,7 @@ export default function TableHeader({
 
         {/* Add Column Header Cell */}
         <th
-          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 relative border-r border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+          className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
           style={{ width: '200px' }}
         >
           {!showCreateColumn ? (

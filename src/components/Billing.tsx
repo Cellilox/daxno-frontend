@@ -156,7 +156,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
           <span className="font-medium">Current Plan:</span>
-          <span className="font-semibold">{subPlan}</span>
+          <span className="font-semibold">{subPlan || 'Free'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium">Amount:</span>

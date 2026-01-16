@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { updateBillingConfig, provisionManagedByok, rotateManagedByok, getByokUsage, getManagedByokActivity } from '@/actions/settings-actions';
 import { getAvailablePlans, requestPayment } from '@/actions/payment-actions';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -45,13 +45,18 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Determine initial billing type based on URL param 'tier' or config
+    // Determine initial billing type based on URL param 'option' (new) or 'tier' (legacy) or config
     // Priority: URL Param > Config > Default
     const initialBillingType = useMemo(() => {
+        // Check both 'option' (new) and 'tier' (legacy) params
+        const option = searchParams.get('option');
         const tier = searchParams.get('tier');
-        if (tier === 'managed') return 'managed';
-        if (tier === 'byok') return 'byok';
-        if (tier === 'standard') return 'standard';
+
+        const param = option || tier;
+
+        if (param === 'managed') return 'managed';
+        if (param === 'byok') return 'byok';
+        if (param === 'standard') return 'standard';
 
         // Fallback to config logic
         if (initialConfig?.subscription_type === 'managed') return 'managed';
@@ -136,6 +141,45 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
             }).catch(() => setIsLoadingActivity(false));
         }
     }, [billingType, apiKey]);
+
+    // Track if we should highlight the CTA button
+    const [highlightCTA, setHighlightCTA] = useState(false);
+
+    // Simple scroll to top when coming from modal
+    useEffect(() => {
+        const option = searchParams.get('option');
+        if (!option) return;
+
+        // Longer delay to ensure page fully loads
+        const timer = setTimeout(() => {
+            // Find the selected radio button
+            const radioElement = document.querySelector(`input[value="${option}"]`);
+
+            if (radioElement) {
+                // Get the parent container
+                const container = radioElement.closest('div.flex.items-start');
+
+                if (container) {
+                    // Calculate position to bring element to top of viewport
+                    const elementPosition = container.getBoundingClientRect().top + window.pageYOffset;
+                    const offsetPosition = elementPosition - 10; // 10px from top
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            // Add highlight for managed option's Buy Credits button
+            if (option === 'managed') {
+                setHighlightCTA(true);
+                setTimeout(() => setHighlightCTA(false), 3000);
+            }
+        }, 800); // Longer delay for full page load
+
+        return () => clearTimeout(timer);
+    }, [searchParams]);
 
     // Auto-fetch provider-specific models when provider and API key are configured (for BYOK)
     useEffect(() => {
@@ -513,7 +557,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                 </label>
                                 <button
                                     onClick={() => setIsCreditModalOpen(true)}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center shadow-sm"
+                                    className={`px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center shadow-sm ${highlightCTA ? 'animate-pulse ring-4 ring-blue-300' : ''
+                                        }`}
                                 >
                                     <CreditCard className="mr-2 h-3.5 w-3.5" />
                                     Buy Credits
@@ -591,7 +636,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                     <div className="space-y-6 mt-4 pt-4 border-t border-gray-100">
                         {/* Unlock Feature Overlay if not subscribed */}
                         {!isByokSubscribed && (
-                            <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-6 text-center space-y-4">
+                            <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 sm:p-6 text-center space-y-4">
                                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
                                     <Lock className="w-6 h-6 text-yellow-600" />
                                 </div>
@@ -602,7 +647,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                     </p>
 
                                     {/* Billing Cycle Toggle */}
-                                    <div className="flex justify-center gap-3 mt-4 mb-2">
+                                    <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mt-4 mb-2">
                                         <button
                                             onClick={() => setBillingCycle('monthly')}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
@@ -618,13 +663,13 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                         </button>
                                     </div>
                                 </div>
-                                <div className="flex justify-center gap-4">
+                                <div className="flex justify-center">
                                     <button
                                         onClick={() => handleByokSubscribe()}
                                         disabled={isSubscribing}
-                                        className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg shadow-sm w-full max-w-xs transition-transform active:scale-95 disabled:opacity-75 disabled:scale-100"
+                                        className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg shadow-sm w-full sm:max-w-xs transition-transform active:scale-95 disabled:opacity-75 disabled:scale-100"
                                     >
-                                        {isSubscribing ? 'Processing...' : 'Subscribe ($10/mo)'}
+                                        {isSubscribing ? 'Processing...' : `Subscribe (${billingCycle === 'yearly' ? '$100/yr' : '$10/mo'})`}
                                     </button>
                                 </div>
                                 <p className="text-xs text-yellow-600">

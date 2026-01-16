@@ -58,20 +58,20 @@ export async function queryDocument(projectId: string, fileName: string) {
       let errorDetail = '';
       try {
         const errorData = await response.json();
-        errorDetail = errorData?.detail ? JSON.stringify(errorData.detail) : JSON.stringify(errorData);
+        errorDetail = errorData?.detail ? (typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)) : JSON.stringify(errorData);
       } catch (e) {
         errorDetail = await response.text();
       }
-      console.error(`[Frontend] queryDocument failed: ${response.status}`);
-      throw new Error(`Analysis failed. Please try again.`);
+      console.error(`[Frontend] queryDocument failed: ${response.status}`, errorDetail);
+      throw new Error(errorDetail || 'Analysis failed. Please try again.');
     }
 
     const data = await response.json();
     return data;
   } catch (error: any) {
     console.error('[Frontend] Error in queryDocument:', error);
-    // Re-throw with message to be caught by UI
-    throw new Error('Failed to analyze document');
+    // Re-throw the actual error message
+    throw error;
   }
 }
 

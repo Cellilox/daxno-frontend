@@ -18,6 +18,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
     const [rowData, setRowData] = useState<ApiRecord[]>(initialRecords)
     const [columns, setColumns] = useState<Field[]>(initialFields)
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
+    const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
     useEffect(() => {
         if (!socketRef.current) {
@@ -59,6 +60,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         const handleRecordCreated = (data: { record: ApiRecord; fields: Field[] }) => {
             setRowData(prev => [...prev, data.record]);
             setColumns(data.fields);
+            setProcessingStatus(null); // Clear status on success
         };
 
         const handleRecordUpdated = (data: { record: ApiRecord; fields: Field[] }) => {
@@ -83,6 +85,18 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             setColumns(prev => prev.filter(x => x.hidden_id !== data.field_id));
         };
 
+        const handleOcrStart = (data: { status: string }) => {
+            setProcessingStatus('Starting OCR...');
+        };
+
+        const handleOcrProgress = (data: { current: number; total: number }) => {
+            setProcessingStatus(`OCR: Processing page ${data.current} of ${data.total}...`);
+        };
+
+        const handleAiStart = (data: { status: string }) => {
+            setProcessingStatus('AI Analyzing document...');
+        };
+
         // Add listeners
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
@@ -94,6 +108,9 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
         socket.on('field_created', handleColumnCreated);
         socket.on('field_updated', handleColumnUpdated);
         socket.on('field_deleted', handleColumnDeleted)
+        socket.on('ocr_start', handleOcrStart);
+        socket.on('ocr_progress', handleOcrProgress);
+        socket.on('ai_start', handleAiStart);
 
         // Cleanup on unmount
         return () => {
@@ -107,6 +124,9 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             socket.off('field_created', handleColumnCreated);
             socket.off('field_updated', handleColumnUpdated);
             socket.off('field_deleted', handleColumnDeleted)
+            socket.off('ocr_start', handleOcrStart);
+            socket.off('ocr_progress', handleOcrProgress);
+            socket.off('ai_start', handleAiStart);
             socket.disconnect();
             socketRef.current = null;
         };
@@ -114,15 +134,26 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
 
     return (
         <div>
-            <div className="flex justify-between items-center">
-                {isConnected && (<p className='mb-4'>Status: <span className='text-green-500'>Connected</span></p>)}
-                {!isConnected && (<p className='mb-4'>Status: <span className='text-red-500'>Connecting...</span></p>)}
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col">
+                    {isConnected ? (
+                        <p className='text-sm md:text-base text-gray-600'>Connection: <span className='text-green-600 font-semibold'>Online</span></p>
+                    ) : (
+                        <p className='text-sm md:text-base text-gray-600'>Connection: <span className='text-red-600 font-semibold'>Connecting...</span></p>
+                    )}
+                    {processingStatus && (
+                        <div className="flex items-center mt-2 animate-pulse">
+                            <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                            <p className="text-sm md:text-base font-semibold text-blue-600">{processingStatus}</p>
+                        </div>
+                    )}
+                </div>
                 {initialFields.length >= 2 &&
-                    <div
-                        className="text-right"
-                        onClick={() => setIsReorderPopupVisible(true)}
-                    >
-                        <button onClick={() => setIsReorderPopupVisible(true)} className="text-blue-600 hover:text-blue-700 text-md mb-4 underline sticky right-0 ">
+                    <div className="text-right">
+                        <button
+                            onClick={() => setIsReorderPopupVisible(true)}
+                            className="text-sm md:text-base text-blue-600 hover:text-blue-700 font-medium underline"
+                        >
                             Reorder Columns
                         </button>
                     </div>

@@ -243,8 +243,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   }
 
   return (
-    <div className="bg-gray-50 border border-1 border-gray relative overflow-x-auto min-h-[calc(100vh-30rem)]">
-      <table className="min-w-full w-max bg-white border border-gray-200" style={{ tableLayout: 'fixed' }}>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-x-auto min-h-[calc(100vh-30rem)]">
+      <table className="min-w-full w-max bg-white" style={{ tableLayout: 'fixed' }}>
         <TableHeader
           columns={localColumns}
           records={records}

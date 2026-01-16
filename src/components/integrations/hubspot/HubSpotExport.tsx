@@ -255,18 +255,18 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <HubSpotIcon className="w-5 h-5 text-[#FF7A59]" />
-          <h3 className="text-sm font-medium text-gray-900">Export to HubSpot</h3>
+          <h3 className="text-base font-medium text-gray-900">Export to HubSpot</h3>
         </div>
         {status.isConnected && (
           <>
             {isDisconnecting ?
               <div className="flex items-center justify-end">
                 <DisconnectingSpinner />
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-base font-medium text-gray-900">
                   Disconnecting...
                 </span>
               </div> :
-              <h3 onClick={disconnectHubspot} className="text-sm font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
+              <h3 onClick={disconnectHubspot} className="text-base font-medium text-gray-900 cursor-pointer underline">Disconnect</h3>
             }
           </>
         )}
@@ -314,13 +314,13 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
             onClick={() => status.isConnected ? setShowOptions(true) : handleHubSportConnection()}
             disabled={status.isLoading || status.isCheckingConnection}
             className={`
-              w-full flex items-center justify-between px-4 py-2 rounded-lg
+              w-full flex items-center justify-between px-5 py-2.5 rounded-lg
               ${status.isConnected
                 ? 'bg-[#FF7A59] hover:bg-[#FF8A69] text-white'
                 : 'bg-[#FF7A59] hover:bg-[#FF8A69] text-white'
               }
               disabled:opacity-50 disabled:cursor-not-allowed
-              transition-colors duration-200
+              transition-colors duration-200 text-base
             `}
           >
             <div className="flex items-center space-x-2">
@@ -331,7 +331,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                   <span>Checking connection...</span>
                 </div>
               ) : (
-                <span>
+                <span className="text-base font-medium">
                   {status.isConnected
                     ? selectedType
                       ? `Export as ${selectedType}`
@@ -401,7 +401,7 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                             setSelectedOurField(field.name);
                             setShowHubSpotProperties(true);
                           }}
-                          className="w-full text-left px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59] truncate"
+                          className="w-full text-left px-3 py-2 text-base text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#FF7A59] focus:border-[#FF7A59] truncate"
                         >
                           {propertyMappings.get(field.name)
                             ? availableProperties.find(p => p.name === propertyMappings.get(field.name))?.label
@@ -509,12 +509,12 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                 <button
                   onClick={handleExport}
                   disabled={status.isLoading || propertyMappings.size === 0}
-                  className="w-full bg-[#FF7A59] text-white py-2 px-4 rounded-md hover:bg-[#FF8A69] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-[#FF7A59] text-white py-3 px-5 rounded-md hover:bg-[#FF8A69] disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium"
                 >
                   {status.isLoading ? (
                     <div className="flex items-center justify-center">
-                      <LoadingSpinner className="w-5 h-5 mr-2" />
-                      <span>Exporting...</span>
+                      <DisconnectingSpinner />
+                      <span className="ml-2">Exporting...</span>
                     </div>
                   ) : (
                     'Export to HubSpot'
