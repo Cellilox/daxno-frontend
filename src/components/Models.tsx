@@ -125,7 +125,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
         ref={selectorRef}
         onClick={handleButtonClick}
         disabled={disabled}
-        className={`w-60 text-left border rounded-md shadow-sm p-3 flex items-center justify-between relative transition-colors
+        className={`w-48 text-left border rounded-md shadow-sm p-2 flex items-center justify-between relative transition-colors
           ${disabled
             ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
             : 'border-blue-400 hover:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white'
@@ -133,11 +133,11 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
       >
         <div className="flex items-center overflow-hidden">
           {autoEnabled && !userHasSelected && (
-            <span className="px-1.5 py-0.5 mr-2 bg-gray-200 text-gray-700 text-sm rounded font-medium">Auto</span>
+            <span className="px-1 py-0.5 mr-1 bg-gray-200 text-gray-600 text-xs rounded font-medium">Auto</span>
           )}
-          <span className="text-base font-medium truncate">{displayLabel}</span>
+          <span className="text-sm font-medium truncate">{displayLabel}</span>
         </div>
-        <ChevronDown size={20} className="ml-2 text-blue-600" />
+        <ChevronDown size={16} className="ml-2 text-blue-600" />
       </button>
 
       {showTooltip && (
@@ -145,13 +145,13 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
           ref={tooltipRef}
           className="absolute z-50 mt-2 w-48 p-4 bg-white border border-gray-200 rounded shadow-lg left-0 top-full"
         >
-          <p className="text-base text-gray-700 mb-3">
+          <p className="text-sm text-gray-600 mb-2">
             Balanced quality and speed, recommended for most tasks.
           </p>
-          <label className="flex items-center space-x-3 cursor-pointer">
+          <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4"
+              className="w-3.5 h-3.5"
               checked={!autoEnabled}
               onChange={() => {
                 setAutoEnabled(false);
@@ -159,7 +159,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
                 setOpen(true);
               }}
             />
-            <span className="text-base">Disable Auto</span>
+            <span className="text-sm">Disable Auto</span>
           </label>
         </div>
       )}
@@ -177,7 +177,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="Filter models..."
-                className="w-full border-b border-gray-300 focus:outline-none p-2 text-base"
+                className="w-full border-b border-gray-300 focus:outline-none p-1 text-sm"
                 onMouseDown={(e) => e.stopPropagation()}
               />
             </div>
@@ -189,7 +189,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
                   onClick={() => handleSelect(model.id)}
                 >
                   <div className="flex items-center">
-                    <span className="text-base">{extractLabel(model.name)}</span>
+                    <span className="text-sm">{extractLabel(model.name)}</span>
                   </div>
                   {selectedModel === model.id && (
                     <Check size={16} className="text-green-600 ml-2" />

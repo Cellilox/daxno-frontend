@@ -1,4 +1,4 @@
-import { Pencil, Trash, PlusCircle, FileSpreadsheet } from 'lucide-react';
+import { Pencil, Trash, PlusCircle, FileSpreadsheet, FileText } from 'lucide-react';
 import { Field, ApiRecord } from './types';
 import CreateColumn from '../forms/CreateColumn';
 import { useState } from 'react';
@@ -58,7 +58,6 @@ export default function TableHeader({
             <th
               key="actions"
               className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
-              style={{ width: `${columnWidths['__actions__'] || 100}px` }}
             >
               Actions
               {/* Resize Handle */}
@@ -72,9 +71,11 @@ export default function TableHeader({
             <th
               key="filename"
               className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 group`}
-              style={{ width: `${columnWidths['__filename__'] || 250}px` }}
             >
-              Filename
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <span>Filename</span>
+              </div>
               {/* Resize Handle */}
               <div
                 className="absolute -right-2 top-0 bottom-0 w-4 cursor-col-resize z-50 flex justify-center group/handle"
@@ -89,7 +90,6 @@ export default function TableHeader({
           <th
             key={`column-${column.hidden_id}`}
             className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors"
-            style={{ width: `${columnWidths[column.hidden_id]}px` }}
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
           >
@@ -125,7 +125,6 @@ export default function TableHeader({
         {/* Add Column Header Cell */}
         <th
           className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-xs sm:text-sm md:text-base font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
-          style={{ width: '200px' }}
         >
           {!showCreateColumn ? (
             <button
@@ -145,6 +144,7 @@ export default function TableHeader({
               />         </div>
           )}
         </th>
+        <th className="border-r border-gray-100 bg-gray-50/30"></th>
       </tr>
     </thead>
   );

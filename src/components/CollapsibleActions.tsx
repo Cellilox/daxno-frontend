@@ -84,18 +84,18 @@ export default function CollapsibleActions({
               {is_project_owner && (
                 <button
                   onClick={() => setIsShareLinkPopupVisible(true)}
-                  className="text-base inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                  className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 >
-                  <Share2 className="w-5 h-5 mr-3" />
+                  <Share2 className="w-4 h-4 mr-2" />
                   Shareable Link
                 </button>
               )}
 
               <button
                 onClick={() => setIsAddressPopupVisible(true)}
-                className="text-base inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
               >
-                <Mail className="w-5 h-5 mr-3" />
+                <Mail className="w-4 h-4 mr-2" />
                 Mail Attachments
               </button>
             </div>
@@ -119,9 +119,9 @@ export default function CollapsibleActions({
               {is_project_owner && (
                 <button
                   onClick={() => setIsInvitePopupVisible(true)}
-                  className="text-base inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                  className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 >
-                  <Users className="w-5 h-5 mr-3" />
+                  <Users className="w-4 h-4 mr-2" />
                   Invite
                 </button>
               )}

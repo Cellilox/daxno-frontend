@@ -25,7 +25,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedColumnToDelete, setSelectedColumnToDelete] = useState<Field | null>(null);
   const [selectedRecordToDelete, setSelectedRecordToDelete] = useState<Record | null>(null);
-  const [editingRow, setEditingRow] = useState<number | null>(null);
+  const [editingCell, setEditingCell] = useState<{ rowIndex: number, columnId: string } | null>(null);
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
@@ -39,7 +39,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setColumnWidths(prev => {
       const newWidths: { [key: string]: number } = {
         '__actions__': 100,
-        '__filename__': 250,
+        '__filename__': 200,
         ...prev
       };
 
@@ -153,8 +153,8 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     await deleteFileUrl(file_key, proj_id);
   };
 
-  const handleEditRow = (rowIndex: number) => {
-    setEditingRow(rowIndex);
+  const handleEditCell = (rowIndex: number, columnId: string) => {
+    setEditingCell({ rowIndex, columnId });
   };
 
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
@@ -183,11 +183,14 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
 
   const handleSaveRow = async (rowIndex: number) => {
     const editedRecord = editedRecords[rowIndex];
+
+    // Always clear the editing state to exit edit mode
+    setEditingCell(null);
+
     if (!editedRecord) return;
 
     try {
-      const result = await updateRecord(editedRecord.id, editedRecord);
-      setEditingRow(null);
+      await updateRecord(editedRecord.id, editedRecord);
       setEditedRecords((prev) => {
         const newState = { ...prev };
         delete newState[rowIndex];
@@ -204,7 +207,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       delete newState[rowIndex];
       return newState;
     });
-    setEditingRow(null);
+    setEditingCell(null);
   };
 
 
@@ -243,8 +246,16 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-x-auto min-h-[calc(100vh-30rem)]">
-      <table className="min-w-full w-max bg-white" style={{ tableLayout: 'fixed' }}>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-auto h-full">
+      <table className="w-full bg-white" style={{ tableLayout: 'fixed' }}>
+        <colgroup>
+          <col style={{ width: `${columnWidths['__actions__'] || 100}px` }} className="md:hidden" />
+          <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
+          {localColumns.map(col => (
+            <col key={`col-${col.hidden_id}`} style={{ width: `${columnWidths[col.hidden_id] || 200}px` }} />
+          ))}
+          <col style={{ width: 'auto' }} />
+        </colgroup>
         <TableHeader
           columns={localColumns}
           records={records}
@@ -265,12 +276,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
               rowIndex={rowIndex}
               hoveredRow={hoveredRow}
               setHoveredRow={setHoveredRow}
-              editingRow={editingRow}
+              editingCell={editingCell}
               editedRecords={editedRecords}
               onCellChange={handleCellChange}
               onSaveRow={handleSaveRow}
               onCancelEdit={handleCancelEdit}
-              onEditRow={handleEditRow}
+              onEditCell={handleEditCell}
               onDeleteRow={handleShowDeleteRecordAlert}
               handleReviewRecord={handleReviewRecord}
               columnWidths={columnWidths}
@@ -281,12 +292,12 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           {Array.from({ length: Math.max(0, 20 - localRecords.length) }).map((_, i) => (
             <tr key={`ghost-${i}`} className="h-12 border-b border-gray-100/50">
               {/* Actions Ghost */}
-              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10 md:hidden" style={{ width: `${columnWidths['__actions__'] || 100}px` }}></td>
+              <td className="md:hidden"></td>
               {/* Filename Ghost */}
-              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10" style={{ width: `${columnWidths['__filename__'] || 250}px` }}></td>
+              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10"></td>
               {/* Columns Ghost */}
               {localColumns.map(col => (
-                <td key={`ghost-${i}-${col.hidden_id}`} className="border-r border-gray-100" style={{ width: `${columnWidths[col.hidden_id]}px` }}></td>
+                <td key={`ghost-${i}-${col.hidden_id}`} className="border-r border-gray-100"></td>
               ))}
               {/* Spacer Ghost */}
               <td className="border-r border-gray-100 bg-gray-50/30"></td>

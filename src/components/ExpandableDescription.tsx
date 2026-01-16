@@ -12,16 +12,16 @@ export default function ExpandableDescription({ description, maxLength = 150 }: 
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!description) {
-    return <p className="text-base text-gray-600">No description available</p>;
+    return <p className="text-sm text-gray-600">No description available</p>;
   }
 
   if (description.length <= maxLength) {
-    return <p className="text-base text-gray-600">{description}</p>;
+    return <p className="text-sm text-gray-600">{description}</p>;
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-base text-gray-600">
+      <p className="text-sm text-gray-600">
         {isExpanded ? description : `${description.slice(0, maxLength)}...`}
       </p>
       <button
@@ -29,7 +29,7 @@ export default function ExpandableDescription({ description, maxLength = 150 }: 
           e.stopPropagation();
           setIsExpanded(!isExpanded);
         }}
-        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 w-fit"
+        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 w-fit"
       >
         {isExpanded ? (
           <>

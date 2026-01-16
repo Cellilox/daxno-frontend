@@ -51,9 +51,9 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
       {externalIsOpen === undefined && (
         <button
           onClick={handleOpen}
-          className="text-base inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+          className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
         >
-          <Upload className="w-5 h-5 mr-3 flex-shrink-0" />
+          <Upload className="w-4 h-4 mr-2 flex-shrink-0" />
           Scan Files
         </button>
       )}

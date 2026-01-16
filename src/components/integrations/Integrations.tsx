@@ -38,10 +38,10 @@ export default function Integrations({ projectId, fields, records }: OptionsProp
     return (
         <div className="">
             <button
-                className="text-base inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
                 onClick={() => setIsOptionVisible(true)}
             >
-                <Plug2 className="w-5 h-5 mr-3 flex-shrink-0" />
+                <Plug2 className="w-4 h-4 mr-2 flex-shrink-0" />
                 Integrations
             </button>
             {isOptionVisible &&

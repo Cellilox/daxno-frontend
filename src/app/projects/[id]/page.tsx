@@ -11,6 +11,7 @@ import { Model } from "@/types"
 import { getConversations } from "@/actions/conversations-actions"
 import { Message } from "@/components/chat/types"
 import { getBillingConfig, getBillingConfigForUser } from "@/actions/settings-actions"
+import LayoutFix from "@/components/LayoutFix"
 
 export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
@@ -88,42 +89,22 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <>
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg">
-          <div className="flex flex-col space-y-4 sm:space-y-6">
-            {/* Header Section */}
-            <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
-                <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 break-words">
-                  Project: {project.name}
-                </p>
-                <ExpandableDescription description={project.description} />
-              </div>
-
-              {/* Mobile: 3-dot menu next to title */}
-              {/* Desktop: Actions below (rendered by CollapsibleActions) */}
-              <div className="flex-shrink-0 md:hidden">
-                <CollapsibleActions
-                  projectId={id}
-                  project={project}
-                  shareableLink={project.shareable_link}
-                  isLinkActive={project.link_is_active}
-                  address={project.address_domain}
-                  is_project_owner={is_project_owner}
-                  linkOwner={linkOwner}
-                  fields={fields}
-                  records={records}
-                  plan={plan?.plan_name}
-                  models={displayedModels}
-                  tenantModal={tenantModel.selected_model}
-                  chats={chats}
-                />
-              </div>
+    <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden px-4 sm:px-6 lg:px-8 pb-4">
+      <LayoutFix />
+      <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg flex-shrink-0">
+        <div className="flex flex-col space-y-4 sm:space-y-6">
+          {/* Header Section */}
+          <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 break-words">
+                Project: {project.name}
+              </p>
+              <ExpandableDescription description={project.description} />
             </div>
 
-            {/* Desktop: Full action buttons row */}
-            <div className="hidden md:block">
+            {/* Mobile: 3-dot menu next to title */}
+            {/* Desktop: Actions below (rendered by CollapsibleActions) */}
+            <div className="flex-shrink-0 md:hidden">
               <CollapsibleActions
                 projectId={id}
                 project={project}
@@ -141,17 +122,36 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
               />
             </div>
           </div>
-        </div>
 
-        {/* Records Section - Outside the white card */}
-        <div className="mt-4 sm:mt-6 lg:mt-8">
-          <Records
-            projectId={id}
-            initialFields={fields}
-            initialRecords={records}
-          />
+          {/* Desktop: Full action buttons row */}
+          <div className="hidden md:block">
+            <CollapsibleActions
+              projectId={id}
+              project={project}
+              shareableLink={project.shareable_link}
+              isLinkActive={project.link_is_active}
+              address={project.address_domain}
+              is_project_owner={is_project_owner}
+              linkOwner={linkOwner}
+              fields={fields}
+              records={records}
+              plan={plan?.plan_name}
+              models={displayedModels}
+              tenantModal={tenantModel.selected_model}
+              chats={chats}
+            />
+          </div>
         </div>
       </div>
-    </>
+
+      {/* Records Section - Outside the white card */}
+      <div className="mt-4 flex-1 min-h-0 overflow-hidden">
+        <Records
+          projectId={id}
+          initialFields={fields}
+          initialRecords={records}
+        />
+      </div>
+    </div>
   );
 }

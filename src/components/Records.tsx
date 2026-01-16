@@ -133,8 +133,8 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
     }, [projectId]);
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <div className="flex flex-col">
                     {isConnected ? (
                         <p className='text-sm md:text-base text-gray-600'>Connection: <span className='text-green-600 font-semibold'>Online</span></p>
@@ -159,14 +159,15 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
                     </div>
                 }
             </div>
-            <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
+            <div className="flex-1 min-h-0">
+                <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
+            </div>
             <ColumnReorderPopup
                 columns={columns}
                 isOpen={isReorderPopupVisible}
                 onClose={() => setIsReorderPopupVisible(false)}
                 onReorder={setColumns}
             />
-
         </div>
     );
 }
