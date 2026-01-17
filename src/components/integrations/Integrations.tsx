@@ -5,12 +5,12 @@ import DownLoadCSV from './DownlaodCSV';
 import GoogleDriveExport from './google-drive/GoogleDriveExport';
 import { Plug2 } from 'lucide-react';
 import HubSpotExport from './hubspot/HubSpotExport';
-import { Field, Record } from '../spreadsheet/types';
+import { Field, DocumentRecord } from '../spreadsheet/types';
 
 type OptionsProps = {
     projectId: string;
     fields: Field[]
-    records: Record[]
+    records: DocumentRecord[]
 }
 
 export default function Integrations({ projectId, fields, records }: OptionsProps) {
@@ -38,11 +38,13 @@ export default function Integrations({ projectId, fields, records }: OptionsProp
     return (
         <div className="">
             <button
-                className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
                 onClick={() => setIsOptionVisible(true)}
             >
-                <Plug2 className="w-4 h-4 mr-2 flex-shrink-0" />
-                Integrations
+                <div className="p-1 rounded-md bg-orange-50 text-orange-600 group-hover:bg-orange-100 transition-colors">
+                    <Plug2 size={16} />
+                </div>
+                <span className="text-sm font-medium">Integrations</span>
             </button>
             {isOptionVisible &&
                 <div className="z-[100] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end p-4">

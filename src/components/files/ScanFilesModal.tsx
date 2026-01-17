@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import FormModal from '../ui/Popup'
+import StandardPopup from '../ui/StandardPopup'
 import MyDropzone from './Dropzone'
 import { messageType, messageTypeEnum } from '@/types'
 import { Upload } from 'lucide-react'
@@ -51,25 +51,32 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
       {externalIsOpen === undefined && (
         <button
           onClick={handleOpen}
-          className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
         >
-          <Upload className="w-4 h-4 mr-2 flex-shrink-0" />
-          Scan Files
+          <Upload size={16} />
+          <span className="text-sm font-medium">Scan Files</span>
         </button>
       )}
 
-      <FormModal
-        visible={isVisible}
+      <StandardPopup
+        isOpen={isVisible}
+        onClose={handleClose}
         title="Scan Your Files"
-        message={message}
-        onSubmit={async (e) => {
-          e.preventDefault();
-        }}
-        onCancel={handleClose}
-        position="center"
-        size='small'
+        subtitle="Upload documents or images for processing"
+        icon={<Upload size={24} />}
+        widthClassName="max-w-2xl"
       >
         <div className="flex flex-col">
+          {message.text && (
+            <div className={`mb-4 p-3 rounded-md text-sm ${message.type === messageTypeEnum.ERROR ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+              <div className="flex justify-between items-center w-full">
+                <span>{message.text}</span>
+                {message.rightText && (
+                  <span className="font-medium ml-2">{message.rightText}</span>
+                )}
+              </div>
+            </div>
+          )}
           <MyDropzone
             linkOwner={linkOwner}
             projectId={projectId}
@@ -78,7 +85,7 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
             plan={plan}
           />
         </div>
-      </FormModal>
+      </StandardPopup>
     </>
   );
 } 

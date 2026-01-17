@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import type { Field } from "../spreadsheet/types";
-import FormModal from "../ui/Popup";
+import StandardPopup from "../ui/StandardPopup";
 import { reorderColumns } from "@/actions/column-actions";
 interface Props {
   columns: Field[];
@@ -157,16 +157,16 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
   if (!isOpen) return null;
 
   return (
-    <FormModal
-      visible={isOpen}
+    <StandardPopup
+      isOpen={isOpen}
+      onClose={onClose}
       title="Reorder Columns"
-      onCancel={onClose}
-      position="center"
-      size="small"
+      subtitle="Drag and drop to rearrange your columns"
+      icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>}
     >
 
       <DndProvider backend={HTML5Backend}>
-        <div className="flex-1 overflow-y-auto mb-4">
+        <div className="flex-1 overflow-y-auto mb-4 max-h-[60vh]">
           {localColumns.map((column, index) => (
             <ColumnItem
               key={column.hidden_id}
@@ -186,7 +186,7 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
           Save Order
         </button>
       </div>
-    </FormModal>
+    </StandardPopup>
   );
 };
 

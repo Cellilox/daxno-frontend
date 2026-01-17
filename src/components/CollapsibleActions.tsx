@@ -5,8 +5,9 @@ import { Users, Mail, Share2, Upload } from 'lucide-react';
 import ProjectActionsMenu from './ProjectActionsMenu';
 import ScanFilesModal from './files/ScanFilesModal';
 import FormModal from './ui/Popup';
+import StandardPopup from './ui/StandardPopup';
 import CreateInvite from './forms/CreateInvite';
-import { Field, Record } from './spreadsheet/types';
+import { Field, DocumentRecord } from './spreadsheet/types';
 import Address from './Address';
 import ShareableLink from './ShareableLink';
 import { Model, Project } from '@/types';
@@ -26,7 +27,7 @@ interface CollapsibleActionsProps {
   is_project_owner: boolean;
   linkOwner: string;
   fields: Field[]
-  records: Record[]
+  records: DocumentRecord[]
   models: Model[]
   tenantModal: string;
   chats: Message[]
@@ -74,7 +75,7 @@ export default function CollapsibleActions({
       <div className="hidden md:block w-full">
         <div className={`relative transition-all duration-300 ${fields.length === 0 ? 'blur-sm pointer-events-none select-none opacity-60' : ''}`}>
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between w-full">
-            <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
+            <div className="flex flex-wrap gap-2 items-center">
               <ScanFilesModal
                 linkOwner={linkOwner}
                 projectId={projectId}
@@ -84,23 +85,27 @@ export default function CollapsibleActions({
               {is_project_owner && (
                 <button
                   onClick={() => setIsShareLinkPopupVisible(true)}
-                  className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                  className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Shareable Link
+                  <div className="p-1 rounded-md bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+                    <Share2 size={16} />
+                  </div>
+                  <span className="text-sm font-medium">Share</span>
                 </button>
               )}
 
               <button
                 onClick={() => setIsAddressPopupVisible(true)}
-                className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                className="group flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-gray-300 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md"
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Mail Attachments
+                <div className="p-1 rounded-md bg-green-50 text-green-600 group-hover:bg-green-100 transition-colors">
+                  <Mail size={16} />
+                </div>
+                <span className="text-sm font-medium">Email</span>
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <ModelSelector
                 models={models}
                 tenantModal={tenantModal}
@@ -119,19 +124,24 @@ export default function CollapsibleActions({
               {is_project_owner && (
                 <button
                   onClick={() => setIsInvitePopupVisible(true)}
-                  className="text-sm inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
                 >
-                  <Users className="w-4 h-4 mr-2" />
-                  Invite
+                  <Users size={16} />
+                  <span className="text-sm font-medium">Invite</span>
                 </button>
               )}
 
               <div className="flex items-center gap-2">
-                <Integrations
-                  projectId={projectId}
-                  fields={fields}
-                  records={records}
-                />
+                <div className="group relative">
+                  <Integrations
+                    projectId={projectId}
+                    fields={fields}
+                    records={records}
+                  />
+                  {/* Optional: Add a wrapping style if Integrations component doesn't expose one, or assume Integrations needs similar styling update. 
+                      Since Integrations is a component, I'll trust it or might need to update it too if it's just a button wrapper. 
+                      For now, leaving it as is but wrapped. */}
+                </div>
               </div>
             </div>
           </div>
@@ -144,17 +154,17 @@ export default function CollapsibleActions({
 
       {/* Modals */}
       {isInvitePopupVisible && (
-        <FormModal
-          visible={isInvitePopupVisible}
+        <StandardPopup
+          isOpen={isInvitePopupVisible}
           title="Send Invite"
-          onCancel={() => setIsInvitePopupVisible(false)}
-          position="center"
-          size="small"
+          subtitle="Invite team members to collaborate"
+          icon={<Users size={24} />}
+          onClose={() => setIsInvitePopupVisible(false)}
         >
           <div className='flex justify-between'>
             <CreateInvite projectId={projectId} setIsInvitePopupVisible={setIsInvitePopupVisible} />
           </div>
-        </FormModal>
+        </StandardPopup>
       )}
 
       {isAddressPopupVisible && (

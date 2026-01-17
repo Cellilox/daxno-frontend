@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MoreVertical, Upload, Share2, Mail, Sparkles, Users, Zap, X } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import FormModal from './ui/Popup';
+import StandardPopup from './ui/StandardPopup';
 import CreateInvite from './forms/CreateInvite';
 import Address from './Address';
 import ShareableLink from './ShareableLink';
@@ -11,7 +12,7 @@ import { Model, Project } from '@/types';
 import ModelSelector from './Models';
 import OnyxDeepLinkButton from './OnyxDeepLinkButton';
 import Integrations from './integrations/Integrations';
-import { Field, Record } from './spreadsheet/types';
+import { Field, DocumentRecord } from './spreadsheet/types';
 
 interface ProjectActionsMenuProps {
     projectId: string;
@@ -23,7 +24,7 @@ interface ProjectActionsMenuProps {
     is_project_owner: boolean;
     linkOwner: string;
     fields: Field[];
-    records: Record[];
+    records: DocumentRecord[];
     models: Model[];
     tenantModal: string;
 }
@@ -240,17 +241,17 @@ export default function ProjectActionsMenu({
 
             {/* Invite Popup */}
             {isInvitePopupVisible && (
-                <FormModal
-                    visible={isInvitePopupVisible}
+                <StandardPopup
+                    isOpen={isInvitePopupVisible}
                     title="Send Invite"
-                    onCancel={() => setIsInvitePopupVisible(false)}
-                    position="center"
-                    size="small"
+                    subtitle="Invite team members to collaborate"
+                    icon={<Users size={24} />}
+                    onClose={() => setIsInvitePopupVisible(false)}
                 >
                     <div className="flex justify-between">
                         <CreateInvite projectId={projectId} setIsInvitePopupVisible={setIsInvitePopupVisible} />
                     </div>
-                </FormModal>
+                </StandardPopup>
             )}
 
             {/* Generate Address Popup */}

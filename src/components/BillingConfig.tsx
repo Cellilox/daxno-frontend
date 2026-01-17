@@ -253,6 +253,11 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         setModelsFetchError(null);
         // Reset search term for fresh start
         setSearchTerm('');
+
+        // Sync to URL for deep linking and auto-scroll behavior
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('option', type);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const handleProvision = async () => {
