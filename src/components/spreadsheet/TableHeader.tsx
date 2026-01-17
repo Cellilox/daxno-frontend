@@ -133,7 +133,7 @@ export default function TableHeader({
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
           >
-            <div className="flex items-center justify-between h-full">
+            <div className="flex items-center justify-between h-full gap-2 px-1">
               {editingColumnId === column.hidden_id ? (
                 <input
                   ref={inputRef}
@@ -147,35 +147,37 @@ export default function TableHeader({
                 />
               ) : (
                 <span
-                  className="font-semibold truncate w-full"
+                  className="font-semibold truncate flex-1 min-w-0"
                   onClick={() => startEditing(column)}
-                  title="Click to rename"
+                  title={column.name}
                 >
                   {column.name}
                 </span>
               )}
 
-              <div className={`absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1 ${editingColumnId !== column.hidden_id ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBackfillColumn(column);
-                  }}
-                  className="p-1 hover:bg-purple-50 rounded transition-colors group/backfill"
-                  title="Smart Backfill - Re-analyze all records for this column"
-                >
-                  <Sparkles className="w-4 h-4 text-purple-600 group-hover/backfill:text-purple-700" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteColumn(column);
-                  }}
-                  className="p-1 hover:bg-gray-200 rounded transition-colors"
-                >
-                  <Trash className="w-4 h-4 text-red-600" />
-                </button>
-              </div>
+              {editingColumnId !== column.hidden_id && (
+                <div className="flex items-center gap-1 flex-shrink-0 opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBackfillColumn(column);
+                    }}
+                    className="p-1 hover:bg-purple-50 rounded transition-colors group/backfill"
+                    title="Smart Backfill - Re-analyze all records for this column"
+                  >
+                    <Sparkles className="w-4 h-4 text-purple-600 group-hover/backfill:text-purple-700" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteColumn(column);
+                    }}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                  >
+                    <Trash className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Resize Handle */}
