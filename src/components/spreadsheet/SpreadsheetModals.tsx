@@ -140,9 +140,15 @@ export default function SpreadsheetModals({
           title={`Review ${selectedRecordForReview.original_filename}`}
           onCancel={handleCloseReviewRecordPopup}
           size='large'
+          isHeaderHidden={true}
+          fullScreen={true}
         >
-          <div>
-            <DocumentReview selectedRecordForReview={selectedRecordForReview} columns={columns} />
+          <div className="h-full flex flex-col">
+            <DocumentReview
+              selectedRecordForReview={selectedRecordForReview}
+              columns={columns}
+              onClose={handleCloseReviewRecordPopup}
+            />
           </div>
         </FormModal>
       )}

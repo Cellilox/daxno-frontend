@@ -130,18 +130,43 @@ export default function PdfViewer({
         await task.promise;
 
         if (isMountedRef.current) {
-          // draw only border highlights
+          // draw highlights with "Premium Highlighter" look
           const canvas = canvasRef.current!;
           const ctx = canvas.getContext("2d")!;
+
           Object.entries(answers).forEach(([key, ans]) => {
             if (ans.page !== currentPage) return;
             const left = ans.geometry.left * viewport.width;
             const top = ans.geometry.top * viewport.height;
             const w = ans.geometry.width * viewport.width;
             const h = ans.geometry.height * viewport.height;
-            ctx.strokeStyle = key === activeItem ? "#ef4444" : "#888888";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(left, top, w, h);
+
+            const isActive = key === activeItem;
+
+            if (isActive) {
+              // ACTIVE: Vibrant Blue with Glow & Fill
+              ctx.shadowColor = "rgba(37, 99, 235, 0.4)"; // Blue-600 shadow
+              ctx.shadowBlur = 10;
+              ctx.fillStyle = "rgba(59, 130, 246, 0.2)"; // Blue-500 fill (20%)
+              ctx.strokeStyle = "#2563EB"; // Blue-600 border
+              ctx.lineWidth = 2;
+
+              // Draw fill then stroke
+              ctx.fillRect(left, top, w, h);
+              ctx.strokeRect(left, top, w, h);
+
+              // Reset shadow for next items
+              ctx.shadowColor = "transparent";
+              ctx.shadowBlur = 0;
+            } else {
+              // INACTIVE: Subtle Gray/Blue
+              ctx.fillStyle = "rgba(226, 232, 240, 0.1)"; // Slate-200 fill (10%)
+              ctx.strokeStyle = "#94a3b8"; // Slate-400
+              ctx.lineWidth = 1;
+              // Optional: setLineDash([4, 2]) for dashed look? 
+              // Let's keep it solid but thin for cleaner look.
+              ctx.strokeRect(left, top, w, h);
+            }
           });
         }
       } catch (err: any) {
@@ -189,7 +214,7 @@ export default function PdfViewer({
   return (
     <div className="flex flex-col w-full h-full">
       {/* navigation */}
-      <div className="flex justify-between items-center mb-2 bg-gray-100 p-2 rounded-t">
+      <div className="hidden md:flex justify-between items-center mb-2 bg-gray-100 p-2 rounded-t">
         <button
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1}

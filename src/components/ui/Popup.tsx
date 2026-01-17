@@ -13,6 +13,7 @@ type FormModalProps = {
   position?: 'center' | 'right';
   size?: 'small' | 'large';
 
+  fullScreen?: boolean;
 };
 
 export default function FormModal({
@@ -23,7 +24,8 @@ export default function FormModal({
   onCancel,
   children,
   position = 'right',
-  size= 'small'
+  size = 'small',
+  fullScreen = false
 }: FormModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -44,26 +46,30 @@ export default function FormModal({
   if (!visible) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto z-[100]"
       style={{ minHeight: '100vh' }}
     >
-      <div 
-        ref={modalRef} 
+      <div
+        ref={modalRef}
         className={`
-          relative bg-white w-[95%] lg:w-2/5 
-          max-h-[90vh] rounded-lg shadow-xl 
-          flex flex-col overflow-hidden
-          ${position === 'center' ? 'm-4' : 'h-full right-0'}
-          ${size === 'large' ? "lg:w-5/6" : "lg:w-2/5"}
+          relative bg-white 
+          shadow-xl flex flex-col overflow-hidden
+          ${fullScreen
+            ? 'w-full h-full m-0 rounded-none md:w-[95%] md:h-[90vh] md:m-4 md:rounded-lg'
+            : `w-[95%] max-h-[90vh] rounded-lg ${position === 'center' ? 'm-4' : 'h-full right-0'}`
+          }
+          ${!fullScreen && size === 'large' ? "lg:w-5/6" : ""}
+          ${!fullScreen && size === 'small' ? "lg:w-2/5" : ""}
+          ${fullScreen && size === 'large' ? "lg:w-5/6" : ""} 
         `}
       >
-        <ModalHeader title={title} onClose={onCancel} message={message} isHeaderHidden={isHeaderHidden}/>
+        <ModalHeader title={title} onClose={onCancel} message={message} isHeaderHidden={isHeaderHidden} />
         <div className="p-6 flex-1">
           <div className="flex flex-col h-full">
-            <div 
-              className="overflow-y-auto scrollbar-hide" 
-              style={{ 
+            <div
+              className="overflow-y-auto scrollbar-hide"
+              style={{
                 maxHeight: 'calc(90vh - 150px)',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
