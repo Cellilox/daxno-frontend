@@ -6,7 +6,7 @@ import type { Field } from "../spreadsheet/types";
 import StandardPopup from "../ui/StandardPopup";
 import { reorderColumns } from "@/actions/column-actions";
 interface Props {
-  columns: Field[];
+  columns?: Field[];
   isOpen: boolean;
   onClose: () => void;
   onReorder: (newColumns: Field[]) => void;
@@ -121,7 +121,7 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
 
   useEffect(() => {
-    setLocalColumns([...columns]);
+    setLocalColumns([...(columns || [])]);
   }, [columns]);
 
   const moveColumn = (dragIndex: number, hoverIndex: number) => {
@@ -147,11 +147,11 @@ const ColumnReorderPopup: React.FC<Props> = ({ columns, isOpen, onClose, onReord
 
       try {
         await reorderColumns(prevOrder, nextOrder, column.hidden_id);
-        onClose();
       } catch (error) {
         console.error(`Error reordering column ${column.name}:`, error);
       }
     }
+    onClose();
   };
 
   if (!isOpen) return null;

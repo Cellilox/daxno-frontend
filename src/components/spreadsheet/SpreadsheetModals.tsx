@@ -137,7 +137,7 @@ export default function SpreadsheetModals({
       {isPopupVisible && selectedRecordForReview && (
         <FormModal
           visible={isPopupVisible}
-          title={`Review ${selectedRecordForReview.orginal_file_name}`}
+          title={`Review ${selectedRecordForReview.original_filename}`}
           onCancel={handleCloseReviewRecordPopup}
           size='large'
         >
