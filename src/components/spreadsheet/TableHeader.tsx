@@ -1,4 +1,4 @@
-import { Trash, PlusCircle, FileText, Check, X } from 'lucide-react';
+import { Trash, PlusCircle, FileText, Check, X, Sparkles } from 'lucide-react';
 import { Field, DocumentRecord } from './types';
 import CreateColumn from '../forms/CreateColumn';
 import { useState, useRef, useEffect } from 'react';
@@ -14,6 +14,7 @@ type TableHeaderProps = {
   columnWidths: { [key: string]: number };
   onColumnResize: (id: string, width: number) => void;
   onUpdateColumn: (column: Field, newName: string) => void;
+  onBackfillColumn: (column: Field) => void;
 };
 
 export default function TableHeader({
@@ -26,7 +27,8 @@ export default function TableHeader({
   projectId,
   columnWidths,
   onColumnResize,
-  onUpdateColumn
+  onUpdateColumn,
+  onBackfillColumn
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
@@ -154,6 +156,16 @@ export default function TableHeader({
               )}
 
               <div className={`absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1 ${editingColumnId !== column.hidden_id ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBackfillColumn(column);
+                  }}
+                  className="p-1 hover:bg-purple-50 rounded transition-colors group/backfill"
+                  title="Smart Backfill - Re-analyze all records for this column"
+                >
+                  <Sparkles className="w-4 h-4 text-purple-600 group-hover/backfill:text-purple-700" />
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

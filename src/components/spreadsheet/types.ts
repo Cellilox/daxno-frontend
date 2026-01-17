@@ -25,10 +25,10 @@ export type AnswerData = {
 export type DocumentRecord = {
   id: string;
   filename: string;
-  orginal_file_name: string;
+  original_filename: string;
   file_key: string;
   project_id: string;
-  answers: { [key: string]: AnswerData };
+  answers: { [key: string]: any };
   created_at: string;
   updated_at: string;
   pages: number;

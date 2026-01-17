@@ -75,8 +75,19 @@ export default function TableRow({
         </div>
       </td>
       <td className="px-3 md:px-4 py-2 text-sm text-gray-900 border-r overflow-hidden leading-relaxed relative group/filename">
-        <div className="flex items-center h-full">
-          <span className="relative z-0 truncate block w-full font-medium text-gray-800 pr-16">{row.orginal_file_name}</span>
+        <div className="flex items-center h-full gap-2">
+          <span className="relative z-0 truncate block font-medium text-gray-800">{row.original_filename}</span>
+          {row.answers?.__status__ === 'processing' && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full flex-shrink-0 animate-pulse">
+              <div className="w-2 h-2 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Analyzing</span>
+            </div>
+          )}
+          {row.answers?.__status__ === 'error' && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 border border-red-100 rounded-full flex-shrink-0">
+              <span className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Failed</span>
+            </div>
+          )}
 
           {/* Floating actions for larger screens - moved to top-right */}
           {hoveredRow === rowIndex && !isRowEditing && (

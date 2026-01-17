@@ -9,6 +9,7 @@ import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
+import BackfillModal from '../forms/BackfillModal';
 
 export default function SpreadSheet({ columns, records, projectId, project }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
@@ -27,6 +28,8 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
 
 
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
+  const [isBackfillModalOpen, setIsBackfillModalOpen] = useState(false);
+  const [selectedFieldForBackfill, setSelectedFieldForBackfill] = useState<Field | null>(null);
 
   useEffect(() => {
     if (columns) setLocalColumns(columns);
@@ -180,6 +183,11 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
   const handleCloseDeleteColumnAlert = () => {
     setIsAlertVisible(false);
     setSelectedColumnToDelete(null);
+  };
+
+  const handleBackfillColumn = (column: Field) => {
+    setSelectedFieldForBackfill(column);
+    setIsBackfillModalOpen(true);
   };
 
   const handleDeleteColumn = async (columnId: string) => {
@@ -345,6 +353,7 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
           columnWidths={columnWidths}
           onColumnResize={handleColumnResize}
           onUpdateColumn={handleUpdateColumn}
+          onBackfillColumn={handleBackfillColumn}
         />
         <tbody>
           {localRecords.map((row, rowIndex) => (
@@ -408,6 +417,13 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
         selectedRecordForReview={selectedRecordForReview}
         handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
         columns={columns}
+      />
+      <BackfillModal
+        isOpen={isBackfillModalOpen}
+        onClose={() => setIsBackfillModalOpen(false)}
+        projectId={projectId}
+        field={selectedFieldForBackfill}
+        recordCount={localRecords.length}
       />
     </div>
   );

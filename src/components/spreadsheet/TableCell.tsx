@@ -55,6 +55,16 @@ export default function TableCell({
                     className="w-full bg-white focus:outline-none resize-none overflow-hidden text-sm leading-relaxed p-0 m-0 block"
                     placeholder="..."
                 />
+            ) : editedRow.answers?.__status__ === 'processing' ? (
+                <div className="flex flex-col gap-1.5 py-1">
+                    <div className="h-2 w-full bg-gray-100 animate-pulse rounded-full"></div>
+                    <div className="h-2 w-2/3 bg-gray-50 animate-pulse rounded-full"></div>
+                </div>
+            ) : editedRow.answers?.__status__ === 'error' ? (
+                <div className="flex items-center gap-1.5 text-red-500 bg-red-50/50 px-2 py-1 rounded border border-red-100">
+                    <span className="text-[10px] font-bold uppercase">Error</span>
+                    <span className="text-[10px] truncate">{editedRow.answers.message || 'Analysis failed'}</span>
+                </div>
             ) : (
                 <div className="line-clamp-3 min-h-[1.5em]">
                     {editedRow.answers[column.hidden_id]?.text || (
