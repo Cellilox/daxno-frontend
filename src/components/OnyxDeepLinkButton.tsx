@@ -49,8 +49,9 @@ export default function OnyxDeepLinkButton({ projectId }: OnyxDeepLinkButtonProp
                     alert("Security Check: The link provided by the server is not on the allowed list.");
                 }
             } else {
-                console.error("No URL returned", data);
-                alert("Could not connect to AI Insights. Please try again.");
+                console.error("No URL returned. Data:", data);
+                const info = typeof data === 'object' ? JSON.stringify(data) : String(data);
+                alert(`Could not connect to AI Insights. Server response: ${info}`);
             }
         } catch (e) {
             console.error(e);

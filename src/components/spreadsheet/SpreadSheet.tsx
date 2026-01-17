@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { deleteColumn, updateColumn, updateColumnWidth } from '@/actions/column-actions';
-import { deleteRecord, updateRecord } from '@/actions/record-actions';
+import { deleteRecord, updateRecord, deleteBatchRecords } from '@/actions/record-actions';
+import { Trash, X } from 'lucide-react';
 import { updateProjectSettings } from '@/actions/project-actions';
 import { Field, DocumentRecord, SpreadSheetProps } from './types';
 import TableHeader from './TableHeader';
@@ -10,8 +11,9 @@ import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
 import BackfillModal from '../forms/BackfillModal';
+import AlertDialog from '../ui/AlertDialog';
 
-export default function SpreadSheet({ columns, records, projectId, project }: SpreadSheetProps) {
+export default function SpreadSheet({ columns, records, projectId, project, user }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
   const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -30,6 +32,12 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isBackfillModalOpen, setIsBackfillModalOpen] = useState(false);
   const [selectedFieldForBackfill, setSelectedFieldForBackfill] = useState<Field | null>(null);
+
+  // Batch Selection State
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<string>>(new Set());
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+  const [showBatchDeleteAlert, setShowBatchDeleteAlert] = useState(false);
+
 
   useEffect(() => {
     if (columns) setLocalColumns(columns);
@@ -66,7 +74,7 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
     }));
 
     // Debounced Persistence
-    const timerId = `resize-${columnId}`;
+    const timerId = `resize - ${columnId} `;
     if ((window as any)[timerId]) clearTimeout((window as any)[timerId]);
     (window as any)[timerId] = setTimeout(async () => {
       try {
@@ -321,6 +329,44 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
     setSelectedRecordForReview(null);
   }
 
+  // Batch Selection Handlers
+  const handleSelectRecord = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedRecordIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedRecordIds(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRecordIds(new Set(localRecords.map(r => r.id)));
+    } else {
+      setSelectedRecordIds(new Set());
+    }
+  };
+
+  const handleBatchDelete = () => {
+    setShowBatchDeleteAlert(true);
+  };
+
+  const performBatchDelete = async () => {
+    setShowBatchDeleteAlert(false);
+    setIsBatchDeleting(true);
+    try {
+      await deleteBatchRecords(Array.from(selectedRecordIds));
+      // Optimistic remove
+      setLocalRecords(prev => prev.filter(r => !selectedRecordIds.has(r.id)));
+      setSelectedRecordIds(new Set());
+    } catch (err) {
+      alert('Batch delete failed');
+    } finally {
+      setIsBatchDeleting(false);
+    }
+  };
+
   const hasRecords = localRecords.length > 0;
 
   if (!localRecords) {
@@ -333,6 +379,8 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
         <colgroup>
           {hasRecords && (
             <>
+              {/* Checkbox Column */}
+              <col style={{ width: '40px' }} />
               <col style={{ width: `${columnWidths['__actions__'] || 100}px` }} className="md:hidden" />
               <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
             </>
@@ -354,6 +402,10 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
           onColumnResize={handleColumnResize}
           onUpdateColumn={handleUpdateColumn}
           onBackfillColumn={handleBackfillColumn}
+          // Batch Selection Props
+          selectedCount={selectedRecordIds.size}
+          totalCount={localRecords.length}
+          onSelectAll={handleSelectAll}
         />
         <tbody>
           {localRecords.map((row, rowIndex) => (
@@ -373,6 +425,8 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
               onDeleteRow={handleShowDeleteRecordAlert}
               handleReviewRecord={handleReviewRecord}
               columnWidths={columnWidths}
+              isSelected={selectedRecordIds.has(row.id)}
+              onSelect={(checked) => handleSelectRecord(row.id, checked)}
             />
           ))}
 
@@ -381,8 +435,10 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
             <tr key={`ghost-${i}`} className="h-12 border-b border-gray-100/50">
               {hasRecords && (
                 <>
+                  {/* Checkbox Ghost */}
+                  <td className="border-r border-gray-100 bg-gray-50/10 sticky left-0 z-20"></td>
                   {/* Actions Ghost */}
-                  <td className="md:hidden"></td>
+                  <td className="md:hidden sticky left-[40px]"></td>
                   {/* Filename Ghost */}
                   <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10"></td>
                 </>
@@ -408,16 +464,51 @@ export default function SpreadSheet({ columns, records, projectId, project }: Sp
         onCloseColumnUpdatePopup={handleCloseColumnUpdatePopup}
         onUpdateColumnSubmit={handleUpdateColumnSubmit}
         onCloseDeleteColumnAlert={handleCloseDeleteColumnAlert}
-        onDeleteColumn={handleDeleteColumn}
-        onCloseDeleteRecordAlert={handleCloseDeleteRecordAlert}
-        onDeleteRecord={handleDeleteRecord}
+        onDeleteColumn={(id) => handleDeleteColumn(id)}
+        onCloseDeleteRecordAlert={handleCancelDelete}
+        onDeleteRecord={(id, key) => handleConfirmDelete()}
         onConfirmDelete={handleConfirmDelete}
         onCancelDelete={handleCancelDelete}
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
         selectedRecordForReview={selectedRecordForReview}
         handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
-        columns={columns}
+        columns={localColumns}
       />
+
+      {/* Batch Delete Alert */}
+      <AlertDialog
+        visible={showBatchDeleteAlert}
+        title={`Delete ${selectedRecordIds.size} Records`}
+        message={`Are you sure you want to delete ${selectedRecordIds.size} records? This action cannot be undone.`}
+        onConfirm={performBatchDelete}
+        onCancel={() => setShowBatchDeleteAlert(false)}
+        confirmText="Delete All"
+        cancelText="Cancel"
+      />
+
+      {/* Floating Bulk Actions Bar */}
+      {selectedRecordIds.size > 0 && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 shadow-xl rounded-full px-6 py-3 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-4">
+          <span className="text-sm font-medium text-gray-700">
+            {selectedRecordIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-gray-300"></div>
+          <button
+            onClick={handleBatchDelete}
+            disabled={isBatchDeleting}
+            className="flex items-center gap-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-full transition disabled:opacity-50"
+          >
+            {isBatchDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+          <button
+            onClick={() => setSelectedRecordIds(new Set())}
+            className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"
+            title="Clear selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       <BackfillModal
         isOpen={isBackfillModalOpen}
         onClose={() => setIsBackfillModalOpen(false)}

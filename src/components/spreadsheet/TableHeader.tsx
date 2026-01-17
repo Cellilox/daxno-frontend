@@ -15,6 +15,9 @@ type TableHeaderProps = {
   onColumnResize: (id: string, width: number) => void;
   onUpdateColumn: (column: Field, newName: string) => void;
   onBackfillColumn: (column: Field) => void;
+  selectedCount?: number;
+  totalCount?: number;
+  onSelectAll?: (checked: boolean) => void;
 };
 
 export default function TableHeader({
@@ -28,7 +31,10 @@ export default function TableHeader({
   columnWidths,
   onColumnResize,
   onUpdateColumn,
-  onBackfillColumn
+  onBackfillColumn,
+  selectedCount = 0,
+  totalCount = 0,
+  onSelectAll
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
@@ -95,9 +101,20 @@ export default function TableHeader({
       <tr>
         {hasRecords && (
           <>
+            {/* Checkbox Column */}
+            <th className="px-3 py-2 border-r border-gray-200 sticky left-0 z-30 bg-gray-50 text-center w-[40px]">
+              <input
+                type="checkbox"
+                checked={totalCount > 0 && selectedCount === totalCount}
+                ref={el => { if (el) el.indeterminate = selectedCount > 0 && selectedCount < totalCount }}
+                onChange={e => onSelectAll && onSelectAll(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </th>
+
             <th
               key="actions"
-              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
+              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-[40px] bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
             >
               Actions
               {/* Resize Handle */}

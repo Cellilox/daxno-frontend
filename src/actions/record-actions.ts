@@ -201,3 +201,24 @@ export async function checkRecordStatus(projectId: string, filename: string) {
     return null;
   }
 }
+export async function deleteBatchRecords(recordIds: string[]) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/records/delete-batch`, {
+      method: "POST",
+      body: JSON.stringify({ record_ids: recordIds }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Backend error:", err);
+      throw new Error(`Batch delete failed: ${response.status} ${err}`);
+    }
+
+    revalidatePath("/projects");
+    return await response.json();
+  } catch (error) {
+    console.error("Batch delete failed", error);
+    throw error;
+  }
+}

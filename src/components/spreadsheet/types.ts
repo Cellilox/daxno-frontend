@@ -39,4 +39,5 @@ export type SpreadSheetProps = {
   records: DocumentRecord[];
   projectId: string;
   project: any;
+  user?: any;
 };

@@ -17,6 +17,8 @@ type TableRowProps = {
   onEditCell: (rowIndex: number, columnId: string) => void;
   onDeleteRow: (row: DocumentRecord) => void;
   handleReviewRecord: (row: DocumentRecord) => void;
+  isSelected?: boolean;
+  onSelect?: (checked: boolean) => void;
 };
 
 export default function TableRow({
@@ -33,7 +35,9 @@ export default function TableRow({
   onEditCell,
   onDeleteRow,
   handleReviewRecord,
-  columnWidths
+  columnWidths,
+  isSelected = false,
+  onSelect
 }: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -41,11 +45,21 @@ export default function TableRow({
   return (
     <tr
       key={row.id}
-      className="border-b hover:bg-gray-50 bg-white transition-colors"
+      className={`border-b transition-colors group ${isSelected ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-gray-50 bg-white'}`}
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-0 bg-white shadow-r md:hidden border-r">
+      {/* Checkbox Column - Sticky Left */}
+      <td className={`px-3 py-2 border-r border-gray-100 sticky left-0 z-20 w-[40px] text-center ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => onSelect && onSelect(e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+        />
+      </td>
+
+      <td className={`z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-[40px] shadow-r md:hidden border-r ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
         <div className="flex items-center justify-center gap-3">
           {!isRowEditing && (
             <>
