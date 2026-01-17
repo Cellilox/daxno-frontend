@@ -65,19 +65,29 @@ export default function FormModal({
         `}
       >
         <ModalHeader title={title} onClose={onCancel} message={message} isHeaderHidden={isHeaderHidden} />
-        <div className="p-6 flex-1">
-          <div className="flex flex-col h-full">
-            <div
-              className="overflow-y-auto scrollbar-hide"
-              style={{
-                maxHeight: 'calc(90vh - 150px)',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}
-            >
+
+        {/* Content Wrapper */}
+        <div className={`flex-1 flex flex-col ${fullScreen ? 'p-0 overflow-hidden' : 'p-6'}`}>
+          {fullScreen ? (
+            /* FullScreen Mode: Children take full height, manage their own scroll */
+            <div className="flex-1 h-full w-full overflow-hidden">
               {children}
             </div>
-          </div>
+          ) : (
+            /* Default Mode: Legacy wrappers with padding and max-height */
+            <div className="flex flex-col h-full">
+              <div
+                className="overflow-y-auto scrollbar-hide"
+                style={{
+                  maxHeight: 'calc(90vh - 150px)',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                {children}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

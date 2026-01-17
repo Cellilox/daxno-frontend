@@ -225,9 +225,9 @@ export default function DocumentReview({ selectedRecordForReview, columns, onClo
         </div>
 
         {/* Left: Form Data (Bottom on Mobile) - Order 2 on mobile */}
-        {/* Mobile: Takes remaining space (approx 55vh). Desktop: Full height. */}
-        <div className="w-full md:w-1/3 md:min-w-[320px] flex-1 md:h-full overflow-y-auto bg-white order-2 md:order-1">
-          <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        {/* Mobile: Takes remaining space. Desktop: Full height. */}
+        <div className="w-full md:w-1/3 md:min-w-[320px] flex-1 md:h-full overflow-y-auto bg-gray-100 md:bg-white order-2 md:order-1">
+          <div className="m-3 md:m-0 bg-white md:bg-transparent rounded-xl md:rounded-none shadow-sm md:shadow-none p-4 md:p-6 space-y-4 md:space-y-6">
             {columns.map(field => {
               const answer = editedAnswers[field.hidden_id];
               const isActive = activeItem === field.hidden_id;
