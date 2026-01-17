@@ -1,21 +1,22 @@
-import { useRef, useCallback } from 'react';
+import { useRef } from 'react';
+import TableCell from './TableCell';
 import { Pencil, Trash, MessageCircle, Eye } from 'lucide-react';
-import { Field, Record } from './types';
+import { Field, DocumentRecord } from './types';
 
 type TableRowProps = {
-  row: Record;
+  row: DocumentRecord;
   columns: Field[];
   rowIndex: number;
   hoveredRow: number | null;
   setHoveredRow: (index: number | null) => void;
   editingCell: { rowIndex: number, columnId: string } | null;
-  editedRecords: { [rowIndex: number]: Record };
+  editedRecords: { [rowIndex: number]: DocumentRecord };
   onCellChange: (rowIndex: number, columnId: string, value: string) => void;
   onSaveRow: (rowIndex: number) => void;
   onCancelEdit: (rowIndex: number) => void;
   onEditCell: (rowIndex: number, columnId: string) => void;
-  onDeleteRow: (row: Record) => void;
-  handleReviewRecord: (row: Record) => void;
+  onDeleteRow: (row: DocumentRecord) => void;
+  handleReviewRecord: (row: DocumentRecord) => void;
 };
 
 export default function TableRow({
@@ -73,7 +74,7 @@ export default function TableRow({
           )}
         </div>
       </td>
-      <td className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-xs sm:text-sm md:text-base text-gray-900 border-r overflow-hidden leading-relaxed relative group/filename">
+      <td className="px-3 md:px-4 py-2 text-sm text-gray-900 border-r overflow-hidden leading-relaxed relative group/filename">
         <div className="flex items-center h-full">
           <span className="relative z-0 truncate block w-full font-medium text-gray-800 pr-16">{row.orginal_file_name}</span>
 
@@ -105,54 +106,20 @@ export default function TableRow({
           )}
         </div>
       </td>
-      {columns.map((column) => {
-        const isCellEditing = editingCell?.rowIndex === rowIndex && editingCell?.columnId === column.hidden_id;
-
-        // Callback ref to auto-resize textarea
-        const textareaRef = useCallback((node: HTMLTextAreaElement | null) => {
-          if (node) {
-            node.style.height = '0px';
-            const scrollHeight = node.scrollHeight;
-            node.style.height = `${scrollHeight}px`;
-            node.focus();
-          }
-        }, []);
-
-        return (
-          <td
-            key={column.hidden_id}
-            className={`px-3 md:px-4 py-2 md:py-3 lg:py-4 text-xs sm:text-sm md:text-base text-gray-900 border-r overflow-hidden leading-relaxed cursor-pointer transition-colors relative ${isCellEditing ? 'bg-blue-50/10 ring-2 ring-blue-400 ring-inset' : 'hover:bg-gray-100/30'}`}
-            onClick={() => !isCellEditing && onEditCell(rowIndex, column.hidden_id)}
-          >
-            {isCellEditing ? (
-              <textarea
-                ref={textareaRef}
-                value={editedRow.answers[column.hidden_id]?.text ?? ''}
-                onChange={(e) => onCellChange(rowIndex, column.hidden_id, e.target.value)}
-                onBlur={() => onSaveRow(rowIndex)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    onSaveRow(rowIndex);
-                  } else if (e.key === 'Escape') {
-                    onCancelEdit(rowIndex);
-                  }
-                }}
-                className="w-full bg-white focus:outline-none resize-none overflow-hidden text-sm md:text-base leading-relaxed p-0 m-0 block"
-                placeholder="..."
-              />
-            ) : (
-              <div className="line-clamp-3 min-h-[1.5em]">
-                {editedRow.answers[column.hidden_id]?.text || (
-                  <span className="text-gray-300 italic text-xs">Click to edit</span>
-                )}
-              </div>
-            )}
-          </td>
-        );
-      })}
-      {/* Empty spacer cell to match "Add Column" header */}
-      <td className="border-r border-gray-100 bg-gray-50/30"></td>
+      {columns.map((column) => (
+        <TableCell
+          key={column.hidden_id}
+          column={column}
+          rowIndex={rowIndex}
+          isCellEditing={editingCell?.rowIndex === rowIndex && editingCell?.columnId === column.hidden_id}
+          onEditCell={onEditCell}
+          editedRow={editedRow}
+          onCellChange={onCellChange}
+          onSaveRow={onSaveRow}
+          onCancelEdit={onCancelEdit}
+        />
+      ))}
+      {/* Empty spacer cell removed as per user request to prevent covering data cells */}
     </tr>
   );
 } 

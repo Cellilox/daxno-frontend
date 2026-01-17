@@ -1,41 +1,39 @@
 "use client"
 
-import { useEffect, useState } from 'react';
-import { deleteColumn, updateColumn } from '@/actions/column-actions';
+import { useEffect, useState, useRef } from 'react';
+import { deleteColumn, updateColumn, updateColumnWidth } from '@/actions/column-actions';
 import { deleteRecord, updateRecord } from '@/actions/record-actions';
-import { Field, Record, ApiRecord } from './types';
+import { updateProjectSettings } from '@/actions/project-actions';
+import { Field, DocumentRecord, SpreadSheetProps } from './types';
 import TableHeader from './TableHeader';
 import TableRow from './TableRow';
 import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
 
-type SpreadSheetProps = {
-  columns: Field[];
-  records: ApiRecord[];
-  projectId: string;
-};
-
-export default function SpreadSheet({ columns, records, projectId }: SpreadSheetProps) {
+export default function SpreadSheet({ columns, records, projectId, project }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
-  const [localRecords, setLocalRecords] = useState<Record[]>([]);
+  const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedColumnToUpdate, setSelectedColumnToUpdate] = useState<Field | null>(null);
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedColumnToDelete, setSelectedColumnToDelete] = useState<Field | null>(null);
-  const [selectedRecordToDelete, setSelectedRecordToDelete] = useState<Record | null>(null);
+  const [selectedRecordToDelete, setSelectedRecordToDelete] = useState<DocumentRecord | null>(null);
   const [editingCell, setEditingCell] = useState<{ rowIndex: number, columnId: string } | null>(null);
-  const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: Record }>({});
+  const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: DocumentRecord }>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedRecordForReview, setSelectedRecordForReview] = useState<Record | null>(null);
+  const [selectedRecordForReview, setSelectedRecordForReview] = useState<DocumentRecord | null>(null);
 
 
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
-    setLocalColumns(columns || []);
-    // Initialize widths if new columns appear
+    if (columns) setLocalColumns(columns);
+    if (records) setLocalRecords(records);
+  }, [records, columns]);
+
+  useEffect(() => {
     setColumnWidths(prev => {
       const newWidths: { [key: string]: number } = {
         '__actions__': 100,
@@ -43,33 +41,86 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
         ...prev
       };
 
-      if (columns) {
-        columns.forEach(col => {
-          if (!newWidths[col.hidden_id]) {
-            newWidths[col.hidden_id] = 200; // Default width
-          }
-        });
+      if (project?.ui_settings?.column_widths) {
+        Object.assign(newWidths, project.ui_settings.column_widths);
       }
+
+      columns?.forEach(col => {
+        if (!newWidths[col.hidden_id]) {
+          newWidths[col.hidden_id] = col.width || 200;
+        }
+      });
       return newWidths;
     });
-
-    if (records) {
-      // Convert ApiRecord to Record (they now have matching answer structures)
-      const convertedRecords = records.map(apiRecord => ({
-        ...apiRecord,
-        answers: { ...apiRecord.answers }
-      }));
-      setLocalRecords(convertedRecords);
-    }
-  }, [records, columns]);
+  }, [columns, project]);
 
   // Column handlers
   const handleColumnResize = (columnId: string, newWidth: number) => {
+    const clampedWidth = Math.max(50, newWidth);
     setColumnWidths(prev => ({
       ...prev,
-      [columnId]: Math.max(50, newWidth) // Min width 50px
+      [columnId]: clampedWidth
     }));
+
+    // Debounced Persistence
+    const timerId = `resize-${columnId}`;
+    if ((window as any)[timerId]) clearTimeout((window as any)[timerId]);
+    (window as any)[timerId] = setTimeout(async () => {
+      try {
+        if (columnId === '__filename__' || columnId === '__actions__') {
+          // Standard columns: Update project settings
+          const currentWidths = { ...columnWidths, [columnId]: clampedWidth }; // Use local latest
+          const standardWidths = {
+            '__filename__': currentWidths['__filename__'],
+            '__actions__': currentWidths['__actions__']
+          };
+          await updateProjectSettings(projectId, {
+            ...project.ui_settings,
+            column_widths: standardWidths
+          });
+        } else {
+          // Custom columns: Update field specific width
+          await updateColumnWidth(columnId, projectId, clampedWidth);
+        }
+      } catch (err) {
+        console.error('Failed to persist column width:', err);
+      } finally {
+        delete (window as any)[timerId];
+      }
+    }, 1000);
   };
+
+  // Auto-scroll when new columns are added
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prevColumnsLength = useRef(columns?.length || 0);
+  const hasInitialized = useRef(false);
+
+  useEffect(() => {
+    // Prevent scroll on initial load
+    if (!hasInitialized.current && localColumns.length > 0) {
+      hasInitialized.current = true;
+      prevColumnsLength.current = localColumns.length;
+      return;
+    }
+
+    if (localColumns.length > prevColumnsLength.current) {
+      // Column added
+      if (scrollContainerRef.current) {
+        // Scroll to the end (right)
+        // Use setTimeout to allow DOM to update with new column
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (container) {
+            container.scrollTo({
+              left: container.scrollWidth,
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
+      }
+    }
+    prevColumnsLength.current = localColumns.length;
+  }, [localColumns.length]);
 
   const handleShowColumnUpdatePopup = (column: Field) => {
     setSelectedColumnToUpdate(column);
@@ -80,6 +131,26 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   const handleCloseColumnUpdatePopup = () => {
     setIsPopupVisible(false);
     setSelectedColumnToUpdate(null);
+  };
+
+  const handleUpdateColumn = async (column: Field, newName: string) => {
+    if (!newName.trim() || newName === column.name) return;
+
+    setIsLoading(true);
+    const updateData = {
+      id: column.id,
+      name: newName,
+      description: column.description,
+      related_project: projectId
+    };
+
+    try {
+      await updateColumn(column.hidden_id, projectId, updateData);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error updating column:', error);
+      setIsLoading(false);
+    }
   };
 
   const handleUpdateColumnSubmit = async (e: React.FormEvent) => {
@@ -125,7 +196,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
   };
 
   // Record handlers
-  const handleShowDeleteRecordAlert = (record: Record) => {
+  const handleShowDeleteRecordAlert = (record: DocumentRecord) => {
     setIsAlertVisible(true);
     setSelectedRecordToDelete(record);
   };
@@ -174,6 +245,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
             [columnId]: {
               ...currentAnswer,
               text: value,
+              geometry: { ...currentAnswer.geometry }
             },
           },
         },
@@ -231,7 +303,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordToDelete(null);
   };
 
-  const handleReviewRecord = (record: Record) => {
+  const handleReviewRecord = (record: DocumentRecord) => {
     setIsPopupVisible(true)
     setSelectedRecordForReview(record);
   }
@@ -241,24 +313,30 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
     setSelectedRecordForReview(null);
   }
 
-  if (!localColumns || !localRecords) {
+  const hasRecords = localRecords.length > 0;
+
+  if (!localRecords) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-auto h-full">
+    <div ref={scrollContainerRef} className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-auto h-full">
       <table className="w-full bg-white" style={{ tableLayout: 'fixed' }}>
         <colgroup>
-          <col style={{ width: `${columnWidths['__actions__'] || 100}px` }} className="md:hidden" />
-          <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
+          {hasRecords && (
+            <>
+              <col style={{ width: `${columnWidths['__actions__'] || 100}px` }} className="md:hidden" />
+              <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
+            </>
+          )}
           {localColumns.map(col => (
             <col key={`col-${col.hidden_id}`} style={{ width: `${columnWidths[col.hidden_id] || 200}px` }} />
           ))}
-          <col style={{ width: 'auto' }} />
+          <col style={{ width: '200px' }} />
         </colgroup>
         <TableHeader
           columns={localColumns}
-          records={records}
+          records={localRecords}
           hoveredColumn={hoveredColumn}
           setHoveredColumn={setHoveredColumn}
           onEditColumn={handleShowColumnUpdatePopup}
@@ -266,6 +344,7 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           projectId={projectId}
           columnWidths={columnWidths}
           onColumnResize={handleColumnResize}
+          onUpdateColumn={handleUpdateColumn}
         />
         <tbody>
           {localRecords.map((row, rowIndex) => (
@@ -291,16 +370,19 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
           {/* Ghost Rows to fill screen */}
           {Array.from({ length: Math.max(0, 20 - localRecords.length) }).map((_, i) => (
             <tr key={`ghost-${i}`} className="h-12 border-b border-gray-100/50">
-              {/* Actions Ghost */}
-              <td className="md:hidden"></td>
-              {/* Filename Ghost */}
-              <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10"></td>
+              {hasRecords && (
+                <>
+                  {/* Actions Ghost */}
+                  <td className="md:hidden"></td>
+                  {/* Filename Ghost */}
+                  <td className="px-4 py-2 border-r border-gray-100 bg-gray-50/10"></td>
+                </>
+              )}
               {/* Columns Ghost */}
               {localColumns.map(col => (
                 <td key={`ghost-${i}-${col.hidden_id}`} className="border-r border-gray-100"></td>
               ))}
-              {/* Spacer Ghost */}
-              <td className="border-r border-gray-100 bg-gray-50/30"></td>
+              {/* Spacer Ghost - Removed */}
             </tr>
           ))}
         </tbody>
@@ -329,4 +411,4 @@ export default function SpreadSheet({ columns, records, projectId }: SpreadSheet
       />
     </div>
   );
-} 
+}

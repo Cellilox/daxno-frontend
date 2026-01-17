@@ -2,20 +2,21 @@
 import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
-import { Field, ApiRecord } from './spreadsheet/types';
+import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
 
 
 type RecordsProps = {
     projectId: string;
     initialFields: Field[];
-    initialRecords: ApiRecord[];
+    initialRecords: DocumentRecord[];
+    project: any;
 };
 
-export default function Records({ projectId, initialFields, initialRecords }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [rowData, setRowData] = useState<ApiRecord[]>(initialRecords)
+    const [rowData, setRowData] = useState<DocumentRecord[]>(initialRecords)
     const [columns, setColumns] = useState<Field[]>(initialFields)
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
@@ -57,13 +58,13 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             console.warn('WebSocket connection timeout');
         };
 
-        const handleRecordCreated = (data: { record: ApiRecord; fields: Field[] }) => {
+        const handleRecordCreated = (data: { record: DocumentRecord; fields: Field[] }) => {
             setRowData(prev => [...prev, data.record]);
             setColumns(data.fields);
             setProcessingStatus(null); // Clear status on success
         };
 
-        const handleRecordUpdated = (data: { record: ApiRecord; fields: Field[] }) => {
+        const handleRecordUpdated = (data: { record: DocumentRecord; fields: Field[] }) => {
             setRowData(prev => prev.map(x => x.id === data.record.id ? data.record : x));
             setColumns(data.fields);
         };
@@ -73,7 +74,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
             setColumns(data.fields);
         };
 
-        const handleColumnCreated = (data: { records: ApiRecord[]; field: Field }) => {
+        const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
             setRowData(data.records);
             setColumns(prev => [...prev, data.field]);
         };
@@ -160,7 +161,7 @@ export default function Records({ projectId, initialFields, initialRecords }: Re
                 }
             </div>
             <div className="flex-1 min-h-0">
-                <SpreadSheet records={rowData} columns={columns} projectId={projectId} />
+                <SpreadSheet records={rowData} columns={columns} projectId={projectId} project={project} />
             </div>
             <ColumnReorderPopup
                 columns={columns}

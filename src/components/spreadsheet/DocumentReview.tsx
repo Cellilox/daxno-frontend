@@ -4,32 +4,12 @@ import { getFileUrl } from "@/actions/aws-url-actions";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Field } from "./types";
+import { Field, DocumentRecord } from "./types";
 import { updateRecord } from "@/actions/record-actions";
 import LoadingSpinner from "../ui/LoadingSpinner";
 
-interface AnswerItem {
-  text: string;
-  geometry: {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-  };
-  page: number;
-}
-
 interface DocumentReviewProps {
-  selectedRecordForReview?: {
-    id: string;
-    orginal_file_name: string;
-    created_at: string;
-    answers: Record<string, AnswerItem>;
-    filename: string;
-    file_key: string;
-    project_id: string;
-    pages: number;
-  };
+  selectedRecordForReview?: DocumentRecord;
   columns: Field[];
 }
 
@@ -57,7 +37,7 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState(false);
   const [isPdf, setIsPdf] = useState(false);
-  const [editedAnswers, setEditedAnswers] = useState<Record<string, AnswerItem>>({});
+  const [editedAnswers, setEditedAnswers] = useState<Record<string, any>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +84,7 @@ export default function DocumentReview({ selectedRecordForReview, columns }: Doc
     }
     try {
       setIsLoading(true)
-      await updateRecord(selectedRecordForReview.id, { answers: editedAnswers });
+      await updateRecord(selectedRecordForReview.id, { answers: editedAnswers as any });
       setIsLoading(false)
       setIsDirty(false);
       setIsEditMode(false);
