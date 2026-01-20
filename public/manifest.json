@@ -1,6 +1,6 @@
 {
-    "name": "Daxno",
-    "short_name": "Daxno",
+    "name": "Cellilox",
+    "short_name": "Cellilox",
     "description": "AI-powered document processing and analysis",
     "start_url": "/",
     "display": "standalone",
@@ -19,6 +19,14 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide"
         }
     ]
 }
