@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import CreateProjectForm from "@/components/forms/CreateProject";
 import FormModal from "@/components/ui/Popup";
+import StandardPopup from "@/components/ui/StandardPopup";
+import { FolderPlus } from "lucide-react";
 import { Project } from "@/types";
 
 export default function ProjectsClient({ projects }: { projects: Project[] }) {
@@ -29,15 +31,15 @@ export default function ProjectsClient({ projects }: { projects: Project[] }) {
           + Add Project
         </button>
       </div>
-      <FormModal
-        visible={showModal}
-        title="Create Project"
-        onCancel={() => setShowModal(false)}
-        position="center"
-        size="small"
+      <StandardPopup
+        isOpen={showModal}
+        title="Create New Project"
+        subtitle="Start a new workspace for your documents"
+        icon={<FolderPlus size={24} />}
+        onClose={() => setShowModal(false)}
       >
         <CreateProjectForm onCreated={handleProjectCreated} onCancel={() => setShowModal(false)} />
-      </FormModal>
+      </StandardPopup>
       <div className="mt-8">
         {projects?.length >= 1 ? (
           <>

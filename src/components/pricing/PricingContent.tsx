@@ -21,19 +21,28 @@ interface PricingContentProps {
 export function PricingContent({ billingInterval, makePayment, loading, clickedPlanName, current_plan, current_txn_amount, current_txn_end_date, current_plan_id, monthlyPlans, yearlyPlans, hourlyPlans }: PricingContentProps) {
   const features = {
     starter: [
-      <>500 documents/month</>,
-      <>Basic Templates</>,
-      <>Email Support</>
+      <><strong>500</strong>&nbsp;Documents/month</>,
+      <>AI Analysis & Project Agents</>,
+      <>Advanced OCR & Layout Geometry</>,
+      <>Cloud Connectors (Google Drive, etc.)</>,
+      <>Automated Workflows & Attachments</>,
+      <>Team Collaboration & Shared Links</>
     ],
     professional: [
-      <>2,000 documents/month</>,
-      <>Advanced Templates</>,
-      <>Priority Support</>
+      <><strong>2,000</strong>&nbsp;Documents/month</>,
+      <>Priority AI Processing</>,
+      <>Advanced Collaboration Tools</>,
+      <>Smart Notifications (SES/SNS)</>,
+      <>Priority Email & Chat Support</>,
+      <><strong>Everything in Starter</strong></>
     ],
-    enterprise: [
-      <>Unlimited Documents</>,
-      <>Custom Workflows</>,
-      <>Dedicated Support</>
+    byok: [
+      <><strong>1,000</strong>&nbsp;Documents/month</>,
+      <><strong>Bring Your Own Key (BYOK)</strong></>,
+      <><strong>Generate Managed Keys (GYOMK)</strong></>,
+      <>Full AI Agent Suite Access</>,
+      <>Enterprise-Grade Connectors</>,
+      <><strong>Dedicated 24/7 Support</strong></>
     ]
   }
   return (
@@ -62,21 +71,7 @@ export function PricingContent({ billingInterval, makePayment, loading, clickedP
               />
             )
           })}
-          <PricingCard
-            title="Enterprise"
-            planAmount={0}
-            features={features.enterprise}
-            ctaText="Contact Sales"
-            ctaLink="/contact"
-            billingInterval={billingInterval}
-            isEnterprise
-            makePayment={makePayment}
-            loading={loading}
-            clickedPlanName={clickedPlanName}
-            current_plan={current_plan}
-            current_txn_amount={current_txn_amount}
-            current_txn_end_date={current_txn_end_date}
-          />
+
         </div> :
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
@@ -102,21 +97,7 @@ export function PricingContent({ billingInterval, makePayment, loading, clickedP
               />
             )
           })}
-          <PricingCard
-            title="Enterprise"
-            planAmount={0}
-            features={features.enterprise}
-            ctaText="Contact Sales"
-            ctaLink="/contact"
-            billingInterval={billingInterval}
-            isEnterprise
-            makePayment={makePayment}
-            loading={loading}
-            clickedPlanName={clickedPlanName}
-            current_plan={current_plan}
-            current_txn_amount={current_txn_amount}
-            current_txn_end_date={current_txn_end_date}
-          />
+
         </div>
       }
     </>

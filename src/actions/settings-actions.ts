@@ -26,10 +26,31 @@ export async function getBillingConfig() {
             // Do NOT return byok_api_key (raw or masked) if not needed for display.
             // If strictly needed for UI "masked state", ensure it is "••••••••" from backend.
             byok_api_key: data.byok_api_key ? "••••••••" : undefined,
+            byok_provider: data.byok_provider,
             preferred_models: data.preferred_models
         };
     } catch (error) {
         console.error("Error fetching billing config:", error);
+        return null;
+    }
+}
+
+export async function getBillingConfigForUser(userId: string) {
+    try {
+        const response = await fetchAuthed(`${apiUrl}/tenants/user/${userId}`);
+        if (!response.ok) {
+            if (response.status === 404) return null;
+            throw new Error("Failed to fetch user billing config");
+        }
+        const data = await response.json();
+
+        return {
+            subscription_type: data.subscription_type,
+            byok_provider: data.byok_provider,
+            preferred_models: data.preferred_models
+        };
+    } catch (error) {
+        console.error("Error fetching user billing config:", error);
         return null;
     }
 }
@@ -59,12 +80,13 @@ export async function getAllModels() {
     }
 }
 
-export async function updateBillingConfig(subscription_type: string, byok_api_key?: string, preferred_models?: any) {
+export async function updateBillingConfig(subscription_type: string, byok_api_key?: string, preferred_models?: any, byok_provider?: string) {
     try {
         const payload = {
             subscription_type,
             byok_api_key,
-            preferred_models
+            preferred_models,
+            byok_provider
         };
         const response = await fetchAuthedJson(`${apiUrl}/tenants/billing-config`, {
             method: "POST",
@@ -126,5 +148,40 @@ export async function getManagedByokActivity(limit: number = 50, offset: number 
     } catch (error) {
         console.error("Error fetching BYOK activity:", error);
         return [];
+    }
+}
+
+export async function getProviderModels(provider: string) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/models/provider-models?provider=${provider}`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch provider models");
+        }
+        return response.json();
+    } catch (error) {
+        console.error("Error fetching provider models:", error);
+        return null;
+    }
+}
+
+export async function verifyProviderKey(provider: string, apiKey: string) {
+    try {
+        const response = await fetchAuthedJson(`${apiUrl}/tenants/verify-provider-key`, {
+            method: "POST",
+            body: JSON.stringify({
+                provider,
+                api_key: apiKey
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Verification failed");
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error verifying provider key:", error);
+        throw error;
     }
 }

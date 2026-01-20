@@ -1,13 +1,16 @@
 'use client'
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { queryDocument, saveRecord, uploadFile } from '@/actions/record-actions';
+import { io, Socket } from 'socket.io-client';
+import { useAuth } from '@clerk/nextjs';
+import { queryDocument, saveRecord, uploadFile, checkRecordStatus, getPresignedUrl } from '@/actions/record-actions';
 import { loggedInUserId } from '@/actions/loggedin-user';
 import { useRouter } from 'next/navigation';
 import { createDocument } from '@/actions/documents-action';
 import { messageType, messageTypeEnum } from '@/types';
+import UsageLimitModal from '../modals/UsageLimitModal';
 import { FileStatus } from './types';
 import { getTransactions } from '@/actions/transaction-actions';
 
@@ -20,6 +23,8 @@ type MyDropzoneProps = {
 };
 
 export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan }: MyDropzoneProps) {
+  const { getToken, sessionId } = useAuth();
+  const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -30,12 +35,38 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // New state for local feedback
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [activeFilename, setActiveFilename] = useState<string | null>(null);
+
+
+  // Limit Modal State
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [limitModalMessage, setLimitModalMessage] = useState('');
+  const [limitModalType, setLimitModalType] = useState<'AI_EXHAUSTED' | 'DAILY_LIMIT'>('DAILY_LIMIT');
 
   const router = useRouter();
-  useEffect(() => {
-    if (plan === "Professional" || plan === "Team") {
-      setIsBulkUploadAllowed(true)
+
+  const checkLimitError = (errorMsg: string) => {
+    const cleanMsg = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+
+    if (cleanMsg.includes('AI_CREDITS_EXHAUSTED')) {
+      setLimitModalType('AI_EXHAUSTED');
+      setLimitModalMessage("All available platform credits are currently exhausted. Please try again later or Bring Your Own Key to continue instantly.");
+      setLimitModalOpen(true);
+      setIsLoading(false);
+      return true;
     }
+    if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
+      setLimitModalType('DAILY_LIMIT');
+      setLimitModalMessage(cleanMsg.replace(/"/g, ''));
+      setLimitModalOpen(true);
+      setIsLoading(false);
+      return true;
+    }
+    return false;
+  };
+  useEffect(() => {
+    // Enabled for testing on all plans
+    setIsBulkUploadAllowed(true)
   }, [plan])
 
   // Single file upload handlers
@@ -50,9 +81,133 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   }, []);
 
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB in bytes
+  useEffect(() => {
+    // Initialize Socket.IO connection for real-time feedback
+    if (!socketRef.current && projectId) {
+      socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
+        path: '/ws/records/sockets',
+        auth: { projectId },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        withCredentials: true
+      });
 
-  const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO) => {
+      const socket = socketRef.current;
+
+      socket.on('ocr_start', (data: { status: string }) => {
+        // Resurrect loading state if it was killed by a timeout but backend is still going
+        setIsLoading(true);
+        setUploadError(null);
+        updateStatus('OCR Processing...', messageTypeEnum.INFO, 'Starting OCR...');
+      });
+
+      socket.on('ocr_progress', (data: { current: number; total: number }) => {
+        setIsLoading(true);
+        setUploadError(null);
+        updateStatus('OCR Processing...', messageTypeEnum.INFO, `Page ${data.current} of ${data.total}`);
+      });
+
+      socket.on('ai_start', (data: { status: string }) => {
+        setIsLoading(true);
+        setUploadError(null);
+        updateStatus('AI Analysis...', messageTypeEnum.INFO, 'Thinking...');
+      });
+
+      socket.on('record_created', (data: { record: any }) => {
+        setIsLoading(false);
+        setUploadError(null);
+        updateStatus('Upload Complete!', messageTypeEnum.INFO, 'Success!');
+
+        // Close modal after success
+        setTimeout(() => {
+          setIsVisible(false);
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+          router.refresh();
+        }, 1500);
+      });
+
+      socket.on('processing_error', (data: { message: string }) => {
+        let displayMsg = data.message;
+
+        // Map technical errors to user friendly messages
+        if (displayMsg.includes('Could not connect to the endpoint URL') || displayMsg.includes('EndpointConnectionError')) {
+          displayMsg = "Network Error: Server could not reach AI provider. Please check your internet connection.";
+        } else if (displayMsg.includes('ClientError') || displayMsg.includes('403')) {
+          displayMsg = "Permission Error: Access denied to AI resources.";
+        }
+
+        setIsLoading(false);
+        setUploadError(displayMsg);
+        updateStatus('Processing Failed', messageTypeEnum.ERROR, 'Error');
+        onMessageChange({ type: messageTypeEnum.ERROR, text: `${displayMsg}` });
+      });
+
+      socket.on('connect', async () => {
+        console.log('Socket reconnected');
+
+        // If we were loading, check if the record was actually finished OR failed while we were offline
+        if (isLoading && activeFilename) {
+          updateStatus('Reconnected. Checking status...', messageTypeEnum.INFO, 'Syncing...');
+
+          // Check if record exists in DB (returns Record object or null)
+          const record = await checkRecordStatus(projectId, activeFilename);
+
+          if (record) {
+            // Check internal status from answers field
+            const status = record.answers?.['__status__'];
+
+            if (status === 'error') {
+              // 1. Processing Failed
+              const errMsg = record.answers?.['message'] || "Unknown error";
+              setIsLoading(false);
+              setUploadError(`Processing Failed: ${errMsg}`);
+              updateStatus('Failed', messageTypeEnum.ERROR);
+              onMessageChange({ type: messageTypeEnum.ERROR, text: `Server Error: ${errMsg}` });
+
+            } else if (status === 'processing') {
+              // 2. Still Processing
+              updateStatus('Processing in background...', messageTypeEnum.INFO, 'Server is busy...');
+              // Logic: We just stay in isLoading=true and wait for socket events.
+              // Polling fallback could be added here if socket is unreliable.
+
+            } else {
+              // 3. Success (Normal answers)
+              setIsLoading(false);
+              setUploadError(null);
+              setActiveFilename(null);
+              updateStatus('Upload Complete (Synced)!', messageTypeEnum.INFO, 'Success!');
+
+              setTimeout(() => {
+                setIsVisible(false);
+                onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+                router.refresh();
+              }, 1500);
+            }
+          } else {
+            // Not found yet? It might be just starting or inconsistent.
+            updateStatus('Connection restored', messageTypeEnum.INFO, 'Waiting for update...');
+          }
+        }
+      });
+
+      socket.on('disconnect', () => {
+        if (isLoading) {
+          updateStatus('Connection lost...', messageTypeEnum.INFO, 'Reconnecting...');
+        }
+      });
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, [projectId, activeFilename]);
+
+  const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB in bytes
+
+  const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO, rightText?: string) => {
     if (type === messageTypeEnum.ERROR) {
       setUploadError(text);
       setUploadStatus(''); // Clear status on error
@@ -61,7 +216,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setUploadStatus(text);
       setUploadError(null);
       // Propagate INFO messages (for the top progress banner)
-      onMessageChange({ type, text });
+      onMessageChange({ type, text, rightText });
     }
   };
 
@@ -78,51 +233,97 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      const msg = `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 50 MB.`;
+      const msg = `File too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Maximum allowed is 500 MB.`;
       updateStatus(msg, messageTypeEnum.ERROR);
       setIsLoading(false);
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      updateStatus('Uploading file...');
-      const result = await uploadFile(formData, projectId);
+    if (!projectId || projectId === 'undefined') {
+      updateStatus('Project ID is missing. Please refresh the page.', messageTypeEnum.ERROR);
+      setIsLoading(false);
+      return;
+    }
 
-      if (result.detail) {
-        updateStatus(`${JSON.stringify(result.detail)}`, messageTypeEnum.ERROR);
-        setIsLoading(false)
-        return;
+    try {
+      updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
+
+      console.log('[DEBUG] Calling getPresignedUrl for:', file.name, 'in project:', projectId, 'type:', file.type);
+      const { upload_url, filename: uniqueFilename, key: fileKey } = await getPresignedUrl(file.name, projectId, file.type);
+
+      if (!uniqueFilename || uniqueFilename === 'undefined') {
+        console.error('[ERROR] handleUpload: received invalid filename from server:', uniqueFilename);
+        throw new Error('Server returned invalid filename. Please try again.');
       }
-      const filename = result.filename;
-      const orginal_file_name = result.original_filename;
-      const file_key = result.Key;
-      await handlequeryDocument(filename, orginal_file_name, file_key);
+
+      console.log('[DEBUG] handleUpload: getPresignedUrl success:', { upload_url, uniqueFilename, fileKey });
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', upload_url);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            updateStatus('Uploading to S3...', messageTypeEnum.INFO, `${percentComplete}%`);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('[DEBUG] S3 Upload (single) successful');
+            resolve({ filename: uniqueFilename, original_filename: file.name, key: fileKey });
+          } else {
+            console.error('[DEBUG] S3 Upload (single) failed status:', xhr.status);
+            reject(new Error(`S3 Upload failed with status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during S3 upload'));
+        xhr.send(file);
+      });
+
+      const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = result;
+      console.log('[DEBUG] handleUpload proceeding to analysis with:', { uploadedFilename, originalName, finalKey });
+      setActiveFilename(uploadedFilename);
+      await handlequeryDocument(uploadedFilename, originalName, finalKey);
     } catch (error: any) {
       setIsLoading(false);
       const errMsg = error.message || 'Error uploading a file';
-      updateStatus(errMsg, messageTypeEnum.ERROR);
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
     }
   };
 
-  const handlequeryDocument = async (fileName: string, orginal_file_name: string, file_key: string) => {
+  const handlequeryDocument = async (filename: string, original_filename: string, file_key: string) => {
+    console.log('[DEBUG] handlequeryDocument start:', { filename, original_filename, file_key });
+
+    if (!filename || filename === 'undefined') {
+      console.error('[ERROR] handlequeryDocument called with invalid filename:', filename);
+      updateStatus('Internal error: Invalid filename generated.', messageTypeEnum.ERROR);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      updateStatus('Optical Character Recognition...');
+      updateStatus('Queuing analysis...', messageTypeEnum.INFO, 'Processing in background...');
 
-      // Artificial delay for UI feedback if needed, but risky to rely on timeouts for messages
-      setTimeout(() => {
-        // Only update if still loading and no error
-        if (isLoading) updateStatus('AI Model Thinking....');
-      }, 4000);
+      // Call the endpoint which now returns immediately (Background Task)
+      await queryDocument(projectId, filename, original_filename);
 
-      const response = await queryDocument(projectId, fileName);
-      const recordPayload = { ...response, orginal_file_name: orginal_file_name, file_key: file_key };
-      await saveData(recordPayload);
+      // We do NOT wait for result or call saveRecord anymore. 
+      // The backend background task handles everything and emits 'record_created'.
+      // The socket listener we added will pick that up and finish the flow.
+      updateStatus('Processing...', messageTypeEnum.INFO, 'Server is analyzing...');
+
     } catch (error: any) {
       setIsLoading(false);
-      const errMsg = error.message || 'Error processing document';
-      updateStatus(errMsg, messageTypeEnum.ERROR);
+      const errMsg = error.message || 'Error initializing processing';
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
     }
   };
 
@@ -186,49 +387,74 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
-      const user_id = `${linkOwner ? linkOwner : await loggedInUserId()}`
-      // Upload File
-      updateFileStatus({ status: 'uploading', progress: 25 });
-      const formData = new FormData();
-      formData.append('file', file);
-      const uploadResult = await uploadFile(formData, projectId);
-      if (uploadResult.detail) {
-        onMessageChange({ type: messageTypeEnum.ERROR, text: `${JSON.stringify(uploadResult.detail)}` })
-        setIsLoading(false)
-        return;
-      }
-      // Analyze Content
-      updateFileStatus({ status: 'analyzing', progress: 50 });
-      const analysisResult = await queryDocument(projectId, uploadResult.filename);
+      // 1. Get Presigned URL
+      updateFileStatus({ status: 'uploading', progress: 10 });
+      console.log('[DEBUG] processSingleFile: Calling getPresignedUrl for:', file.name, 'type:', file.type);
+      const { upload_url, filename, key } = await getPresignedUrl(file.name, projectId, file.type);
 
-      // Save Record
-      updateFileStatus({ status: 'saving', progress: 80 });
-      const recordPayload = {
-        ...analysisResult,
-        orginal_file_name: uploadResult.original_filename,
-        file_key: uploadResult.Key
-      };
-      const savedResult = await saveRecord(recordPayload, user_id);
-      const db_data = {
-        filename: savedResult.record.filename,
-        page_number: savedResult.record.pages
+      if (!filename || filename === 'undefined') {
+        throw new Error("Server returned invalid filename for " + file.name);
       }
-      await createDocument(db_data, user_id, projectId);
 
-      // Finalize
-      updateFileStatus({
-        status: 'complete',
-        progress: 100,
-        result: savedResult
+      console.log('[DEBUG] processSingleFile: getPresignedUrl result:', { upload_url, filename, key });
+
+      // 2. Upload to S3
+      updateFileStatus({ status: 'uploading', progress: 20 });
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', upload_url);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = 20 + Math.round((e.loaded / e.total) * 30);
+            updateFileStatus({ status: 'uploading', progress: percent });
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('[DEBUG] S3 Upload (bulk) successful');
+            resolve(null);
+          } else {
+            console.error('[DEBUG] S3 Upload (bulk) failed status:', xhr.status);
+            reject(new Error('S3 upload failed'));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.send(file);
       });
+
+      // 3. Trigger Analysis (Async)
+      updateFileStatus({ status: 'analyzing', progress: 60 });
+      console.log('[DEBUG] processSingleFile triggering queryDocument with:', { filename, original: file.name });
+      await queryDocument(projectId, filename, file.name);
+
+      // We rely on sockets for completion in bulk mode too, but for individual file status
+      // we might need to listen to socket events with file correlation?
+      // Since bulk mode uses `processSingleFile` sequentially, we need a way to know when THIS file is done.
+      // Ideally, we'd wait for a promise that resolves when the specific record is created.
+      // For now, let's mark it as 'submitted' or 'processing'.
+      updateFileStatus({ status: 'analyzing', progress: 60, result: { message: "Processing in background" } });
+
+      // Note: Full bulk tracking requires more sophisticated socket correlation (e.g. by filename).
+      // But this unblocks the "blocking" issue.
 
     } catch (error) {
       console.error(`Error processing ${fileStatus.file.name}:`, error);
-      updateFileStatus({
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Processing failed',
-        progress: 100
-      });
+      const errMsg = error instanceof Error ? error.message : 'Processing failed';
+
+      if (!checkLimitError(errMsg)) {
+        updateFileStatus({
+          status: 'error',
+          error: errMsg,
+          progress: 100
+        });
+      } else {
+        updateFileStatus({
+          status: 'error',
+          error: 'Limit Reached',
+          progress: 100
+        });
+      }
     }
   };
 
@@ -294,6 +520,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       case 'uploading': return 'Uploading...';
       case 'extracting': return 'Extracting text...';
       case 'analyzing': return 'Analyzing content...';
+      case 'analyzed': return 'Analysis complete';
       case 'saving': return 'Saving record...';
       case 'complete': return 'Completed';
       case 'error': return 'Error occurred';
@@ -517,9 +744,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   );
 
   return (
-    <div className="space-y-4">
-      {renderUploadModeToggle()}
-      {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
-    </div>
+    <>
+      <div className="space-y-4">
+        {renderUploadModeToggle()}
+        {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
+      </div>
+
+      <UsageLimitModal
+        isOpen={limitModalOpen}
+        onClose={() => {
+          setLimitModalOpen(false);
+          setIsVisible(false); // Close the parent dropzone modal
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' }); // Clear the status message
+          setUploadStatus(''); // Clear local status
+        }}
+        message={limitModalMessage}
+        type={limitModalType}
+      />
+    </>
   );
 }

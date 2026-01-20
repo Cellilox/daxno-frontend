@@ -18,7 +18,7 @@ export async function getAvailablePlans() {
 
 const sanitizePath = (path: string) => {
   // Remove leading slashes and any scheme/host attempts
-  return path.replace(/^\/+/, '').replace(/[^\w\-\/]/g, '');
+  return path.replace(/^\/+/, '').replace(/[^\w\-\/\?\=\&]/g, '');
 };
 
 export async function requestPayment(pathname: string, amount: number, plan_id: number) {

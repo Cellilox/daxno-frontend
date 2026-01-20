@@ -4,6 +4,7 @@ import Link from 'next/link'
 import React from 'react'
 import CurrentPlan from './CurrentPlan'
 import { getTransactions } from '@/actions/transaction-actions'
+import { getBillingConfig } from '@/actions/settings-actions'
 import Image from 'next/image'
 import MobileMenu from './MobileMenu'
 
@@ -11,6 +12,7 @@ const Header = async () => {
   const user = await currentUser()
   const userId = user?.id
   const transactions = await getTransactions()
+  const billingConfig = await getBillingConfig()
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
@@ -33,7 +35,7 @@ const Header = async () => {
         <div className='md:mr-3'>
           <SignedIn>
             <div className='flex justify-between'>
-              <CurrentPlan transactions={transactions} />
+              <CurrentPlan transactions={transactions} billingConfig={billingConfig} />
               <div className="md:hidden -mt-2 ml-3">
                 <MobileMenu userId={userId!} />
               </div>

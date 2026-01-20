@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { create_sub_feedback } from "@/actions/cancel-feedback-actions";
 import { usePathname } from "next/navigation";
 
-type BillingProps = {
+export type BillingProps = {
   sub_id: number;
   t_id: number;
   subPlan: string;
@@ -138,7 +138,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4">
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-2xl font-bold">Billing & Subscription</h1>
         {isActive ?
           (
@@ -156,7 +156,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
           <span className="font-medium">Current Plan:</span>
-          <span className="font-semibold">{subPlan}</span>
+          <span className="font-semibold">{subPlan || 'Free'}</span>
         </div>
         <div className="flex justify-between">
           <span className="font-medium">Amount:</span>
@@ -168,23 +168,27 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
         </div>
         <div className="flex justify-between">
           <span className="font-medium">Next Billing Date:</span>
-          <span className="capitalize">{readableDate}</span>
+          <span className="capitalize">
+            {['gyok', 'topup'].includes(subPlan?.toLowerCase()) ? 'One-time' : readableDate}
+          </span>
         </div>
-        {isActive ? (
-          <button
-            onClick={openModal}
-            className="w-full flex justify-center items-center mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg"
-          >
-            {submitting && <LoadingSpinner className="mr3" />}
-            {submitting ? 'Cancelling...' : 'Cancel Subscription'}
-          </button>
-        ) : (
-          <button
-            disabled
-            className="w-full mt-4 bg-gray-400 text-white font-medium py-2 rounded-lg cursor-not-allowed"
-          >
-            Subscription Cancelled
-          </button>
+        {!['gyok', 'topup'].includes(subPlan?.toLowerCase()) && (
+          isActive ? (
+            <button
+              onClick={openModal}
+              className="w-full flex justify-center items-center mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-lg"
+            >
+              {submitting && <LoadingSpinner className="mr3" />}
+              {submitting ? 'Cancelling...' : 'Cancel Subscription'}
+            </button>
+          ) : (
+            <button
+              disabled
+              className="w-full mt-4 bg-gray-400 text-white font-medium py-2 rounded-lg cursor-not-allowed"
+            >
+              Subscription Cancelled
+            </button>
+          )
         )}
       </div>
 

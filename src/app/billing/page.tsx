@@ -1,7 +1,6 @@
 import { getUserPlan, getUserSubscription, getPaymentHistory } from "@/actions/payment-actions";
 import { getTransactions } from "@/actions/transaction-actions";
-import Billing from "@/components/Billing";
-import BillingConfig from "@/components/BillingConfig";
+import BillingTabs from "@/components/BillingTabs";
 import { getBillingConfig, getTrustedModels, getAllModels } from "@/actions/settings-actions";
 import { Metadata } from "next";
 
@@ -46,21 +45,20 @@ export default async function BillingPage() {
     };
   }
 
-  return (
-    <>
-      <BillingConfig initialConfig={billingConfig} trustedModels={trustedModels} allModels={allModels} />
+  const billingConfigProps = {
+    initialConfig: billingConfig,
+    trustedModels: trustedModels,
+    allModels: allModels,
+    currentPlan: subscriptionProps?.subPlan || (firstTx?.plan_name as string), // Fallback to transaction plan name if available
+    currentInterval: subscriptionProps?.subInterval,
+    currentAmount: subscriptionProps?.subAmount ? Number(subscriptionProps.subAmount) : (firstTx?.amount ? Number(firstTx.amount) : 0),
+    currentEndDate: subscriptionProps?.nextBillingDate || firstTx?.end_date,
+  };
 
-      {firstTx && subscriptionProps ? (
-        <Billing {...subscriptionProps} />
-      ) : (
-        <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col justify-center items-center">
-          <h1 className="text-2xl font-bold mb-6">Subscription History</h1>
-          <p className="text-gray-500 mb-4">You don't have any ongoing subscription.</p>
-          <a href="/pricing" className="text-indigo-600 hover:text-indigo-800 font-medium">
-            View Pricing Plans &rarr;
-          </a>
-        </div>
-      )}
-    </>
+  return (
+    <BillingTabs
+      billingConfigProps={billingConfigProps}
+      billingProps={subscriptionProps}
+    />
   );
 }

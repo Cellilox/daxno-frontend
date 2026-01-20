@@ -1,10 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Search } from 'lucide-react';
+import { ChevronDown, Check, Search, Plus } from 'lucide-react';
 import { Model } from '@/types';
 import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
+
+export interface ModelInfo {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 type ModelSelectorProps = {
   models: Model[];
@@ -126,11 +133,11 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
       >
         <div className="flex items-center overflow-hidden">
           {autoEnabled && !userHasSelected && (
-            <span className="px-1 mr-1 bg-gray-200 text-gray-600 text-xs rounded">Auto</span>
+            <span className="px-1 py-0.5 mr-1 bg-gray-200 text-gray-600 text-xs rounded font-medium">Auto</span>
           )}
           <span className="text-sm font-medium truncate">{displayLabel}</span>
         </div>
-        <ChevronDown size={20} className="ml-2 text-blue-600" />
+        <ChevronDown size={16} className="ml-2 text-blue-600" />
       </button>
 
       {showTooltip && (
@@ -138,12 +145,13 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
           ref={tooltipRef}
           className="absolute z-50 mt-2 w-48 p-4 bg-white border border-gray-200 rounded shadow-lg left-0 top-full"
         >
-          <p className="text-sm text-gray-700 mb-2">
+          <p className="text-sm text-gray-600 mb-2">
             Balanced quality and speed, recommended for most tasks.
           </p>
-          <label className="flex items-center space-x-2">
+          <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
+              className="w-3.5 h-3.5"
               checked={!autoEnabled}
               onChange={() => {
                 setAutoEnabled(false);
@@ -174,38 +182,33 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
               />
             </div>
             <ul>
-              {filteredModels.map((model) => {
-                const tier = model.tier || 'free';
-
-                let isDisabled = false;
-                if (tier === 'starter') {
-                  isDisabled = !['Starter', 'Professional'].includes(plan);
-                } else if (tier === 'professional') {
-                  isDisabled = plan !== 'Professional';
-                }
-
-                return (
-                  <li
-                    key={model.id}
-                    className={`flex justify-between items-center p-2 rounded ${isDisabled
-                      ? 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                      : 'hover:bg-gray-100 cursor-pointer'
-                      }`}
-                    onClick={() => !isDisabled && handleSelect(model.id)}
-                  >
-                    <div className="flex items-center">
-                      <span>{extractLabel(model.name)}</span>
-                      {tier === 'starter' && <span className="ml-2 text-[10px] bg-blue-100 text-blue-800 px-1 rounded font-bold">STARTER</span>}
-                      {tier === 'professional' && <span className="ml-2 text-[10px] bg-yellow-100 text-yellow-800 px-1 rounded font-bold">PRO</span>}
-                    </div>
-                    {selectedModel === model.id && (
-                      <Check size={16} className="text-green-600 ml-2" />
-                    )}
-                    {model.id === pickedModel && isLoading ? <LoadingSpinner /> : null}
-                  </li>
-                )
-              })}
+              {filteredModels.map((model) => (
+                <li
+                  key={model.id}
+                  className="flex justify-between items-center p-2 rounded hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleSelect(model.id)}
+                >
+                  <div className="flex items-center">
+                    <span className="text-sm">{extractLabel(model.name)}</span>
+                  </div>
+                  {selectedModel === model.id && (
+                    <Check size={16} className="text-green-600 ml-2" />
+                  )}
+                  {model.id === pickedModel && isLoading ? <LoadingSpinner /> : null}
+                </li>
+              ))}
             </ul>
+            {!disabled && (
+              <div className="border-t border-gray-100 mt-2 pt-2 px-1">
+                <Link
+                  href="/billing?tab=configuration"
+                  className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2.5 rounded transition-colors w-full"
+                >
+                  <Plus size={16} />
+                  Add more models
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

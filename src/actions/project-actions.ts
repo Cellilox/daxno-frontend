@@ -37,6 +37,23 @@ export async function createProject(formData: projectCreateData) {
   }
 }
 
+export async function updateProjectSettings(projectId: string, uiSettings: any) {
+  try {
+    const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify({ ui_settings: uiSettings }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update project settings");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating project settings:", error);
+    throw error;
+  }
+}
+
 export async function getProjects() {
   try {
     const response = await fetchAuthedJson(`${apiUrl}/projects/`, {

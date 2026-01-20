@@ -64,9 +64,9 @@ export default function OnyxDeepLinkButton({ projectId }: OnyxDeepLinkButtonProp
         <button
             onClick={handleDeepLink}
             disabled={loading}
-            className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
+            className="text-sm inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
         >
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
             {loading ? "Connecting..." : "Deep Insights & Chat"}
             {!loading && <ExternalLink className="w-3 h-3 ml-2 opacity-70" />}
         </button>

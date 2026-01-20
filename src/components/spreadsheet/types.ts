@@ -6,6 +6,7 @@ export type Field = {
   order_number: number;
   type: string;
   project_id: string;
+  width?: number;
 };
 
 export type Geometry = {
@@ -21,32 +22,21 @@ export type AnswerData = {
   page: number;
 };
 
-export type ApiRecord = {
-  id: string;
-  answers: { [key: string]: AnswerData };
-  updated_at: string;
-  created_at: string;
-  filename: string;
-  orginal_file_name: string;
-  file_key: string;
-  project_id: string;
-  pages: number;
-};
-
-export type Record = {
+export type DocumentRecord = {
   id: string;
   filename: string;
-  orginal_file_name: string;
+  original_filename: string;
   file_key: string;
   project_id: string;
-  answers: { [key: string]: AnswerData };
+  answers: { [key: string]: any };
   created_at: string;
   updated_at: string;
   pages: number;
 };
 
 export type SpreadSheetProps = {
-  columns: Field[] | undefined;
-  records: ApiRecord[] | undefined;
+  columns: Field[];
+  records: DocumentRecord[];
   projectId: string;
+  project: any;
 };
