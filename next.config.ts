@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWA from 'next-pwa';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
@@ -28,4 +29,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// PWA configuration
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development', // Disable in dev for easier debugging
+  sw: 'sw.js',
+});
+
+export default pwaConfig(nextConfig);
