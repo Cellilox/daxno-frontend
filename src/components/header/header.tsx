@@ -7,6 +7,7 @@ import { getTransactions } from '@/actions/transaction-actions'
 import { getBillingConfig } from '@/actions/settings-actions'
 import Image from 'next/image'
 import MobileMenu from './MobileMenu'
+import { getSafeUrl } from '@/lib/api-utils'
 
 const Header = async () => {
   const user = await currentUser()
@@ -47,7 +48,7 @@ const Header = async () => {
             <SignInButton mode="modal" />
           </SignedOut>
           <SignedIn>
-            <UserButton afterSignOutUrl={`${process.env.NEXT_PUBLIC_ONYX_URL}/auth/logout-bridge?next=${process.env.NEXT_PUBLIC_CLIENT_URL}`} />
+            <UserButton afterSignOutUrl={getSafeUrl(process.env.NEXT_PUBLIC_ONYX_URL || '/api/proxy/onyx', `/auth/logout-bridge?next=${process.env.NEXT_PUBLIC_CLIENT_URL}`)} />
           </SignedIn>
         </div>
       </div>

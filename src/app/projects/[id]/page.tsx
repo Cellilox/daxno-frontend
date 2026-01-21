@@ -1,6 +1,7 @@
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
 import { fetchAuthed } from "@/lib/api-client"
+import { buildApiUrl } from "@/lib/api-utils"
 import { getColumns } from "@/actions/column-actions"
 import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
@@ -44,7 +45,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   ]);
 
   // Secondary data that depends on primary data, but can still be parallelized
-  const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
+  const recordsUrl = buildApiUrl(`/records/${id}`);
   const [
     recordsResponse,
     plan,

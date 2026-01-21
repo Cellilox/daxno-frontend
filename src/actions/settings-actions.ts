@@ -1,8 +1,6 @@
 'use server';
 
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export interface BillingConfig {
     subscription_type: string;
@@ -12,7 +10,8 @@ export interface BillingConfig {
 
 export async function getBillingConfig() {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/me`);
+        const url = buildApiUrl('/tenants/me');
+        const response = await fetchAuthed(url);
         if (!response.ok) {
             if (response.status === 404) return null;
             throw new Error("Failed to fetch billing config");
@@ -37,7 +36,8 @@ export async function getBillingConfig() {
 
 export async function getBillingConfigForUser(userId: string) {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/user/${userId}`);
+        const url = buildApiUrl(`/tenants/user/${userId}`);
+        const response = await fetchAuthed(url);
         if (!response.ok) {
             if (response.status === 404) return null;
             throw new Error("Failed to fetch user billing config");
@@ -56,7 +56,8 @@ export async function getBillingConfigForUser(userId: string) {
 }
 export async function getTrustedModels() {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/models/trusted`);
+        const url = buildApiUrl('/models/trusted');
+        const response = await fetchAuthedJson(url);
         if (!response.ok) {
             throw new Error("Failed to fetch trusted models");
         }
@@ -69,7 +70,8 @@ export async function getTrustedModels() {
 
 export async function getAllModels() {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/models/available`);
+        const url = buildApiUrl('/models/available');
+        const response = await fetchAuthedJson(url);
         if (!response.ok) {
             throw new Error("Failed to fetch available models");
         }
@@ -88,7 +90,8 @@ export async function updateBillingConfig(subscription_type: string, byok_api_ke
             preferred_models,
             byok_provider
         };
-        const response = await fetchAuthedJson(`${apiUrl}/tenants/billing-config`, {
+        const url = buildApiUrl('/tenants/billing-config');
+        const response = await fetchAuthedJson(url, {
             method: "POST",
             body: JSON.stringify(payload)
         });
@@ -105,7 +108,8 @@ export async function updateBillingConfig(subscription_type: string, byok_api_ke
 
 export async function provisionManagedByok(limit: number = 0.02) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/tenants/provision-byok?limit=${limit}`, {
+        const url = buildApiUrl(`/tenants/provision-byok?limit=${limit}`);
+        const response = await fetchAuthedJson(url, {
             method: "POST"
         });
         if (!response.ok) throw new Error("Failed to provision Managed BYOK key");
@@ -118,7 +122,8 @@ export async function provisionManagedByok(limit: number = 0.02) {
 
 export async function rotateManagedByok() {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/tenants/rotate-byok`, {
+        const url = buildApiUrl('/tenants/rotate-byok');
+        const response = await fetchAuthedJson(url, {
             method: "POST"
         });
         if (!response.ok) throw new Error("Failed to rotate Managed BYOK key");
@@ -131,7 +136,8 @@ export async function rotateManagedByok() {
 
 export async function getByokUsage() {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/byok-usage`);
+        const url = buildApiUrl('/tenants/byok-usage');
+        const response = await fetchAuthed(url);
         if (!response.ok) throw new Error("Failed to fetch BYOK usage");
         return response.json();
     } catch (error) {
@@ -142,7 +148,8 @@ export async function getByokUsage() {
 
 export async function getManagedByokActivity(limit: number = 50, offset: number = 0) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/tenants/byok-activity?limit=${limit}&offset=${offset}`);
+        const url = buildApiUrl(`/tenants/byok-activity?limit=${limit}&offset=${offset}`);
+        const response = await fetchAuthedJson(url);
         if (!response.ok) throw new Error("Failed to fetch BYOK activity");
         return response.json();
     } catch (error) {
@@ -153,7 +160,8 @@ export async function getManagedByokActivity(limit: number = 50, offset: number 
 
 export async function getProviderModels(provider: string) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/models/provider-models?provider=${provider}`);
+        const url = buildApiUrl(`/models/provider-models?provider=${provider}`);
+        const response = await fetchAuthedJson(url);
         if (!response.ok) {
             throw new Error("Failed to fetch provider models");
         }
@@ -166,7 +174,8 @@ export async function getProviderModels(provider: string) {
 
 export async function verifyProviderKey(provider: string, apiKey: string) {
     try {
-        const response = await fetchAuthedJson(`${apiUrl}/tenants/verify-provider-key`, {
+        const url = buildApiUrl('/tenants/verify-provider-key');
+        const response = await fetchAuthedJson(url, {
             method: "POST",
             body: JSON.stringify({
                 provider,

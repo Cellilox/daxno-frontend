@@ -1,21 +1,13 @@
 import { getRequestAuthHeaders, JsonAuthRequestHeaders } from "./server-headers";
+import { resolveInternalUrl } from "./api-utils";
 
-const isServer = typeof window === 'undefined';
-const internalUrl = process.env.INTERNAL_API_URL;
-const publicUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-function resolveInternalUrl(url: string) {
-  // If we are on the server and have an internal URL, 
-  // we swap the public URL piece with the internal service name.
-  if (isServer && internalUrl && publicUrl && url.startsWith(publicUrl)) {
-    return url.replace(publicUrl, internalUrl);
-  }
-  return url;
-}
+export { getSafeUrl, buildApiUrl, API_BASE_URL } from "./api-utils";
 
 export async function fetchAuthed(url: string, options?: RequestInit) {
   const headers = await getRequestAuthHeaders();
   const resolvedUrl = resolveInternalUrl(url);
+
+  console.log(`[API_CLIENT] Fetching: ${resolvedUrl}`);
 
   if (options?.headers) {
     const extraHeaders = new Headers(options.headers);
@@ -24,16 +16,24 @@ export async function fetchAuthed(url: string, options?: RequestInit) {
     });
   }
 
-  return fetch(resolvedUrl, {
+  const response = await fetch(resolvedUrl, {
     ...options,
     headers,
   });
+
+  if (!response.ok) {
+    console.error(`[API_CLIENT] Error: ${response.status} for ${resolvedUrl}`);
+  }
+
+  return response;
 }
 
 export async function fetchAuthedJson(url: string, options?: RequestInit) {
   const headers = await JsonAuthRequestHeaders();
   const resolvedUrl = resolveInternalUrl(url);
 
+  console.log(`[API_CLIENT] Fetching JSON: ${resolvedUrl}`);
+
   if (options?.headers) {
     const extraHeaders = new Headers(options.headers);
     extraHeaders.forEach((value, key) => {
@@ -41,10 +41,16 @@ export async function fetchAuthedJson(url: string, options?: RequestInit) {
     });
   }
 
-  return fetch(resolvedUrl, {
+  const response = await fetch(resolvedUrl, {
     ...options,
     headers,
   });
+
+  if (!response.ok) {
+    console.error(`[API_CLIENT] JSON Error: ${response.status} for ${resolvedUrl}`);
+  }
+
+  return response;
 }
 
 

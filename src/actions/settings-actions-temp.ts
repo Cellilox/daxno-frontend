@@ -1,11 +1,10 @@
-import { fetchAuthed } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, buildApiUrl } from "@/lib/api-client";
 
 // Helper to get billing config for a specific user (e.g., project owner)
 export async function getBillingConfigForUser(userId: string) {
     try {
-        const response = await fetchAuthed(`${apiUrl}/tenants/user/${userId}`);
+        const url = buildApiUrl(`/tenants/user/${userId}`);
+        const response = await fetchAuthed(url);
         if (!response.ok) {
             if (response.status === 404) return null;
             throw new Error("Failed to fetch user billing config");

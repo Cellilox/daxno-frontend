@@ -1,12 +1,11 @@
 "use server"
 
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export async function getTransactions() {
    try {
-      const response = await fetchAuthed(`${apiUrl}/transactions`)
+      const url = buildApiUrl('/transactions/');
+      const response = await fetchAuthed(url)
       if (!response.ok) {
          console.error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
          return [];
@@ -20,7 +19,8 @@ export async function getTransactions() {
 
 export async function deleteTransaction(transaction_id: number) {
    try {
-      const response = await fetchAuthedJson(`${apiUrl}/transactions?t_id=${transaction_id}`, {
+      const url = buildApiUrl(`/transactions?t_id=${transaction_id}`);
+      const response = await fetchAuthedJson(url, {
          method: 'DELETE'
       });
 

@@ -1,13 +1,11 @@
 'use server';
 
-import { fetchAuthedJson } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
+import { fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export async function create_project_invite(invitee_user_email: string, project_id: string) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/invites/create`, {
+    const url = buildApiUrl('/invites/create');
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify({ invitee_user_email, project_id }),
     })
@@ -23,7 +21,8 @@ export async function create_project_invite(invitee_user_email: string, project_
 
 export async function accept_invite(token: string | string[] | undefined) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/invites/accept?token=${token}`, {
+    const url = buildApiUrl(`/invites/accept?token=${token}`);
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
     })
     // if(!response.ok) {

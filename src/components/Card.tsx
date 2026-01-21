@@ -29,7 +29,6 @@ export default function Card({ project }: CardProps) {
 
   const handleDeleteProject = async (projectId: string) => {
     setIsLoading(true)
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
     try {
       await deleteProject(projectId)
       setIsLoading(false)

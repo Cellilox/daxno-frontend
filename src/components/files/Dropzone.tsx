@@ -13,6 +13,10 @@ import { messageType, messageTypeEnum } from '@/types';
 import UsageLimitModal from '../modals/UsageLimitModal';
 import { FileStatus } from './types';
 import { getTransactions } from '@/actions/transaction-actions';
+import { addOfflineFile } from '@/lib/db/indexedDB';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { CameraCapture } from '../Camera/CameraCapture';
+import { Camera } from 'lucide-react';
 
 type MyDropzoneProps = {
   projectId: string;
@@ -20,9 +24,10 @@ type MyDropzoneProps = {
   setIsVisible: (isVisible: boolean) => void;
   onMessageChange: (message: messageType) => void;
   plan: string;
+  onCameraToggle?: (active: boolean) => void;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, onCameraToggle }: MyDropzoneProps) {
   const { getToken, sessionId } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -36,6 +41,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeFilename, setActiveFilename] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const { isOnline } = useSyncStatus();
+
+  // Notify parent of camera state changes
+  useEffect(() => {
+    if (onCameraToggle) {
+      onCameraToggle(showCamera);
+    }
+  }, [showCamera, onCameraToggle]);
 
 
   // Limit Modal State
@@ -82,10 +96,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   }, []);
 
   useEffect(() => {
-    // Initialize Socket.IO connection for real-time feedback
+    // Initialize Socket.IO connection for real-time feedback (proxy-aware)
     if (!socketRef.current && projectId) {
-      socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
-        path: '/ws/records/sockets',
+      const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const socketPath = '/ws/records/sockets';
+
+      socketRef.current = io(socketUrl, {
+        path: socketPath,
         auth: { projectId },
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -230,6 +247,30 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setIsVisible(false);
       router.push(`/projects/${projectId}`);
       return;
+    }
+
+    // ✅ NEW: Check if offline
+    if (!isOnline || !navigator.onLine) {
+      try {
+        updateStatus('You are offline. Queueing for upload...', messageTypeEnum.INFO, 'Waiting for network...');
+
+        await addOfflineFile(file, projectId);
+
+        updateStatus('Saved successfully! It will upload auto-sync once you are back online.', messageTypeEnum.INFO, 'Queued');
+
+        // Close modal after success
+        setTimeout(() => {
+          setIsVisible(false);
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+        }, 3000);
+
+        return;
+      } catch (err) {
+        console.error('Failed to queue offline file:', err);
+        updateStatus('Failed to save file for offline sync.', messageTypeEnum.ERROR);
+        setIsLoading(false);
+        return;
+      }
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -563,51 +604,76 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // Render single file upload UI
   const renderSingleUpload = () => (
     <div className="flex flex-col">
-      <div {...getSingleRootProps()} className="flex flex-col">
-        <input {...getSingleInputProps()} />
-        {preview ? (
-          <div className="relative flex justify-center items-center rounded-md">
-            {file?.type === 'application/pdf' ? (
-              <div className="h-[50vh] w-full flex flex-col items-center justify-center border border-gray-200 rounded-md">
-                <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center">
-                  <FileIcon size={48} className="text-blue-500 mb-3" />
-                  <p className="text-gray-800 font-medium text-lg truncate max-w-xs">
-                    {file?.name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <p className="text-gray-500 text-sm">PDF Document</p>
+      {showCamera ? (
+        <CameraCapture
+          projectId={projectId}
+          onClose={() => setShowCamera(false)}
+          onCapture={(photoFile) => {
+            setShowCamera(false);
+            setFile(photoFile);
+            setPreview(URL.createObjectURL(photoFile));
+            updateStatus('Photo captured! Click "Upload File" to start scanning.', messageTypeEnum.INFO, 'Captured');
+          }}
+        />
+      ) : (
+        <div {...getSingleRootProps()} className="flex flex-col">
+          <input {...getSingleInputProps()} />
+          {preview ? (
+            <div className="relative flex justify-center items-center rounded-md">
+              {file?.type === 'application/pdf' ? (
+                <div className="h-[50vh] w-full flex flex-col items-center justify-center border border-gray-200 rounded-md">
+                  <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center">
+                    <FileIcon size={48} className="text-blue-500 mb-3" />
+                    <p className="text-gray-800 font-medium text-lg truncate max-w-xs">
+                      {file?.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      <p className="text-gray-500 text-sm">PDF Document</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <img
-                src={preview}
-                alt="Selected file preview"
-                className="max-h-[50vh] object-contain rounded-md"
-              />
-            )}
+              ) : (
+                <img
+                  src={preview}
+                  alt="Selected file preview"
+                  className="max-h-[50vh] object-contain rounded-md"
+                />
+              )}
 
-            <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
-              {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
+                {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+              </div>
             </div>
-          </div>
-        ) : isSingleDragActive ? (
-          <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
-            <div className="flex flex-col items-center justify-center gap-3">
-              <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
-              <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+          ) : isSingleDragActive ? (
+            <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
+                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
-            <div className="flex flex-col items-center justify-center gap-3">
-              <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
-              <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+          ) : (
+            <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
+                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+
+      {!showCamera && !file && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowCamera(true)}
+            className="w-full flex items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-medium px-4 py-3 rounded-md hover:bg-blue-50 transition-colors"
+          >
+            <Camera className="w-5 h-5" />
+            Take a Photo / Scan
+          </button>
+        </div>
+      )}
 
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">

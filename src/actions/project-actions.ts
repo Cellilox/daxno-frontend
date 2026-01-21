@@ -1,9 +1,7 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthedJson, fetchAuthed } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthedJson, fetchAuthed, buildApiUrl } from "@/lib/api-client";
 
 type projectCreateData = {
   name: string
@@ -18,7 +16,8 @@ type projectUpdateData = {
 export async function createProject(formData: projectCreateData) {
   console.log('Creating project with data:', formData);
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects/`, {
+    const url = buildApiUrl('/projects/');
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify(formData),
     });
@@ -39,7 +38,8 @@ export async function createProject(formData: projectCreateData) {
 
 export async function updateProjectSettings(projectId: string, uiSettings: any) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
+    const url = buildApiUrl(`/projects/${projectId}`);
+    const response = await fetchAuthedJson(url, {
       method: "PUT",
       body: JSON.stringify({ ui_settings: uiSettings }),
     });
@@ -56,7 +56,8 @@ export async function updateProjectSettings(projectId: string, uiSettings: any) 
 
 export async function getProjects() {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects/`, {
+    const url = buildApiUrl('/projects/');
+    const response = await fetchAuthedJson(url, {
       method: 'GET',
     });
     return await response.json();
@@ -67,7 +68,8 @@ export async function getProjects() {
 }
 
 export async function getProjectsById(id: string) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects/${id}`, {
+  const url = buildApiUrl(`/projects/${id}`);
+  const response = await fetchAuthedJson(url, {
     method: 'GET',
   });
   return await response.json();
@@ -75,7 +77,8 @@ export async function getProjectsById(id: string) {
 
 export async function updateProject(projectId: string | undefined, formData: projectUpdateData) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
+    const url = buildApiUrl(`/projects/${projectId}`);
+    const response = await fetchAuthedJson(url, {
       method: 'PUT',
       body: JSON.stringify(formData),
     });
@@ -89,7 +92,8 @@ export async function updateProject(projectId: string | undefined, formData: pro
 }
 
 export async function updateProjectById(id: string, formData: projectCreateData) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects/${id}`, {
+  const url = buildApiUrl(`/projects/${id}`);
+  const response = await fetchAuthedJson(url, {
     method: 'PUT',
     body: JSON.stringify(formData),
   });
@@ -99,7 +103,8 @@ export async function updateProjectById(id: string, formData: projectCreateData)
 
 export async function regenerateProjectLink(projectId: string | undefined, formData: projectUpdateData) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${projectId}`, {
+    const url = buildApiUrl(`/projects/regenerate-link/${projectId}`);
+    const response = await fetchAuthedJson(url, {
       method: 'PUT',
       body: JSON.stringify(formData),
     });
@@ -113,7 +118,8 @@ export async function regenerateProjectLink(projectId: string | undefined, formD
 }
 
 export async function regenerateLink(id: string, formData: projectCreateData) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects/regenerate-link/${id}`, {
+  const url = buildApiUrl(`/projects/regenerate-link/${id}`);
+  const response = await fetchAuthedJson(url, {
     method: 'PUT',
     body: JSON.stringify(formData),
   });
@@ -122,7 +128,8 @@ export async function regenerateLink(id: string, formData: projectCreateData) {
 }
 
 export async function deleteProject(projectId: string) {
-  const response = await fetchAuthedJson(`${apiUrl}/projects/${projectId}`, {
+  const url = buildApiUrl(`/projects/${projectId}`);
+  const response = await fetchAuthedJson(url, {
     method: 'DELETE'
   });
 
@@ -135,7 +142,8 @@ export async function deleteProject(projectId: string) {
 
 export async function get_project_plan(project_owner: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/projects/get-project-plan?project_owner=${project_owner}`)
+    const url = buildApiUrl(`/projects/get-project-plan?project_owner=${project_owner}`);
+    const response = await fetchAuthed(url)
     // if(!response.ok) {
     //   throw new Error ("Failed to fetch projects")
     // }
@@ -147,7 +155,8 @@ export async function get_project_plan(project_owner: string) {
 
 export async function getOnyxDeepLink(projectId: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/onyx-proxy/project-deep-link/${projectId}`)
+    const url = buildApiUrl(`/onyx-proxy/project-deep-link/${projectId}`);
+    const response = await fetchAuthed(url)
     if (!response.ok) {
       throw new Error("Failed to get deep link");
     }
