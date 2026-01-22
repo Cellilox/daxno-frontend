@@ -1,12 +1,9 @@
 import type { NextConfig } from "next";
 import withPWA from 'next-pwa';
 
-const nextConfig: NextConfig = {
+const nextConfig: any = {
   output: 'standalone',
-  eslint: {
-    // TODO: [Tech Debt] Remove this ignore once all lint errors are resolved.
-    ignoreDuringBuilds: true,
-  },
+
   typescript: {
     // TODO: [Tech Debt] Remove this ignore once all type errors are resolved.
     ignoreBuildErrors: true,
