@@ -6,10 +6,10 @@ export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId, sessionId, getToken } = await auth();
+        const { userId, getToken } = await auth();
         const token = await getToken();
 
-        if (!userId || !token || !sessionId) {
+        if (!userId || !token) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -27,8 +27,7 @@ export async function POST(req: NextRequest) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-                "sessionId": sessionId
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(safeBody)
         });

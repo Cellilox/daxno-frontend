@@ -31,8 +31,7 @@ const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable in dev for easier debugging
-  sw: 'sw.js',
+  disable: true, // COMPLETELY DISABLE PWA FOR NOW to fix auth issues
 });
 
 export default pwaConfig(nextConfig);
