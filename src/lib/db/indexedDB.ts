@@ -38,7 +38,7 @@ export async function getDB() {
             },
         });
     }
-    return db Promise;
+    return dbPromise;
 }
 
 export async function addOfflineFile(file: File | Blob, projectId: string) {
