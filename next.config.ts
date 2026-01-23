@@ -31,7 +31,7 @@ const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // Force enabled for offline testing
+  disable: process.env.NODE_ENV === 'development', // Disable in dev to prevent HMR issues
   buildExcludes: [/middleware-manifest\.json$/],
 });
 

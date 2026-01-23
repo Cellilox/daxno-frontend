@@ -27,6 +27,7 @@ export default function SyncBanner() {
             setIsFinished(false);
             isFinishedRef.current = false;
         } else if (isVisibleRef.current && !isFinishedRef.current) {
+            setIsVisible(true); // Ensure it stays visible for the 'Complete' message
             setIsFinished(true);
             isFinishedRef.current = true;
         }

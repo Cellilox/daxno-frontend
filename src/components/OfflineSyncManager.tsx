@@ -127,15 +127,24 @@ export default function OfflineSyncManager() {
                     console.log('[OfflineSync] Marked as uploaded to S3:', originalName);
                     notifyRefresh();
 
-                    // Trigger backend processing (non-blocking)
-                    queryDocument(projectId, filename, originalName).catch(err => {
-                        console.warn('[OfflineSync] Backend processing trigger failed:', err);
-                    });
+                    // Trigger backend processing and AWAIT confirmation
+                    // This is CRITICAL to ensure the record exists in DB before we remove local file
+                    console.log('[OfflineSync] Triggering backend analysis for:', originalName);
+                    try {
+                        await queryDocument(projectId, filename, originalName);
+                        console.log('[OfflineSync] Backend confirmed receipt of:', originalName);
 
-                    // Remove from IndexedDB
-                    await removeOfflineFile(item.id);
-                    console.log('[OfflineSync] Successfully synced and removed from queue:', originalName);
+                        // ONLY remove from IndexedDB if backend confirmed receipt
+                        await removeOfflineFile(item.id);
+                        console.log('[OfflineSync] Successfully synced and removed from queue:', originalName);
+                    } catch (err: any) {
+                        console.error('[OfflineSync] Backend trigger failed for:', originalName, err);
+                        // Mark as failed in DB so user sees it and we don't keep retrying a broken file
+                        await updateFileStatus(item.id, 'failed', err.message || 'Backend processing failed');
+                    }
+
                     notifyRefresh();
+
 
                 } catch (error: any) {
                     console.error('[OfflineSync] Failed to sync file:', item.metadata.originalName, error);

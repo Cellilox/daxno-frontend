@@ -44,8 +44,25 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     getConversations(id)
   ]);
 
-  // Secondary data that depends on primary data, but can still be parallelized
   const recordsUrl = buildApiUrl(`/records/${id}`);
+
+  // Safety Check: If project is missing (404/Deleted), return clean error UI
+  if (!project || project.detail || !project.id) {
+    console.error(`[ProjectView] Project ${id} not found or inaccessible:`, project);
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
+        <div className="text-xl font-bold font-sans text-gray-800">Project not found</div>
+        <p className="text-gray-500">The project you are looking for might have been deleted or moved.</p>
+        <a
+          href="/projects"
+          className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all font-sans"
+        >
+          Return to Dashboard
+        </a>
+      </div>
+    );
+  }
+
   const [
     recordsResponse,
     plan,
