@@ -57,8 +57,8 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
         console.log('[IndexedDB] File is currently being added, skipping duplicate:', name);
         // Wait a bit and return existing file
         await new Promise(resolve => setTimeout(resolve, 100));
-        const existing = await db.getAllFromIndex('offlineFiles', 'by-name', name);
-        return existing[0]?.id || null;
+        const allFiles = await db.getAll('offlineFiles');
+        const existing = allFiles.find(f => f.metadata.originalName === name && f.projectId === projectId);
     }
 
     // Mark as being added
