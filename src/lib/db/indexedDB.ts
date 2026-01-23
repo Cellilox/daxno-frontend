@@ -8,6 +8,7 @@ interface DaxnoDB extends DBSchema {
             file: Blob;
             projectId: string;
             status: 'pending' | 'syncing' | 'failed';
+            uploadedToS3: boolean;  // Track S3 upload completion
             createdAt: number;
             metadata: {
                 originalName: string;
@@ -81,6 +82,7 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
                 file,
                 projectId,
                 status: 'pending',
+                uploadedToS3: false,  // Not uploaded yet
                 createdAt: Date.now(),
                 metadata: {
                     originalName: name,
@@ -144,6 +146,18 @@ export async function removeOfflineFile(id: string) {
     const db = await getDB();
     if (!db) return;
     await db.delete('offlineFiles', id);
+}
+
+export async function markFileUploaded(id: string) {
+    const db = await getDB();
+    if (!db) return;
+
+    const item = await db.get('offlineFiles', id);
+    if (item) {
+        item.uploadedToS3 = true;
+        await db.put('offlineFiles', item);
+        console.log('[IndexedDB] Marked file as uploaded to S3:', item.metadata.originalName);
+    }
 }
 
 export async function clearAllOfflineFiles() {

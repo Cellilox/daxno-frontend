@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles } from '@/lib/db/indexedDB';
+import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded } from '@/lib/db/indexedDB';
 import { getPresignedUrl, queryDocument } from '@/actions/record-actions';
 
 const GLOBAL_SYNCING_IDS = new Set<string>();
@@ -19,7 +19,16 @@ export default function OfflineSyncManager() {
                 const allFiles = await getOfflineFiles();
                 for (const file of allFiles) {
                     if (file.status === 'syncing') {
-                        await updateFileStatus(file.id, 'pending');
+                        // Check if S3 upload completed
+                        if (file.uploadedToS3) {
+                            // Upload done, just remove from queue
+                            console.log('[Cleanup] File already uploaded, removing:', file.metadata.originalName);
+                            await removeOfflineFile(file.id);
+                        } else {
+                            // Truly stuck, safe to retry
+                            console.log('[Cleanup] Resetting stuck file:', file.metadata.originalName);
+                            await updateFileStatus(file.id, 'pending');
+                        }
                     }
                 }
                 window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
@@ -79,6 +88,15 @@ export default function OfflineSyncManager() {
 
                 try {
                     syncingIds.current.add(item.id);
+
+                    // Check if already uploaded to S3
+                    if (item.uploadedToS3) {
+                        console.log('[OfflineSync] Already uploaded, removing:', item.metadata.originalName);
+                        await removeOfflineFile(item.id);
+                        notifyRefresh();
+                        continue;
+                    }
+
                     await updateFileStatus(item.id, 'syncing');
                     notifyRefresh();
 
