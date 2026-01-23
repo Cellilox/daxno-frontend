@@ -32,20 +32,9 @@ export default function OfflineSyncManager() {
             cleanupStuckFiles().then(() => syncOfflineFiles());
         }
 
-        // Continuous monitoring - check every 5 seconds for pending files when online
-        const intervalId = setInterval(() => {
-            if (isOnline && !isSyncing && !IS_GLOBAL_SYNCING) {
-                getPendingFiles().then(files => {
-                    if (files.length > 0) {
-                        console.log('[OfflineSync] Found pending files, triggering sync...');
-                        syncOfflineFiles();
-                    }
-                });
-            }
-        }, 5000);
-
-        return () => clearInterval(intervalId);
-    }, [isOnline, isSyncing]);
+        // DISABLED: Continuous polling was causing performance issues
+        // Sync will only trigger when isOnline state changes
+    }, [isOnline]);
 
     const notifyRefresh = () => {
         window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
