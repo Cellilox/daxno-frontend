@@ -150,11 +150,10 @@ export default function OfflineSyncManager() {
                         continue;
                     }
 
-                    // Handle 401 (Auth Expired) - Stop sync loop
+                    // Handle 401 (Auth Expired) - Pause sync loop (will retry after reload/reconnect)
                     if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
-                        console.warn('[OfflineSync] Session expired. Stopping sync loop.');
-                        await updateFileStatus(item.id, 'failed', 'Session expired. Please refresh.');
-                        notifyRefresh();
+                        console.warn('[OfflineSync] Session unauthorized. Pausing sync for authentication refresh.');
+                        // We DO NOT mark as failed here, as the page reload will likely fix the session.
                         break;
                     }
 

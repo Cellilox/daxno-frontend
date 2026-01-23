@@ -3,14 +3,20 @@
 import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export async function getModels(projectId?: string) {
-  const path = `/models/available${projectId ? `?project_id=${projectId}` : ''}`;
-  const url = buildApiUrl(path);
+  try {
+    const path = `/models/available${projectId ? `?project_id=${projectId}` : ''}`;
+    const url = buildApiUrl(path);
 
-  const response = await fetchAuthed(url, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error("Failed to fetch models")
+    const response = await fetchAuthed(url, { cache: 'no-store' })
+    if (!response.ok) {
+      if (response.status === 401) return [];
+      throw new Error("Failed to fetch models")
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn('[AI_MODELS] Failed to fetch models:', error);
+    return [];
   }
-  return await response.json();
 }
 
 export async function selectModel(selectedModel: string, projectId?: string) {

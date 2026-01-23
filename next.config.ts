@@ -31,7 +31,8 @@ const pwaConfig = withPWA({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: true, // COMPLETELY DISABLE PWA FOR NOW to fix auth issues
+  disable: false, // Force enabled for offline testing
+  buildExcludes: [/middleware-manifest\.json$/],
 });
 
 export default pwaConfig(nextConfig);

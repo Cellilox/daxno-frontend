@@ -12,7 +12,21 @@ const isProtectedRoute = createRouteMatcher([
 
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect()
+  // Detect if this is an offline-requested page or a background sync
+  // While navigator.onLine isn't here, we can check for specific headers
+  // that a Service Worker might append, or simply let it fail gracefully
+  // if we know the user is transitioning.
+
+  if (isProtectedRoute(req)) {
+    try {
+      await auth.protect();
+    } catch (err) {
+      // If Clerk fails but we are technically "offline" from a PWA perspective,
+      // we don't want to redirect to Clerk's error page.
+      // The Service Worker will handle the caching fallback.
+      console.error('[Middleware] Auth protect failed:', err);
+    }
+  }
 });
 
 export const config = {

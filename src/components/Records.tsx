@@ -2,6 +2,7 @@
 import { io, Socket } from 'socket.io-client';
 import React, { useState, useEffect, useRef } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
+import SyncBanner from './SyncBanner';
 import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
 import { getRecords } from '@/actions/record-actions';
@@ -258,7 +259,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [processingCount, processingStatus]);
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+            <SyncBanner />
             <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">

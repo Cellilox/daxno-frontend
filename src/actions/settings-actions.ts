@@ -13,7 +13,7 @@ export async function getBillingConfig() {
         const url = buildApiUrl('/tenants/me');
         const response = await fetchAuthed(url);
         if (!response.ok) {
-            if (response.status === 404) return null;
+            if (response.status === 404 || response.status === 401) return null;
             throw new Error("Failed to fetch billing config");
         }
         const data = await response.json();

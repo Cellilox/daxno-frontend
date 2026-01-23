@@ -1,5 +1,5 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
-import { currentUser } from "@clerk/nextjs/server"
+import { auth } from "@clerk/nextjs/server"
 import Link from 'next/link'
 import React from 'react'
 import CurrentPlan from './CurrentPlan'
@@ -10,10 +10,17 @@ import MobileMenu from './MobileMenu'
 import { getSafeUrl } from '@/lib/api-utils'
 
 const Header = async () => {
-  const user = await currentUser()
-  const userId = user?.id
-  const transactions = await getTransactions()
-  const billingConfig = await getBillingConfig()
+  let userId = null;
+  try {
+    const authObj = await auth();
+    userId = authObj.userId;
+  } catch (error) {
+    console.error('[Header] Clerk auth() failed:', error);
+  }
+
+  // Fetch these only if we have a user to avoid redundant failing requests
+  const transactions = userId ? await getTransactions() : [];
+  const billingConfig = userId ? await getBillingConfig() : null;
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
