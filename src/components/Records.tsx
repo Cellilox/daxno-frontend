@@ -181,62 +181,59 @@ export default function Records({ projectId, initialFields, initialRecords, proj
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <div className="flex flex-col w-full">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            {isConnected ? (
-                                <div className="flex items-center gap-1.6">
-                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                    <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-1.6 animate-pulse">
-                                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                                    <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Connecting</span>
-                                </div>
-                            )}
-                        </div>
-                        {initialFields.length >= 2 &&
-                            <button
-                                onClick={() => setIsReorderPopupVisible(true)}
-                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"
-                            >
-                                Reorder Columns
-                            </button>
-                        }
+            <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        {isConnected ? (
+                            <div className="flex items-center gap-1.6">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1.6 animate-pulse">
+                                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Connecting</span>
+                            </div>
+                        )}
                     </div>
-
-                    {(processingStatus || processingCount > 0) && (
-                        <div className="mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl transition-all duration-300">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                        <span className="text-sm font-semibold text-blue-900">
-                                            {processingStatus || `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}...`}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                                        Running
-                                    </div>
+                    {initialFields.length >= 2 &&
+                        <button
+                            onClick={() => setIsReorderPopupVisible(true)}
+                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"
+                        >
+                            Reorder Columns
+                        </button>
+                    }
+                </div>
+                {(processingStatus || processingCount > 0) && (
+                    <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl transition-all duration-300">
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-sm font-semibold text-blue-900">
+                                        {processingStatus || `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}...`}
+                                    </span>
                                 </div>
-                                <div className="w-full bg-blue-200/50 h-1.5 rounded-full overflow-hidden">
-                                    <div
-                                        className="bg-blue-600 h-full transition-all duration-500 ease-out animate-shimmer"
-                                        style={{
-                                            width: processingStatus?.includes('%')
-                                                ? `${processingStatus.match(/\d+/g)?.pop()}%`
-                                                : '100%',
-                                            backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)',
-                                            backgroundSize: '200% 100%'
-                                        }}
-                                    ></div>
+                                <div className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                    Running
                                 </div>
                             </div>
+                            <div className="w-full bg-blue-200/50 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                    className="bg-blue-600 h-full transition-all duration-500 ease-out animate-shimmer"
+                                    style={{
+                                        width: processingStatus?.includes('%')
+                                            ? `${processingStatus.match(/\d+/g)?.pop()}%`
+                                            : '100%',
+                                        backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)',
+                                        backgroundSize: '200% 100%'
+                                    }}
+                                ></div>
+                            </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
             <div className="flex-1 min-h-0">
                 <SpreadSheet records={rowData} columns={columns} projectId={projectId} project={project} />
@@ -247,6 +244,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 onClose={() => setIsReorderPopupVisible(false)}
                 onReorder={setColumns}
             />
-        </div>
+        </div >
     );
 }
