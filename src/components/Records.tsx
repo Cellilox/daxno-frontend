@@ -34,6 +34,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 getOfflineFiles()
             ]);
 
+            console.log('[Records] Fetched data:', {
+                onlineRecords: Array.isArray(latestOnlineRecords) ? latestOnlineRecords.length : 'not array',
+                onlineColumns: Array.isArray(latestOnlineColumns) ? latestOnlineColumns.length : 'not array',
+                offlineFiles: Array.isArray(offlineFilesRaw) ? offlineFilesRaw.length : 'not array'
+            });
+
             const offlineFiles: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
 
             // Merge offline files into records
@@ -61,10 +67,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     } as any));
 
                 if (pendingRecords.length > 0) {
-                    console.log(`[Records] Merging ${pendingRecords.length} offline files into UI`);
+                    console.log(`[Records] Merging ${pendingRecords.length} offline files into UI`, pendingRecords);
                 }
 
-                return [...baseOnlineRecords, ...pendingRecords];
+                const merged = [...baseOnlineRecords, ...pendingRecords];
+                console.log('[Records] Final merged records count:', merged.length);
+                return merged;
             });
 
             // Update columns if available

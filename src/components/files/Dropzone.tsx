@@ -431,6 +431,17 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
+
+      // Check if offline
+      if (!isOnline || !navigator.onLine) {
+        console.log('[Bulk Upload] Offline - queuing file:', file.name);
+        updateFileStatus({ status: 'pending', progress: 0 });
+        await addOfflineFile(file, projectId);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+        updateFileStatus({ status: 'analyzing', progress: 100, result: { message: "Queued for sync when online" } });
+        return;
+      }
+
       // 1. Get Presigned URL
       updateFileStatus({ status: 'uploading', progress: 10 });
       console.log('[DEBUG] processSingleFile: Calling getPresignedUrl for:', file.name, 'type:', file.type);
@@ -472,15 +483,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       console.log('[DEBUG] processSingleFile triggering queryDocument with:', { filename, original: file.name });
       await queryDocument(projectId, filename, file.name);
 
-      // We rely on sockets for completion in bulk mode too, but for individual file status
-      // we might need to listen to socket events with file correlation?
-      // Since bulk mode uses `processSingleFile` sequentially, we need a way to know when THIS file is done.
-      // Ideally, we'd wait for a promise that resolves when the specific record is created.
-      // For now, let's mark it as 'submitted' or 'processing'.
       updateFileStatus({ status: 'analyzing', progress: 60, result: { message: "Processing in background" } });
-
-      // Note: Full bulk tracking requires more sophisticated socket correlation (e.g. by filename).
-      // But this unblocks the "blocking" issue.
 
     } catch (error) {
       console.error(`Error processing ${fileStatus.file.name}:`, error);

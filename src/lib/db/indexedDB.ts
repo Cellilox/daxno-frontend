@@ -42,9 +42,23 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
     const db = await getDB();
     if (!db) return null;
 
-    const id = crypto.randomUUID();
     const name = file instanceof File ? file.name : `photo-${Date.now()}.jpg`;
     const type = file.type || 'image/jpeg';
+
+    // Check for duplicates
+    const existingFiles = await db.getAll('offlineFiles');
+    const duplicate = existingFiles.find(f =>
+        f.projectId === projectId &&
+        f.metadata.originalName === name &&
+        f.file.size === file.size
+    );
+
+    if (duplicate) {
+        console.log('[IndexedDB] Duplicate file detected, skipping:', name);
+        return duplicate.id;
+    }
+
+    const id = crypto.randomUUID();
 
     await db.add('offlineFiles', {
         id,
@@ -58,6 +72,7 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
         },
     });
 
+    console.log('[IndexedDB] Added offline file:', name, 'ID:', id);
     return id;
 }
 
