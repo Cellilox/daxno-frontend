@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { getOfflineFiles } from '@/lib/db/indexedDB';
 
@@ -10,6 +10,8 @@ export default function SyncBanner() {
     const [syncingCount, setSyncingCount] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const isVisibleRef = useRef(false);
+    const isFinishedRef = useRef(false);
 
     const updateCounts = async () => {
         const files = await getOfflineFiles();
@@ -21,11 +23,12 @@ export default function SyncBanner() {
 
         if (pending + syncing > 0) {
             setIsVisible(true);
+            isVisibleRef.current = true;
             setIsFinished(false);
-        } else if (isVisible && !isFinished) {
-            // If we were visible and now counts are 0, we just finished
+            isFinishedRef.current = false;
+        } else if (isVisibleRef.current && !isFinishedRef.current) {
             setIsFinished(true);
-            // Hide after a delay or keep for "Refresh" button
+            isFinishedRef.current = true;
         }
     };
 
