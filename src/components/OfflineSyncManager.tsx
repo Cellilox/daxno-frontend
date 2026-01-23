@@ -115,22 +115,32 @@ export default function OfflineSyncManager() {
 
                     const errorMsg = error.message || 'Sync failed';
 
-                    // Handle 404 (Project Deleted)
-                    if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+                    // Handle 404 (Project Deleted) - Remove file
+                    if (errorMsg.includes('404') || errorMsg.includes('not found') || errorMsg.includes('Not Found')) {
                         console.warn('[OfflineSync] Project not found (404). Purging orphan file:', item.metadata.originalName);
                         await removeOfflineFile(item.id);
                         notifyRefresh();
                         continue;
                     }
 
-                    // Handle 401 (Auth Expired)
+                    // Handle 401 (Auth Expired) - Stop sync loop
                     if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
                         console.warn('[OfflineSync] Session expired. Stopping sync loop.');
                         await updateFileStatus(item.id, 'failed', 'Session expired. Please refresh.');
+                        notifyRefresh();
                         break;
                     }
 
-                    // Store error message and mark as failed
+                    // Handle 400/500 errors - Mark as failed but continue with next file
+                    if (errorMsg.includes('400') || errorMsg.includes('500') || errorMsg.includes('unexpected response')) {
+                        console.warn('[OfflineSync] Server error for file:', item.metadata.originalName, errorMsg);
+                        await updateFileStatus(item.id, 'failed', 'Server error. Project may not exist.');
+                        notifyRefresh();
+                        continue;
+                    }
+
+                    // Generic error - Mark as failed
+                    console.warn('[OfflineSync] Marking file as failed:', item.metadata.originalName);
                     await updateFileStatus(item.id, 'failed', errorMsg);
                     notifyRefresh();
                 } finally {
