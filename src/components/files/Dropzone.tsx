@@ -261,11 +261,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
         updateStatus('Saved successfully! It will upload auto-sync once you are back online.', messageTypeEnum.INFO, 'Queued');
 
-        // Close modal after success
-        setTimeout(() => {
-          setIsVisible(false);
-          onMessageChange({ type: messageTypeEnum.NONE, text: '' });
-        }, 3000);
+        // Clear file state and close modal immediately
+        setFile(null);
+        setPreview(null);
+        setIsLoading(false);
+        setIsVisible(false);
+        onMessageChange({ type: messageTypeEnum.NONE, text: '' });
 
         return;
       } catch (err) {
@@ -439,6 +440,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         await addOfflineFile(file, projectId);
         window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
         updateFileStatus({ status: 'analyzing', progress: 100, result: { message: "Queued for sync when online" } });
+
+        // Remove this file from the bulk list after queuing
+        setFiles(prev => prev.filter(f => f.file !== file));
         return;
       }
 

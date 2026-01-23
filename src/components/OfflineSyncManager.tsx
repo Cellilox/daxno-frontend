@@ -31,7 +31,21 @@ export default function OfflineSyncManager() {
         if (isOnline) {
             cleanupStuckFiles().then(() => syncOfflineFiles());
         }
-    }, [isOnline]);
+
+        // Continuous monitoring - check every 5 seconds for pending files when online
+        const intervalId = setInterval(() => {
+            if (isOnline && !isSyncing && !IS_GLOBAL_SYNCING) {
+                getPendingFiles().then(files => {
+                    if (files.length > 0) {
+                        console.log('[OfflineSync] Found pending files, triggering sync...');
+                        syncOfflineFiles();
+                    }
+                });
+            }
+        }, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [isOnline, isSyncing]);
 
     const notifyRefresh = () => {
         window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));

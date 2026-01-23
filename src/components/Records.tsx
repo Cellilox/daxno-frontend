@@ -7,6 +7,7 @@ import ColumnReorderPopup from './forms/ColumnReorderPopup';
 import { getRecords } from '@/actions/record-actions';
 import { getColumns } from '@/actions/column-actions';
 import { getOfflineFiles } from '@/lib/db/indexedDB';
+import { useCallback } from 'react';
 
 
 type RecordsProps = {
@@ -24,7 +25,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             console.log('[Records] loadData triggered');
 
@@ -82,7 +83,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         } catch (err) {
             console.error('[Records] Failed to load data:', err);
         }
-    };
+    }, [projectId]);
 
     // Load data on mount and when offline files change
     useEffect(() => {
@@ -98,7 +99,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         return () => {
             window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
         };
-    }, [projectId]);
+    }, [loadData]);
 
     useEffect(() => {
         if (!socketRef.current) {
