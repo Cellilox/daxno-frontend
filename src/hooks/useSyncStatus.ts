@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { syncManager } from '@/lib/sync/syncManager';
 
 export function useSyncStatus() {
     const [isOnline, setIsOnline] = useState(
@@ -9,7 +8,6 @@ export function useSyncStatus() {
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
-            syncManager.processQueue();
         };
 
         const handleOffline = () => {

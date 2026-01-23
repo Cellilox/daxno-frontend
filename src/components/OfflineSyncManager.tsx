@@ -91,7 +91,7 @@ export default function OfflineSyncManager() {
 
                     // Check if already uploaded to S3
                     if (item.uploadedToS3) {
-                        console.log('[OfflineSync] Already uploaded, removing:', item.metadata.originalName);
+                        console.log('[OfflineSync] Already uploaded, removing from queue:', item.metadata.originalName);
                         await removeOfflineFile(item.id);
                         notifyRefresh();
                         continue;
@@ -122,16 +122,19 @@ export default function OfflineSyncManager() {
                         xhr.send(file);
                     });
 
-                    // SUCCESS: File uploaded to S3 - Remove from IndexedDB immediately
-                    // The backend will handle OCR, AI analysis, and record creation asynchronously
-                    await removeOfflineFile(item.id);
-                    console.log(`[OfflineSync] File uploaded to S3, removed from queue: ${originalName}`);
+                    // Mark as uploaded BEFORE removing (idempotency)
+                    await markFileUploaded(item.id);
+                    console.log('[OfflineSync] Marked as uploaded to S3:', originalName);
                     notifyRefresh();
 
-                    // Trigger background processing (non-blocking)
+                    // Trigger backend processing (non-blocking)
                     queryDocument(projectId, filename, originalName).catch(err => {
-                        console.warn('[OfflineSync] Background processing trigger failed:', err);
+                        console.warn('[OfflineSync] Backend processing trigger failed:', err);
                     });
+
+                    // Remove from IndexedDB
+                    await removeOfflineFile(item.id);
+                    console.log('[OfflineSync] Successfully synced and removed from queue:', originalName);
                     notifyRefresh();
 
                 } catch (error: any) {
