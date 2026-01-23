@@ -59,6 +59,7 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
         await new Promise(resolve => setTimeout(resolve, 100));
         const allFiles = await db.getAll('offlineFiles');
         const existing = allFiles.find(f => f.metadata.originalName === name && f.projectId === projectId);
+        return existing?.id || null;
     }
 
     // Mark as being added
