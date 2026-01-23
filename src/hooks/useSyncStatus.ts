@@ -8,12 +8,6 @@ export function useSyncStatus() {
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
-            // Increase delay to 10 seconds to allow Clerk handshake to finish in background
-            setTimeout(() => {
-                if (typeof window !== 'undefined' && window.location.pathname.includes('/projects/')) {
-                    window.location.reload();
-                }
-            }, 10000);
         };
 
         const handleOffline = () => {

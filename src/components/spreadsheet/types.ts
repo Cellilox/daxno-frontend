@@ -40,4 +40,6 @@ export type SpreadSheetProps = {
   projectId: string;
   project: any;
   user?: any;
+  onDeleteRecord?: (id: string) => Promise<void>;
+  onDeleteBatch?: (ids: string[]) => Promise<void>;
 };

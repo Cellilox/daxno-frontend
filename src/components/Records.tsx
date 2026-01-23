@@ -1,16 +1,15 @@
 'use client';
+
 import { io, Socket } from 'socket.io-client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import SpreadSheet from './spreadsheet/SpreadSheet';
 import SyncBanner from './SyncBanner';
 import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
-import { getRecords } from '@/actions/record-actions';
-import { getColumns } from '@/actions/column-actions';
-import { getOfflineFiles } from '@/lib/db/indexedDB';
-import { useCallback } from 'react';
+import { getOfflineFiles, removeOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-
+import { deleteBatchRecords, deleteRecord, getRecords } from '@/actions/record-actions';
+import { getColumns } from '@/actions/column-actions';
 
 type RecordsProps = {
     projectId: string;
@@ -33,7 +32,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         try {
             const offlineFilesRaw = await getOfflineFiles();
             const files: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
-
             const pending = files
                 .filter(f => f.projectId === projectId)
                 .map(f => ({
@@ -50,7 +48,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     created_at: new Date(f.createdAt).toISOString(),
                     updated_at: new Date().toISOString(),
                 } as any));
-
             setOfflineRecords(pending);
         } catch (err) {
             console.error('[Records] Failed to load offline data:', err);
@@ -59,39 +56,60 @@ export default function Records({ projectId, initialFields, initialRecords, proj
 
     const loadOnlineData = useCallback(async () => {
         try {
-            console.log('[Records] loadOnlineData triggered');
             const [latestRecords, latestColumns] = await Promise.all([
                 getRecords(projectId),
                 getColumns(projectId)
             ]);
-
-            if (latestRecords && Array.isArray(latestRecords)) {
-                setOnlineRecords(latestRecords);
-            }
-            if (latestColumns && Array.isArray(latestColumns)) {
-                setColumns(latestColumns);
-            }
+            if (latestRecords && Array.isArray(latestRecords)) setOnlineRecords(latestRecords);
+            if (latestColumns && Array.isArray(latestColumns)) setColumns(latestColumns);
         } catch (err) {
-            console.warn('[Records] Failed to load online data (possibly offline or unauthorized):', err);
+            console.warn('[Records] Failed to load online data:', err);
         }
     }, [projectId]);
 
+    const handleDeleteRecord = useCallback(async (recordId: string) => {
+        setOnlineRecords(prev => prev.filter(r => r.id !== recordId));
+        setOfflineRecords(prev => prev.filter(r => r.id !== recordId));
+        try {
+            const isOffline = offlineRecords.some(r => r.id === recordId);
+            if (isOffline) {
+                await removeOfflineFile(recordId);
+                window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+            } else {
+                await deleteRecord(recordId);
+            }
+        } catch (err) {
+            console.error('[Records] Delete failed:', err);
+            loadOnlineData();
+            loadOfflineData();
+        }
+    }, [offlineRecords, loadOnlineData, loadOfflineData]);
 
-    // Load data on mount and when offline files change
+    const handleDeleteBatch = useCallback(async (ids: string[]) => {
+        const idSet = new Set(ids);
+        setOnlineRecords(prev => prev.filter(r => !idSet.has(r.id)));
+        setOfflineRecords(prev => prev.filter(r => !idSet.has(r.id)));
+        try {
+            const offlineIds = ids.filter(id => offlineRecords.some(r => r.id === id));
+            const onlineIds = ids.filter(id => !offlineIds.includes(id));
+            await Promise.all([
+                ...offlineIds.map(id => removeOfflineFile(id)),
+                onlineIds.length > 0 ? deleteBatchRecords(onlineIds) : Promise.resolve()
+            ]);
+            if (offlineIds.length > 0) window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+        } catch (err) {
+            console.error('[Records] Batch delete failed:', err);
+            loadOnlineData();
+            loadOfflineData();
+        }
+    }, [offlineRecords, loadOnlineData, loadOfflineData]);
+
     useEffect(() => {
         loadOnlineData();
         loadOfflineData();
-
-        const handleOfflineFilesUpdate = () => {
-            console.log('[Records] Offline files updated event received');
-            loadOfflineData();
-        };
-
+        const handleOfflineFilesUpdate = () => loadOfflineData();
         window.addEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
-
-        return () => {
-            window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
-        };
+        return () => window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
     }, [loadOnlineData, loadOfflineData]);
 
     useEffect(() => {
@@ -101,78 +119,33 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 auth: { projectId },
                 transports: ['websocket', 'polling'],
                 reconnection: true,
-                reconnectionAttempts: 5,
-                reconnectionDelay: 1000,
-                timeout: 20000,
                 withCredentials: true
             });
         }
         const socket = socketRef.current;
-        socket.on('connect', () => {
-            console.log(`Joined room: ${projectId}`);
-        });
-
         const handleConnect = async () => {
             setIsConnected(true);
-            console.log('Connected to WebSocket');
-            console.log(`Socket ID: ${socket.id}`);
-
-            // Re-sync on reconnection to handle missed events
             try {
-                console.log('[DEBUG] Reconnected. Re-syncing records and columns...');
-                const [latestRecords, latestColumns] = await Promise.all([
-                    getRecords(projectId),
-                    getColumns(projectId)
-                ]);
-
-                if (latestRecords) {
-                    setOnlineRecords(latestRecords);
-                    const isProcessing = latestRecords.some((r: any) => r.answers?.__status__ === 'processing');
-                    if (!isProcessing) {
-                        setProcessingStatus(null);
-                    }
-                }
-                if (latestColumns) {
-                    setColumns(latestColumns);
-                }
-            } catch (err) {
-                console.error('Failed to re-sync on reconnect:', err);
-            }
+                const [latestRecords, latestColumns] = await Promise.all([getRecords(projectId), getColumns(projectId)]);
+                if (latestRecords) setOnlineRecords(latestRecords);
+                if (latestColumns) setColumns(latestColumns);
+            } catch (err) { }
         };
-
-        const handleDisconnect = () => {
-            setIsConnected(false);
-            console.log('Disconnected from WebSocket');
-        };
-
-        const handleError = (error: Error) => {
-            console.error('WebSocket error:', error);
-        };
-
-        const handleTimeout = () => {
-            console.warn('WebSocket connection timeout');
-        };
-
-        const handleRecordCreated = (data: { record: DocumentRecord; fields: Field[] }) => {
+        const handleDisconnect = () => setIsConnected(false);
+        const handleRecordCreated = (data: any) => {
             setOnlineRecords(prev => [...prev, data.record]);
             setColumns(data.fields);
-            if (data.record.answers?.__status__ !== 'processing') {
-                setProcessingStatus(null);
-            }
-            // Proactively refresh offline data to ensure the row "transitions" immediately
+            if (data.record.answers?.__status__ !== 'processing') setProcessingStatus(null);
             loadOfflineData();
         };
-
-        const handleRecordUpdated = (data: { record: DocumentRecord; fields: Field[] }) => {
+        const handleRecordUpdated = (data: any) => {
             setOnlineRecords(prev => prev.map(x => x.id === data.record.id ? data.record : x));
             setColumns(data.fields);
         };
-
-        const handleRecordDeleted = (data: { id: string; fields: Field[] }) => {
+        const handleRecordDeleted = (data: any) => {
             setOnlineRecords(prev => prev.filter(x => x.id !== data.id));
             setColumns(data.fields);
         };
-
         const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
             setOnlineRecords(data.records);
             setColumns(prev => [...prev, data.field]);
@@ -180,59 +153,43 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x));
         };
-
         const handleColumnDeleted = (data: { field_id: string }) => {
             setColumns(prev => prev.filter(x => x.hidden_id !== data.field_id));
         };
-
-        const handleOcrStart = (data: { status: string }) => {
-            setProcessingStatus('Starting OCR...');
-        };
-
-        const handleOcrProgress = (data: { current: number; total: number }) => {
-            // Calculate percentage if available
+        const handleOcrStart = () => setProcessingStatus('Starting OCR...');
+        const handleOcrProgress = (data: any) => {
             const progress = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
             setProcessingStatus(`OCR: Processing page ${data.current} of ${data.total} (${progress}%)`);
         };
-
-        const handleAiStart = (data: { status: string }) => {
-            setProcessingStatus('AI Analyzing document...');
-        };
-
-        const handleBackfillComplete = (data: { records: DocumentRecord[]; fields: Field[]; stats: any }) => {
+        const handleAiStart = () => setProcessingStatus('AI Analyzing document...');
+        const handleBackfillComplete = (data: any) => {
             setOnlineRecords(data.records);
             setColumns(data.fields);
             setProcessingStatus(null);
         };
 
-        // Add listeners
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
-        socket.on('connect_error', handleError);
-        socket.on('connect_timeout', handleTimeout);
         socket.on('record_created', handleRecordCreated);
         socket.on('record_updated', handleRecordUpdated);
         socket.on('record_deleted', handleRecordDeleted);
         socket.on('field_created', handleColumnCreated);
         socket.on('field_updated', handleColumnUpdated);
-        socket.on('field_deleted', handleColumnDeleted)
+        socket.on('field_deleted', handleColumnDeleted);
         socket.on('ocr_start', handleOcrStart);
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
         socket.on('backfill_complete', handleBackfillComplete);
 
-        // Cleanup on unmount
         return () => {
             socket.off('connect', handleConnect);
             socket.off('disconnect', handleDisconnect);
-            socket.off('connect_error', handleError);
-            socket.off('connect_timeout', handleTimeout);
             socket.off('record_created', handleRecordCreated);
-            socket.off('record_updated', handleRecordUpdated)
-            socket.off('record_deleted', handleRecordDeleted)
+            socket.off('record_updated', handleRecordUpdated);
+            socket.off('record_deleted', handleRecordDeleted);
             socket.off('field_created', handleColumnCreated);
             socket.off('field_updated', handleColumnUpdated);
-            socket.off('field_deleted', handleColumnDeleted)
+            socket.off('field_deleted', handleColumnDeleted);
             socket.off('ocr_start', handleOcrStart);
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);
@@ -240,23 +197,22 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [projectId]);
+    }, [projectId, loadOfflineData, loadOnlineData]);
 
-    // Unified row data for display (Offline items ALWAYS at the TOP for visibility)
-    const onlineFilenames = new Set(onlineRecords.map(r => r.original_filename));
-    const uniqueOfflineRecords = offlineRecords.filter(off => !onlineFilenames.has(off.original_filename));
+    const rowData = useMemo(() => {
+        const onlineFilenames = new Set(onlineRecords.map(r => r.original_filename));
+        const uniqueOfflineRecords = offlineRecords.filter(off => !onlineFilenames.has(off.original_filename));
+        return [...uniqueOfflineRecords, ...onlineRecords].sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+    }, [onlineRecords, offlineRecords]);
 
-    // Merge: Offline first, then Online (chronological by created_at)
-    const rowData = [...uniqueOfflineRecords, ...onlineRecords].sort((a, b) => {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-
-    const processingCount = rowData.filter(r => r.answers?.__status__ === 'processing').length;
+    const processingCount = useMemo(() =>
+        rowData.filter(r => r.answers?.__status__ === 'processing').length
+        , [rowData]);
 
     useEffect(() => {
-        if (processingCount === 0 && processingStatus) {
-            setProcessingStatus(null);
-        }
+        if (processingCount === 0 && processingStatus) setProcessingStatus(null);
     }, [processingCount, processingStatus]);
 
     return (
@@ -282,14 +238,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                             </div>
                         )}
                     </div>
-                    {initialFields.length >= 2 &&
+                    {columns.length >= 2 && (
                         <button
                             onClick={() => setIsReorderPopupVisible(true)}
                             className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"
                         >
                             Reorder Columns
                         </button>
-                    }
+                    )}
                 </div>
                 {(processingStatus || processingCount > 0) && (
                     <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl transition-all duration-300">
@@ -322,7 +278,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 )}
             </div>
             <div className="flex-1 min-h-0">
-                <SpreadSheet records={rowData} columns={columns} projectId={projectId} project={project} />
+                <SpreadSheet
+                    records={rowData}
+                    columns={columns}
+                    projectId={projectId}
+                    project={project}
+                    onDeleteRecord={handleDeleteRecord}
+                    onDeleteBatch={handleDeleteBatch}
+                />
             </div>
             <ColumnReorderPopup
                 columns={columns}
@@ -330,6 +293,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 onClose={() => setIsReorderPopupVisible(false)}
                 onReorder={setColumns}
             />
-        </div >
+        </div>
     );
 }

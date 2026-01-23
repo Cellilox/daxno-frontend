@@ -40,7 +40,7 @@ export default function SyncBanner() {
             clearInterval(interval);
             window.removeEventListener('daxno:offline-files-updated', handleUpdate);
         };
-    }, [isVisible, isFinished]);
+    }, []);
 
     if (!isVisible) return null;
 

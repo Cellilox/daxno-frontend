@@ -13,7 +13,7 @@ import { deleteFileUrl } from '@/actions/aws-url-actions';
 import BackfillModal from '../forms/BackfillModal';
 import AlertDialog from '../ui/AlertDialog';
 
-export default function SpreadSheet({ columns, records, projectId, project, user }: SpreadSheetProps) {
+export default function SpreadSheet({ columns, records, projectId, project, onDeleteRecord, onDeleteBatch }: SpreadSheetProps) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
   const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -225,8 +225,12 @@ export default function SpreadSheet({ columns, records, projectId, project, user
   const handleDeleteRecord = async (recordId: string, file_key: string) => {
     setIsLoading(true);
     try {
-      await deleteRecord(recordId);
-      await handleDeleteFileUrl(file_key, projectId);
+      if (onDeleteRecord) {
+        await onDeleteRecord(recordId);
+      }
+      if (file_key) {
+        await handleDeleteFileUrl(file_key, projectId);
+      }
     } catch (error) {
       alert('Error deleting a record');
     } finally {
@@ -304,7 +308,22 @@ export default function SpreadSheet({ columns, records, projectId, project, user
 
     try {
       setIsLoading(true);
-      await deleteRecord(selectedRecordToDelete.id);
+      if (onDeleteRecord) {
+        await onDeleteRecord(selectedRecordToDelete.id);
+      }
+
+      // Cleanup S3 file if it exists
+      if (selectedRecordToDelete.file_key) {
+        await handleDeleteFileUrl(selectedRecordToDelete.file_key, projectId);
+      }
+
+      // Also clear from selection if it was selected
+      setSelectedRecordIds(prev => {
+        const next = new Set(prev);
+        next.delete(selectedRecordToDelete.id);
+        return next;
+      });
+
       setIsAlertVisible(false);
     } catch (error) {
       alert('Error deleting a record');
@@ -356,9 +375,10 @@ export default function SpreadSheet({ columns, records, projectId, project, user
     setShowBatchDeleteAlert(false);
     setIsBatchDeleting(true);
     try {
-      await deleteBatchRecords(Array.from(selectedRecordIds));
-      // Optimistic remove
-      setLocalRecords(prev => prev.filter(r => !selectedRecordIds.has(r.id)));
+      if (onDeleteBatch) {
+        await onDeleteBatch(Array.from(selectedRecordIds));
+      }
+      // Explicitly clear selection AFTER successful parent update
       setSelectedRecordIds(new Set());
     } catch (err) {
       alert('Batch delete failed');
