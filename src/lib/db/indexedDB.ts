@@ -12,18 +12,8 @@ interface DaxnoDB extends DBSchema {
             metadata: {
                 originalName: string;
                 mimeType: string;
+                error?: string;
             };
-        };
-    };
-    syncQueue: {
-        key: string;
-        value: {
-            id: string;
-            type: 'file' | 'photo';
-            payload: Record<string, any>;
-            status: 'pending' | 'syncing' | 'failed';
-            retryCount: number;
-            createdAt: number;
         };
     };
 }
@@ -39,12 +29,8 @@ export async function getDB() {
     if (!dbPromise) {
         dbPromise = openDB<DaxnoDB>(DB_NAME, DB_VERSION, {
             upgrade(db) {
-                // Create stores if they don't exist
                 if (!db.objectStoreNames.contains('offlineFiles')) {
                     db.createObjectStore('offlineFiles', { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains('syncQueue')) {
-                    db.createObjectStore('syncQueue', { keyPath: 'id' });
                 }
             },
         });
@@ -80,16 +66,25 @@ export async function getPendingFiles() {
     if (!db) return [];
 
     const all = await db.getAll('offlineFiles');
-    return all.filter(f => f.status === 'pending');
+    return all.filter(f => f.status === 'pending' || f.status === 'failed');
 }
 
-export async function updateFileStatus(id: string, status: 'pending' | 'syncing' | 'failed') {
+export async function getOfflineFiles() {
+    const db = await getDB();
+    if (!db) return [];
+    return await db.getAll('offlineFiles');
+}
+
+export async function updateFileStatus(id: string, status: 'pending' | 'syncing' | 'failed', errorMessage?: string) {
     const db = await getDB();
     if (!db) return;
 
     const item = await db.get('offlineFiles', id);
     if (item) {
         item.status = status;
+        if (errorMessage) {
+            item.metadata.error = errorMessage;
+        }
         await db.put('offlineFiles', item);
     }
 }

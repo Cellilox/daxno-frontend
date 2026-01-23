@@ -256,6 +256,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
         await addOfflineFile(file, projectId);
 
+        // Notify other components to refresh their display
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+
         updateStatus('Saved successfully! It will upload auto-sync once you are back online.', messageTypeEnum.INFO, 'Queued');
 
         // Close modal after success

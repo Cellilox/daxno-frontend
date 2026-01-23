@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/header/header";
+import OfflineSyncManager from "@/components/OfflineSyncManager";
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -39,6 +40,7 @@ export default function RootLayout({
                     className={`${geistSans.variable} ${geistMono.variable} antialiased`}
                 >
                     <Header />
+                    <OfflineSyncManager />
                     {children}
                     <Footer />
 

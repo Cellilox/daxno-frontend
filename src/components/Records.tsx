@@ -6,6 +6,7 @@ import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
 import { getRecords } from '@/actions/record-actions';
 import { getColumns } from '@/actions/column-actions';
+import { getOfflineFiles } from '@/lib/db/indexedDB';
 
 
 type RecordsProps = {
@@ -22,6 +23,74 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [columns, setColumns] = useState<Field[]>(initialFields || [])
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
+
+    const loadData = async () => {
+        try {
+            console.log('[Records] loadData triggered');
+
+            const [latestOnlineRecords, latestOnlineColumns, offlineFilesRaw] = await Promise.all([
+                getRecords(projectId),
+                getColumns(projectId),
+                getOfflineFiles()
+            ]);
+
+            const offlineFiles: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
+
+            // Merge offline files into records
+            setRowData(prevRowData => {
+                const baseOnlineRecords: DocumentRecord[] = Array.isArray(latestOnlineRecords) ? latestOnlineRecords : prevRowData.filter(r => !r.answers?.__status__ || !['queued', 'syncing', 'failed'].includes(r.answers.__status__));
+
+                // Deduplicate: If an offline file matches an online record's filename, skip it
+                const onlineFilenames = new Set(baseOnlineRecords.map(r => r.original_filename));
+
+                const pendingRecords: DocumentRecord[] = offlineFiles
+                    .filter(f => f.projectId === projectId && !onlineFilenames.has(f.metadata?.originalName))
+                    .map(f => ({
+                        id: f.id,
+                        filename: f.metadata?.originalName || 'pending',
+                        original_filename: f.metadata?.originalName || 'pending',
+                        file_key: '',
+                        project_id: projectId,
+                        answers: {
+                            __status__: f.status === 'pending' ? 'queued' : f.status,
+                            __error__: f.metadata?.error || (f.status === 'failed' ? 'Sync failed' : undefined)
+                        },
+                        pages: 0,
+                        created_at: new Date(f.createdAt).toISOString(),
+                        updated_at: new Date().toISOString(),
+                    } as any));
+
+                if (pendingRecords.length > 0) {
+                    console.log(`[Records] Merging ${pendingRecords.length} offline files into UI`);
+                }
+
+                return [...baseOnlineRecords, ...pendingRecords];
+            });
+
+            // Update columns if available
+            if (Array.isArray(latestOnlineColumns)) {
+                setColumns(latestOnlineColumns);
+            }
+        } catch (err) {
+            console.error('[Records] Failed to load data:', err);
+        }
+    };
+
+    // Load data on mount and when offline files change
+    useEffect(() => {
+        loadData();
+
+        const handleOfflineFilesUpdate = () => {
+            console.log('[Records] Offline files updated event received');
+            loadData();
+        };
+
+        window.addEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
+
+        return () => {
+            window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
+        };
+    }, [projectId]);
 
     useEffect(() => {
         if (!socketRef.current) {
