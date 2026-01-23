@@ -7,7 +7,9 @@ export async function getTransactions() {
       const url = buildApiUrl('/transactions/');
       const response = await fetchAuthed(url)
       if (!response.ok) {
-         console.error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
+         if (response.status !== 401) {
+            console.error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
+         }
          return [];
       }
       return await response.json();

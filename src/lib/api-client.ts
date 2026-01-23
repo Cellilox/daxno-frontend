@@ -22,7 +22,10 @@ export async function fetchAuthed(url: string, options?: RequestInit) {
   });
 
   if (!response.ok) {
-    console.error(`[API_CLIENT] Error: ${response.status} for ${resolvedUrl}`);
+    // Silence 401s specifically as they are expected during session reconnection/handshake
+    if (response.status !== 401) {
+      console.error(`[API_CLIENT] Error: ${response.status} for ${resolvedUrl}`);
+    }
   }
 
   return response;
@@ -47,7 +50,9 @@ export async function fetchAuthedJson(url: string, options?: RequestInit) {
   });
 
   if (!response.ok) {
-    console.error(`[API_CLIENT] JSON Error: ${response.status} for ${resolvedUrl}`);
+    if (response.status !== 401) {
+      console.error(`[API_CLIENT] JSON Error: ${response.status} for ${resolvedUrl}`);
+    }
   }
 
   return response;
