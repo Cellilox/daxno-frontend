@@ -86,6 +86,23 @@ export default function OfflineSyncManager() {
 
                     console.log('[OfflineSync] Processing:', originalName);
 
+                    // Check if this file was already synced (in case of page reload)
+                    try {
+                        const response = await fetch(`/api/records/${projectId}`);
+                        if (response.ok) {
+                            const existingRecords = await response.json();
+                            const alreadySynced = existingRecords.some((r: any) => r.original_filename === originalName);
+                            if (alreadySynced) {
+                                console.log('[OfflineSync] File already exists on server, removing from queue:', originalName);
+                                await removeOfflineFile(item.id);
+                                notifyRefresh();
+                                continue;
+                            }
+                        }
+                    } catch (checkError) {
+                        console.warn('[OfflineSync] Could not check for existing file, proceeding with sync:', checkError);
+                    }
+
                     // Get Presigned URL
                     const { upload_url, filename } = await getPresignedUrl(originalName, projectId, mimeType);
 
