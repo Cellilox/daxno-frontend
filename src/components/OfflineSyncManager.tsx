@@ -29,11 +29,13 @@ export default function OfflineSyncManager() {
         };
 
         if (isOnline) {
-            cleanupStuckFiles().then(() => syncOfflineFiles());
-        }
+            // Small delay to ensure network is stable
+            const timeoutId = setTimeout(() => {
+                cleanupStuckFiles().then(() => syncOfflineFiles());
+            }, 1000);
 
-        // DISABLED: Continuous polling was causing performance issues
-        // Sync will only trigger when isOnline state changes
+            return () => clearTimeout(timeoutId);
+        }
     }, [isOnline]);
 
     const notifyRefresh = () => {
@@ -86,23 +88,6 @@ export default function OfflineSyncManager() {
 
                     console.log('[OfflineSync] Processing:', originalName);
 
-                    // Check if this file was already synced (in case of page reload)
-                    try {
-                        const response = await fetch(`/api/records/${projectId}`);
-                        if (response.ok) {
-                            const existingRecords = await response.json();
-                            const alreadySynced = existingRecords.some((r: any) => r.original_filename === originalName);
-                            if (alreadySynced) {
-                                console.log('[OfflineSync] File already exists on server, removing from queue:', originalName);
-                                await removeOfflineFile(item.id);
-                                notifyRefresh();
-                                continue;
-                            }
-                        }
-                    } catch (checkError) {
-                        console.warn('[OfflineSync] Could not check for existing file, proceeding with sync:', checkError);
-                    }
-
                     // Get Presigned URL
                     const { upload_url, filename } = await getPresignedUrl(originalName, projectId, mimeType);
 
@@ -119,12 +104,16 @@ export default function OfflineSyncManager() {
                         xhr.send(file);
                     });
 
-                    // Trigger Processing
-                    await queryDocument(projectId, filename, originalName);
-
-                    // Success: Remove from DB
+                    // SUCCESS: File uploaded to S3 - Remove from IndexedDB immediately
+                    // The backend will handle OCR, AI analysis, and record creation asynchronously
                     await removeOfflineFile(item.id);
-                    console.log(`[OfflineSync] Successfully synced: ${originalName}`);
+                    console.log(`[OfflineSync] File uploaded to S3, removed from queue: ${originalName}`);
+                    notifyRefresh();
+
+                    // Trigger background processing (non-blocking)
+                    queryDocument(projectId, filename, originalName).catch(err => {
+                        console.warn('[OfflineSync] Background processing trigger failed:', err);
+                    });
                     notifyRefresh();
 
                 } catch (error: any) {
