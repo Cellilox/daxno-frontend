@@ -9,6 +9,7 @@ import { getRecords } from '@/actions/record-actions';
 import { getColumns } from '@/actions/column-actions';
 import { getOfflineFiles } from '@/lib/db/indexedDB';
 import { useCallback } from 'react';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
 
 
 type RecordsProps = {
@@ -20,6 +21,7 @@ type RecordsProps = {
 
 export default function Records({ projectId, initialFields, initialRecords, project }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
+    const { isOnline } = useSyncStatus();
     const [isConnected, setIsConnected] = useState(false);
     const [rowData, setRowData] = useState<DocumentRecord[]>(initialRecords)
     const [columns, setColumns] = useState<Field[]>(initialFields || [])
@@ -264,7 +266,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        {isConnected ? (
+                        {!isOnline ? (
+                            <div className="flex items-center gap-1.6">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Offline</span>
+                            </div>
+                        ) : isConnected ? (
                             <div className="flex items-center gap-1.6">
                                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                 <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
