@@ -439,10 +439,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         updateFileStatus({ status: 'pending', progress: 0 });
         await addOfflineFile(file, projectId);
         window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
-        updateFileStatus({ status: 'analyzing', progress: 100, result: { message: "Queued for sync when online" } });
-
-        // Remove this file from the bulk list after queuing
-        setFiles(prev => prev.filter(f => f.file !== file));
+        updateFileStatus({ status: 'complete', progress: 100, result: { message: "Queued for sync when online" } });
         return;
       }
 
@@ -509,15 +506,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   };
 
-  // Add a useEffect to monitor when all files are complete
+  // Monitor when all files are complete
   useEffect(() => {
     if (files.length > 0) {
-      const allComplete = files.every(f => f.status === 'complete');
-      const hasErrors = files.some(f => f.status === 'error');
+      const allComplete = files.every(f => f.status === 'complete' || f.status === 'error');
 
       if (allComplete && !isProcessing) {
-        // Close the dropzone after a short delay to allow users to see the completion
+        console.log('[Bulk Upload] All files complete, closing popup...');
         setTimeout(() => {
+          setFiles([]); // Clear files list
           setIsVisible(false);
           onMessageChange({ type: messageTypeEnum.NONE, text: '', });
         }, 1500);

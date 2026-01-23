@@ -23,6 +23,9 @@ const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
+// In-memory set to track files being added (prevents race conditions in bulk uploads)
+const addingFiles = new Set<string>();
+
 export async function getDB() {
     if (typeof window === 'undefined') return null;
 
@@ -35,7 +38,7 @@ export async function getDB() {
             },
         });
     }
-    return dbPromise;
+    return db Promise;
 }
 
 export async function addOfflineFile(file: File | Blob, projectId: string) {
@@ -44,36 +47,60 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
 
     const name = file instanceof File ? file.name : `photo-${Date.now()}.jpg`;
     const type = file.type || 'image/jpeg';
+    const size = file.size;
 
-    // Check for duplicates
-    const existingFiles = await db.getAll('offlineFiles');
-    const duplicate = existingFiles.find(f =>
-        f.projectId === projectId &&
-        f.metadata.originalName === name &&
-        f.file.size === file.size
-    );
+    // Create unique key for this file
+    const fileKey = `${projectId}:${name}:${size}`;
 
-    if (duplicate) {
-        console.log('[IndexedDB] Duplicate file detected, skipping:', name);
-        return duplicate.id;
+    // Check if this file is currently being added
+    if (addingFiles.has(fileKey)) {
+        console.log('[IndexedDB] File is currently being added, skipping duplicate:', name);
+        // Wait a bit and return existing file
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const existing = await db.getAllFromIndex('offlineFiles', 'by-name', name);
+        return existing[0]?.id || null;
     }
 
-    const id = crypto.randomUUID();
+    // Mark as being added
+    addingFiles.add(fileKey);
 
-    await db.add('offlineFiles', {
-        id,
-        file,
-        projectId,
-        status: 'pending',
-        createdAt: Date.now(),
-        metadata: {
-            originalName: name,
-            mimeType: type,
-        },
-    });
+    try {
+        // Check for existing files in DB
+        const existingFiles = await db.getAll('offlineFiles');
+        const duplicate = existingFiles.find(f =>
+            f.projectId === projectId &&
+            f.metadata.originalName === name &&
+            f.file.size === size
+        );
 
-    console.log('[IndexedDB] Added offline file:', name, 'ID:', id);
-    return id;
+        if (duplicate) {
+            console.log('[IndexedDB] Duplicate file found in DB, skipping:', name);
+            return duplicate.id;
+        }
+
+        const id = crypto.randomUUID();
+
+        await db.add('offlineFiles', {
+            id,
+            file,
+            projectId,
+            status: 'pending',
+            createdAt: Date.now(),
+            metadata: {
+                originalName: name,
+                mimeType: type,
+            },
+        });
+
+        console.log('[IndexedDB] Added offline file:', name, 'ID:', id, 'Size:', size);
+        return id;
+    } catch (error: any) {
+        console.error('[IndexedDB] Error adding file:', name, error);
+        return null;
+    } finally {
+        // Remove from "being added" set after 1 second
+        setTimeout(() => addingFiles.delete(fileKey), 1000);
+    }
 }
 
 export async function getPendingFiles() {
