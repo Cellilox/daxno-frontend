@@ -23,78 +23,68 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const socketRef = useRef<Socket | null>(null);
     const { isOnline } = useSyncStatus();
     const [isConnected, setIsConnected] = useState(false);
-    const [rowData, setRowData] = useState<DocumentRecord[]>(initialRecords)
+    const [onlineRecords, setOnlineRecords] = useState<DocumentRecord[]>(initialRecords);
+    const [offlineRecords, setOfflineRecords] = useState<DocumentRecord[]>([]);
     const [columns, setColumns] = useState<Field[]>(initialFields || [])
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
-    const loadData = useCallback(async () => {
+    const loadOfflineData = useCallback(async () => {
         try {
-            console.log('[Records] loadData triggered');
+            const offlineFilesRaw = await getOfflineFiles();
+            const files: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
 
-            const [latestOnlineRecords, latestOnlineColumns, offlineFilesRaw] = await Promise.all([
-                getRecords(projectId),
-                getColumns(projectId),
-                getOfflineFiles()
-            ]);
+            const pending = files
+                .filter(f => f.projectId === projectId)
+                .map(f => ({
+                    id: f.id,
+                    filename: f.metadata?.originalName || 'pending',
+                    original_filename: f.metadata?.originalName || 'pending',
+                    file_key: '',
+                    project_id: projectId,
+                    answers: {
+                        __status__: f.status === 'pending' ? 'queued' : f.status,
+                        __error__: f.metadata?.error || (f.status === 'failed' ? 'Sync failed' : undefined)
+                    },
+                    pages: 0,
+                    created_at: new Date(f.createdAt).toISOString(),
+                    updated_at: new Date().toISOString(),
+                } as any));
 
-            console.log('[Records] Fetched data:', {
-                onlineRecords: Array.isArray(latestOnlineRecords) ? latestOnlineRecords.length : 'not array',
-                onlineColumns: Array.isArray(latestOnlineColumns) ? latestOnlineColumns.length : 'not array',
-                offlineFiles: Array.isArray(offlineFilesRaw) ? offlineFilesRaw.length : 'not array'
-            });
-
-            const offlineFiles: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
-
-            // Merge offline files into records
-            setRowData(prevRowData => {
-                const baseOnlineRecords: DocumentRecord[] = Array.isArray(latestOnlineRecords) ? latestOnlineRecords : prevRowData.filter(r => !r.answers?.__status__ || !['queued', 'syncing', 'failed'].includes(r.answers.__status__));
-
-                // Deduplicate: If an offline file matches an online record's filename, skip it
-                const onlineFilenames = new Set(baseOnlineRecords.map(r => r.original_filename));
-
-                const pendingRecords: DocumentRecord[] = offlineFiles
-                    .filter(f => f.projectId === projectId && !onlineFilenames.has(f.metadata?.originalName))
-                    .map(f => ({
-                        id: f.id,
-                        filename: f.metadata?.originalName || 'pending',
-                        original_filename: f.metadata?.originalName || 'pending',
-                        file_key: '',
-                        project_id: projectId,
-                        answers: {
-                            __status__: f.status === 'pending' ? 'queued' : f.status,
-                            __error__: f.metadata?.error || (f.status === 'failed' ? 'Sync failed' : undefined)
-                        },
-                        pages: 0,
-                        created_at: new Date(f.createdAt).toISOString(),
-                        updated_at: new Date().toISOString(),
-                    } as any));
-
-                if (pendingRecords.length > 0) {
-                    console.log(`[Records] Merging ${pendingRecords.length} offline files into UI`, pendingRecords);
-                }
-
-                const merged = [...baseOnlineRecords, ...pendingRecords];
-                console.log('[Records] Final merged records count:', merged.length);
-                return merged;
-            });
-
-            // Update columns if available
-            if (Array.isArray(latestOnlineColumns)) {
-                setColumns(latestOnlineColumns);
-            }
+            setOfflineRecords(pending);
         } catch (err) {
-            console.error('[Records] Failed to load data:', err);
+            console.error('[Records] Failed to load offline data:', err);
         }
     }, [projectId]);
 
+    const loadOnlineData = useCallback(async () => {
+        try {
+            console.log('[Records] loadOnlineData triggered');
+            const [latestRecords, latestColumns] = await Promise.all([
+                getRecords(projectId),
+                getColumns(projectId)
+            ]);
+
+            if (latestRecords && Array.isArray(latestRecords)) {
+                setOnlineRecords(latestRecords);
+            }
+            if (latestColumns && Array.isArray(latestColumns)) {
+                setColumns(latestColumns);
+            }
+        } catch (err) {
+            console.warn('[Records] Failed to load online data (possibly offline or unauthorized):', err);
+        }
+    }, [projectId]);
+
+
     // Load data on mount and when offline files change
     useEffect(() => {
-        loadData();
+        loadOnlineData();
+        loadOfflineData();
 
         const handleOfflineFilesUpdate = () => {
             console.log('[Records] Offline files updated event received');
-            loadData();
+            loadOfflineData();
         };
 
         window.addEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
@@ -102,7 +92,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         return () => {
             window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
         };
-    }, [loadData]);
+    }, [loadOnlineData, loadOfflineData]);
 
     useEffect(() => {
         if (!socketRef.current) {
@@ -136,8 +126,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 ]);
 
                 if (latestRecords) {
-                    setRowData(latestRecords);
-                    // Check if anything is still processing in the latest batch
+                    setOnlineRecords(latestRecords);
                     const isProcessing = latestRecords.some((r: any) => r.answers?.__status__ === 'processing');
                     if (!isProcessing) {
                         setProcessingStatus(null);
@@ -165,26 +154,27 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
 
         const handleRecordCreated = (data: { record: DocumentRecord; fields: Field[] }) => {
-            setRowData(prev => [...prev, data.record]);
+            setOnlineRecords(prev => [...prev, data.record]);
             setColumns(data.fields);
-            // Only clear status if it wasn't a "processing" record being created
             if (data.record.answers?.__status__ !== 'processing') {
                 setProcessingStatus(null);
             }
+            // Proactively refresh offline data to ensure the row "transitions" immediately
+            loadOfflineData();
         };
 
         const handleRecordUpdated = (data: { record: DocumentRecord; fields: Field[] }) => {
-            setRowData(prev => prev.map(x => x.id === data.record.id ? data.record : x));
+            setOnlineRecords(prev => prev.map(x => x.id === data.record.id ? data.record : x));
             setColumns(data.fields);
         };
 
         const handleRecordDeleted = (data: { id: string; fields: Field[] }) => {
-            setRowData(prev => prev.filter(x => x.id !== data.id));
+            setOnlineRecords(prev => prev.filter(x => x.id !== data.id));
             setColumns(data.fields);
         };
 
         const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
-            setRowData(data.records);
+            setOnlineRecords(data.records);
             setColumns(prev => [...prev, data.field]);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
@@ -210,7 +200,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
 
         const handleBackfillComplete = (data: { records: DocumentRecord[]; fields: Field[]; stats: any }) => {
-            setRowData(data.records);
+            setOnlineRecords(data.records);
             setColumns(data.fields);
             setProcessingStatus(null);
         };
@@ -251,6 +241,15 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socketRef.current = null;
         };
     }, [projectId]);
+
+    // Unified row data for display (Offline items ALWAYS at the TOP for visibility)
+    const onlineFilenames = new Set(onlineRecords.map(r => r.original_filename));
+    const uniqueOfflineRecords = offlineRecords.filter(off => !onlineFilenames.has(off.original_filename));
+
+    // Merge: Offline first, then Online (chronological by created_at)
+    const rowData = [...uniqueOfflineRecords, ...onlineRecords].sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
     const processingCount = rowData.filter(r => r.answers?.__status__ === 'processing').length;
 
