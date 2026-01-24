@@ -74,8 +74,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             if (latestRecords && Array.isArray(latestRecords)) {
                 setOnlineRecords(latestRecords);
                 // Update Cache
-                const { cacheRecords } = await import('@/lib/db/indexedDB');
+                const { cacheRecords, syncRecordDeletions } = await import('@/lib/db/indexedDB');
                 await cacheRecords(projectId, latestRecords, latestColumns);
+
+                // Sync deletions: remove records that no longer exist on server
+                const syncResult = await syncRecordDeletions(projectId, latestRecords);
+                if (syncResult.removed > 0) {
+                    console.log(`[Records] Cleaned ${syncResult.removed} deleted record(s) from cache`);
+                }
             }
             if (latestColumns && Array.isArray(latestColumns)) setColumns(latestColumns);
         } catch (err) {

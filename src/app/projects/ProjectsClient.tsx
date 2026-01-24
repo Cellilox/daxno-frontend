@@ -39,8 +39,14 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
       if (latest && Array.isArray(latest)) {
         setProjectsList(latest);
         if (user?.id) {
-          const { cacheProjects } = await import("@/lib/db/indexedDB");
+          const { cacheProjects, syncProjectDeletions } = await import("@/lib/db/indexedDB");
           await cacheProjects(user.id, latest);
+
+          // Sync deletions: remove projects that no longer exist on server
+          const syncResult = await syncProjectDeletions(user.id, latest);
+          if (syncResult.removed > 0) {
+            console.log(`[ProjectsClient] Cleaned ${syncResult.removed} deleted project(s) from cache`);
+          }
         }
       }
     } catch (err) {

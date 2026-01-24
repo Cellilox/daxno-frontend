@@ -103,6 +103,55 @@ export async function getCachedRecords(projectId: string) {
     return await db.get('cachedRecords', projectId);
 }
 
+// --- Smart Cache Cleanup Helpers ---
+
+/**
+ * Syncs project deletions by comparing server data with cached data.
+ * Removes projects from cache that no longer exist on the server.
+ */
+export async function syncProjectDeletions(userId: string, serverProjects: any[]) {
+    const cached = await getCachedProjects(userId);
+    const serverIds = new Set(serverProjects.map((p: any) => p.id));
+
+    // Keep only projects that still exist on server
+    const validProjects = cached.filter((p: any) => serverIds.has(p.id));
+
+    if (validProjects.length < cached.length) {
+        await cacheProjects(userId, validProjects);
+        return {
+            removed: cached.length - validProjects.length,
+            retained: validProjects.length
+        };
+    }
+
+    return { removed: 0, retained: cached.length };
+}
+
+/**
+ * Syncs record deletions by comparing server data with cached data.
+ * Removes records from cache that no longer exist on the server.
+ */
+export async function syncRecordDeletions(projectId: string, serverRecords: any[]) {
+    const cached = await getCachedRecords(projectId);
+    if (!cached) return { removed: 0, retained: 0 };
+
+    const serverIds = new Set(serverRecords.map((r: any) => r.id));
+
+    // Keep only records that still exist on server
+    const validRecords = cached.data.filter((r: any) => serverIds.has(r.id));
+
+    if (validRecords.length < cached.data.length) {
+        await cacheRecords(projectId, validRecords, cached.fields);
+        return {
+            removed: cached.data.length - validRecords.length,
+            retained: validRecords.length
+        };
+    }
+
+    return { removed: 0, retained: cached.data.length };
+}
+
+
 export async function addOfflineFile(file: File | Blob, projectId: string) {
     const db = await getDB();
     if (!db) return null;
