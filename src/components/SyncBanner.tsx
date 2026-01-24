@@ -49,7 +49,7 @@ export default function SyncBanner() {
     if (!isVisible) return null;
 
     return (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[100] transition-all duration-500 transform ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`} data-testid="sync-banner">
             <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-[320px]">
                 {!isFinished ? (
                     <>
@@ -73,12 +73,13 @@ export default function SyncBanner() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <div className="flex flex-col flex-1">
+                        <div className="flex flex-col flex-1" data-testid="sync-complete-message">
                             <span className="text-sm font-bold text-gray-900">Sync Complete!</span>
                             <span className="text-xs text-gray-500 font-medium">All files are now online.</span>
                         </div>
                         <button
                             onClick={() => window.location.reload()}
+                            data-testid="sync-refresh-button"
                             className="ml-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-200"
                         >
                             Refresh Page

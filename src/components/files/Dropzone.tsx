@@ -634,6 +634,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <button
           type="button"
           onClick={() => setIsBulkMode(false)}
+          data-testid="single-upload-tab"
           className={`px-4 py-2 text-sm font-medium rounded-l-lg ${!isBulkMode
             ? 'bg-blue-600 text-white'
             : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -644,6 +645,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <button
           type="button"
           onClick={() => setIsBulkMode(true)}
+          data-testid="bulk-upload-tab"
           className={`px-4 py-2 text-sm font-medium rounded-r-lg ${isBulkMode
             ? 'bg-blue-600 text-white'
             : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -674,8 +676,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           }}
         />
       ) : (
-        <div {...getSingleRootProps()} className="flex flex-col">
-          <input {...getSingleInputProps()} />
+        <div {...getSingleRootProps()} className="flex flex-col" data-testid="single-dropzone">
+          <input {...getSingleInputProps()} data-testid="file-input" />
           {preview ? (
             <div className="relative flex justify-center items-center rounded-md">
               {file?.type === 'application/pdf' ? (
@@ -725,6 +727,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <div className="mt-4">
           <button
             onClick={() => setShowCamera(true)}
+            data-testid="camera-scan-button"
             className="w-full flex items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-medium px-4 py-3 rounded-md hover:bg-blue-50 transition-colors"
           >
             <Camera className="w-5 h-5" />
@@ -735,7 +738,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       {/* Always show errors, even if file is cleared */}
       {uploadError && (
-        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm">
+        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm" data-testid="upload-error">
           <XCircle className="w-4 h-4" />
           {uploadError}
         </div>
@@ -753,6 +756,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           ) : (
             <button
               onClick={handleUpload}
+              data-testid="start-upload-button"
               className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
               Upload File
@@ -766,10 +770,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // Render bulk upload UI
   const renderBulkUpload = () => (
     <div className="space-y-6">
-      <div {...getBulkRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center 
+      <div {...getBulkRootProps()} data-testid="bulk-dropzone" className={`border-2 border-dashed rounded-lg p-8 text-center 
         ${isBulkDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'}
         ${files.length > 0 ? 'h-32' : 'h-64'} transition-colors`}>
-        <input {...getBulkInputProps()} />
+        <input {...getBulkInputProps()} data-testid="bulk-file-input" />
         <div className="flex flex-col items-center justify-center gap-4 h-full">
           <div>
             <p className="font-medium text-gray-900">
@@ -809,6 +813,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
             <button
               onClick={handleProcessAll}
               disabled={isProcessing}
+              data-testid="bulk-process-button"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : 'Start Processing'}
@@ -817,7 +822,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
           <div className="space-y-2">
             {files.map((fileStatus, index) => (
-              <div key={index} className="border rounded-lg p-4">
+              <div key={index} className="border rounded-lg p-4" data-testid={`file-row-${index}`}>
                 <div className="flex items-center gap-4">
                   {/* Preview Thumbnail */}
                   <div className="flex-shrink-0">
@@ -849,11 +854,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
                     </div>
 
                     <div className="flex justify-between mt-2 text-sm">
-                      <span className="text-gray-500">
+                      <span className="text-gray-500" data-testid={`file-status-label-${index}`}>
                         {getStatusLabel(fileStatus.status)}
                       </span>
                       {fileStatus.error && (
-                        <span className="text-red-500 truncate max-w-[200px]">
+                        <span className="text-red-500 truncate max-w-[200px]" data-testid={`file-error-${index}`}>
                           {fileStatus.error}
                         </span>
                       )}

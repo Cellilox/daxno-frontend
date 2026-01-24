@@ -80,6 +80,7 @@ export default function Card({ project }: CardProps) {
       <div
         className="group relative bg-white border border-gray-200 hover:border-blue-400 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full"
         onClick={handleNavigateToProjectPage}
+        data-testid={`project-card-${project.id}`}
       >
 
 
@@ -100,6 +101,7 @@ export default function Card({ project }: CardProps) {
                 <button
                   className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                   title="Edit project"
+                  data-testid={`edit-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectUpdateForm(project)
@@ -110,6 +112,7 @@ export default function Card({ project }: CardProps) {
                 <button
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete project"
+                  data-testid={`delete-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectDeleteAlert(project)

@@ -8,7 +8,7 @@ interface DaxnoDB extends DBSchema {
             file: Blob;
             projectId: string;
             status: 'pending' | 'syncing' | 'failed';
-            uploadedToS3: boolean;  // Track S3 upload completion
+            uploadedToS3: boolean;
             createdAt: number;
             metadata: {
                 originalName: string;
@@ -17,10 +17,27 @@ interface DaxnoDB extends DBSchema {
             };
         };
     };
+    projects: {
+        key: string; // userId/owner
+        value: {
+            owner: string;
+            data: any[];
+            updatedAt: number;
+        };
+    };
+    cachedRecords: {
+        key: string; // projectId
+        value: {
+            projectId: string;
+            data: any[];
+            fields: any[];
+            updatedAt: number;
+        };
+    };
 }
 
 const DB_NAME = 'daxno-offline';
-const DB_VERSION = 2;
+const DB_VERSION = 3; // Bumped version
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
@@ -32,14 +49,58 @@ export async function getDB() {
 
     if (!dbPromise) {
         dbPromise = openDB<DaxnoDB>(DB_NAME, DB_VERSION, {
-            upgrade(db) {
-                if (!db.objectStoreNames.contains('offlineFiles')) {
+            upgrade(db, oldVersion) {
+                if (oldVersion < 1) {
                     db.createObjectStore('offlineFiles', { keyPath: 'id' });
+                }
+                if (oldVersion < 3) {
+                    if (!db.objectStoreNames.contains('projects')) {
+                        db.createObjectStore('projects', { keyPath: 'owner' });
+                    }
+                    if (!db.objectStoreNames.contains('cachedRecords')) {
+                        db.createObjectStore('cachedRecords', { keyPath: 'projectId' });
+                    }
                 }
             },
         });
     }
     return dbPromise;
+}
+
+// --- Caching Helpers ---
+
+export async function cacheProjects(owner: string, projects: any[]) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('projects', {
+        owner,
+        data: projects,
+        updatedAt: Date.now()
+    });
+}
+
+export async function getCachedProjects(owner: string) {
+    const db = await getDB();
+    if (!db) return [];
+    const item = await db.get('projects', owner);
+    return item?.data || [];
+}
+
+export async function cacheRecords(projectId: string, records: any[], fields: any[]) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('cachedRecords', {
+        projectId,
+        data: records,
+        fields,
+        updatedAt: Date.now()
+    });
+}
+
+export async function getCachedRecords(projectId: string) {
+    const db = await getDB();
+    if (!db) return null;
+    return await db.get('cachedRecords', projectId);
 }
 
 export async function addOfflineFile(file: File | Blob, projectId: string) {

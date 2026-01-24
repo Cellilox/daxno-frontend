@@ -10,6 +10,7 @@ import { getOfflineFiles, removeOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { deleteBatchRecords, deleteRecord, getRecords } from '@/actions/record-actions';
 import { getColumns } from '@/actions/column-actions';
+import SmartAuthGuard from '@/components/auth/SmartAuthGuard';
 
 type RecordsProps = {
     projectId: string;
@@ -24,12 +25,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [isConnected, setIsConnected] = useState(false);
     const [onlineRecords, setOnlineRecords] = useState<DocumentRecord[]>(initialRecords);
     const [offlineRecords, setOfflineRecords] = useState<DocumentRecord[]>([]);
+    const [cachedRecords, setCachedRecords] = useState<DocumentRecord[]>([]);
     const [columns, setColumns] = useState<Field[]>(initialFields || [])
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
+            // 1. Load the Offline Queue (files waiting to be uploaded)
             const offlineFilesRaw = await getOfflineFiles();
             const files: any[] = Array.isArray(offlineFilesRaw) ? offlineFilesRaw : [];
             const pending = files
@@ -49,8 +52,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     updated_at: new Date().toISOString(),
                 } as any));
             setOfflineRecords(pending);
+
+            // 2. Load the Cache (records already synced in the past)
+            const { getCachedRecords } = await import('@/lib/db/indexedDB');
+            const cached = await getCachedRecords(projectId);
+            if (cached?.data) {
+                setCachedRecords(cached.data);
+                if (cached.fields) setColumns(cached.fields);
+            }
         } catch (err) {
-            console.error('[Records] Failed to load offline data:', err);
+            console.error('[Records] Failed to load offline/cached data:', err);
         }
     }, [projectId]);
 
@@ -60,7 +71,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 getRecords(projectId),
                 getColumns(projectId)
             ]);
-            if (latestRecords && Array.isArray(latestRecords)) setOnlineRecords(latestRecords);
+            if (latestRecords && Array.isArray(latestRecords)) {
+                setOnlineRecords(latestRecords);
+                // Update Cache
+                const { cacheRecords } = await import('@/lib/db/indexedDB');
+                await cacheRecords(projectId, latestRecords, latestColumns);
+            }
             if (latestColumns && Array.isArray(latestColumns)) setColumns(latestColumns);
         } catch (err) {
             console.warn('[Records] Failed to load online data:', err);
@@ -200,12 +216,24 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [projectId, loadOfflineData, loadOnlineData]);
 
     const rowData = useMemo(() => {
+        // Priority Merge Hierarchy:
+        // 1. Offline Queue (The most recent actions)
+        // 2. Online Live (Fresh server data)
+        // 3. Cache (Older synced data for offline persistence)
+
+        const offlineFilenames = new Set(offlineRecords.map(r => r.original_filename));
         const onlineFilenames = new Set(onlineRecords.map(r => r.original_filename));
-        const uniqueOfflineRecords = offlineRecords.filter(off => !onlineFilenames.has(off.original_filename));
-        return [...uniqueOfflineRecords, ...onlineRecords].sort((a, b) =>
+
+        // Use live records if online, otherwise use cache
+        const baseSyncedRecords = onlineRecords.length > 0 ? onlineRecords : cachedRecords;
+
+        // Filter out any synced records that are currently in the offline queue (re-uploading/editing)
+        const uniqueSynced = baseSyncedRecords.filter(r => !offlineFilenames.has(r.original_filename));
+
+        return [...offlineRecords, ...uniqueSynced].sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-    }, [onlineRecords, offlineRecords]);
+    }, [onlineRecords, offlineRecords, cachedRecords]);
 
     const processingCount = useMemo(() =>
         rowData.filter(r => r.answers?.__status__ === 'processing').length
@@ -216,83 +244,86 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [processingCount, processingStatus]);
 
     return (
-        <div className="flex flex-col h-full relative">
-            <SyncBanner />
-            <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {!isOnline ? (
-                            <div className="flex items-center gap-1.6">
-                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Offline</span>
-                            </div>
-                        ) : isConnected ? (
-                            <div className="flex items-center gap-1.6">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1.6 animate-pulse">
-                                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                                <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Connecting</span>
-                            </div>
+        <SmartAuthGuard>
+            <div className="flex flex-col h-full relative">
+                <SyncBanner />
+                <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2" data-testid="connection-status">
+                            {!isOnline ? (
+                                <div className="flex items-center gap-1.6" data-testid="status-offline">
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                    <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Offline</span>
+                                </div>
+                            ) : isConnected ? (
+                                <div className="flex items-center gap-1.6" data-testid="status-online">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.6 animate-pulse" data-testid="status-connecting">
+                                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                                    <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Connecting</span>
+                                </div>
+                            )}
+                        </div>
+                        {columns.length >= 2 && (
+                            <button
+                                onClick={() => setIsReorderPopupVisible(true)}
+                                className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"
+                            >
+                                Reorder Columns
+                            </button>
                         )}
                     </div>
-                    {columns.length >= 2 && (
-                        <button
-                            onClick={() => setIsReorderPopupVisible(true)}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"
-                        >
-                            Reorder Columns
-                        </button>
-                    )}
-                </div>
-                {(processingStatus || processingCount > 0) && (
-                    <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl transition-all duration-300">
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-sm font-semibold text-blue-900">
-                                        {processingStatus || `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}...`}
-                                    </span>
+                    {(processingStatus || processingCount > 0) && (
+                        <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl transition-all duration-300" data-testid="global-processing-banner">
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <span className="text-sm font-semibold text-blue-900" data-testid="processing-status-text">
+                                            {processingStatus || `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}...`}
+                                        </span>
+                                    </div>
+                                    <div className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                                        Running
+                                    </div>
                                 </div>
-                                <div className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                                    Running
+                                <div className="w-full bg-blue-200/50 h-1.5 rounded-full overflow-hidden">
+                                    <div
+                                        className="bg-blue-600 h-full transition-all duration-500 ease-out animate-shimmer"
+                                        data-testid="processing-progress-bar"
+                                        style={{
+                                            width: processingStatus?.includes('%')
+                                                ? `${processingStatus.match(/\d+/g)?.pop()}%`
+                                                : '100%',
+                                            backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)',
+                                            backgroundSize: '200% 100%'
+                                        }}
+                                    ></div>
                                 </div>
-                            </div>
-                            <div className="w-full bg-blue-200/50 h-1.5 rounded-full overflow-hidden">
-                                <div
-                                    className="bg-blue-600 h-full transition-all duration-500 ease-out animate-shimmer"
-                                    style={{
-                                        width: processingStatus?.includes('%')
-                                            ? `${processingStatus.match(/\d+/g)?.pop()}%`
-                                            : '100%',
-                                        backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)',
-                                        backgroundSize: '200% 100%'
-                                    }}
-                                ></div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
-            <div className="flex-1 min-h-0">
-                <SpreadSheet
-                    records={rowData}
+                    )}
+                </div>
+                <div className="flex-1 min-h-0">
+                    <SpreadSheet
+                        records={rowData}
+                        columns={columns}
+                        projectId={projectId}
+                        project={project}
+                        onDeleteRecord={handleDeleteRecord}
+                        onDeleteBatch={handleDeleteBatch}
+                    />
+                </div>
+                <ColumnReorderPopup
                     columns={columns}
-                    projectId={projectId}
-                    project={project}
-                    onDeleteRecord={handleDeleteRecord}
-                    onDeleteBatch={handleDeleteBatch}
+                    isOpen={isReorderPopupVisible}
+                    onClose={() => setIsReorderPopupVisible(false)}
+                    onReorder={setColumns}
                 />
             </div>
-            <ColumnReorderPopup
-                columns={columns}
-                isOpen={isReorderPopupVisible}
-                onClose={() => setIsReorderPopupVisible(false)}
-                onReorder={setColumns}
-            />
-        </div>
+        </SmartAuthGuard>
     );
 }

@@ -55,7 +55,7 @@ const Header = async () => {
             <SignInButton mode="modal" />
           </SignedOut>
           <SignedIn>
-            <UserButton afterSignOutUrl={getSafeUrl(process.env.NEXT_PUBLIC_ONYX_URL || '/api/proxy/onyx', `/auth/logout-bridge?next=${process.env.NEXT_PUBLIC_CLIENT_URL}`)} />
+            <UserButton afterSignOutUrl="/auth/logout" />
           </SignedIn>
         </div>
       </div>
