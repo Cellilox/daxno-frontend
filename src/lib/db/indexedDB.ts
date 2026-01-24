@@ -20,7 +20,7 @@ interface DaxnoDB extends DBSchema {
 }
 
 const DB_NAME = 'daxno-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
@@ -75,7 +75,9 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
                 return duplicate.id;
             }
 
-            const id = crypto.randomUUID();
+            // Generate UUID with fallback for browsers without crypto.randomUUID()
+            const id = crypto.randomUUID ? crypto.randomUUID() :
+                `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
             await db.add('offlineFiles', {
                 id,
@@ -93,7 +95,10 @@ export async function addOfflineFile(file: File | Blob, projectId: string) {
             console.log('[IndexedDB] Added offline file:', name, 'ID:', id, 'Size:', size);
             return id;
         } catch (error: any) {
-            console.error('[IndexedDB] Error adding file:', name, error);
+            console.error('[IndexedDB] Error adding file:', name);
+            console.error('[IndexedDB] Error details:', error);
+            console.error('[IndexedDB] Error message:', error?.message);
+            console.error('[IndexedDB] Error stack:', error?.stack);
 
             // On error, check if file was already added
             const existingFiles = await db.getAll('offlineFiles');

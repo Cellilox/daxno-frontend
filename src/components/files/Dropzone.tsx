@@ -40,7 +40,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // New state for local feedback
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [activeFilename, setActiveFilename] = useState<string | null>(null);
+  const uploadStatusRef = useRef<string>('');
+  const uploadErrorRef = useRef<string | null>(null);
+  const activeFilename = useRef<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const { isOnline } = useSyncStatus();
 
@@ -67,6 +69,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setLimitModalMessage("All available platform credits are currently exhausted. Please try again later or Bring Your Own Key to continue instantly.");
       setLimitModalOpen(true);
       setIsLoading(false);
+      // Also show in status message
+      updateStatus("Platform credits exhausted. Please try again later.", messageTypeEnum.ERROR);
       return true;
     }
     if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
@@ -74,6 +78,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setLimitModalMessage(cleanMsg.replace(/"/g, ''));
       setLimitModalOpen(true);
       setIsLoading(false);
+      // Also show in status message for clarity
+      updateStatus(cleanMsg.replace(/"/g, ''), messageTypeEnum.ERROR);
       return true;
     }
     return false;
@@ -112,27 +118,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       const socket = socketRef.current;
 
       socket.on('ocr_start', (data: { status: string }) => {
-        // Resurrect loading state if it was killed by a timeout but backend is still going
         setIsLoading(true);
-        setUploadError(null);
+        // Don't clear errors
         updateStatus('OCR Processing...', messageTypeEnum.INFO, 'Starting OCR...');
       });
 
       socket.on('ocr_progress', (data: { current: number; total: number }) => {
         setIsLoading(true);
-        setUploadError(null);
         updateStatus('OCR Processing...', messageTypeEnum.INFO, `Page ${data.current} of ${data.total}`);
       });
 
       socket.on('ai_start', (data: { status: string }) => {
         setIsLoading(true);
-        setUploadError(null);
         updateStatus('AI Analysis...', messageTypeEnum.INFO, 'Thinking...');
       });
 
       socket.on('record_created', (data: { record: any }) => {
         setIsLoading(false);
-        setUploadError(null);
         updateStatus('Upload Complete!', messageTypeEnum.INFO, 'Success!');
 
         // Close modal after success
@@ -162,12 +164,18 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       socket.on('connect', async () => {
         console.log('Socket reconnected');
 
+        // Check LATEST error via ref to avoid stale closure
+        if (uploadErrorRef.current) {
+          console.log('[Socket] Preserving displayed error during reconnect:', uploadErrorRef.current);
+          return;
+        }
+
         // If we were loading, check if the record was actually finished OR failed while we were offline
-        if (isLoading && activeFilename) {
+        if (isLoading && activeFilename.current) {
           updateStatus('Reconnected. Checking status...', messageTypeEnum.INFO, 'Syncing...');
 
           // Check if record exists in DB (returns Record object or null)
-          const record = await checkRecordStatus(projectId, activeFilename);
+          const record = await checkRecordStatus(projectId, activeFilename.current);
 
           if (record) {
             // Check internal status from answers field
@@ -191,7 +199,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
               // 3. Success (Normal answers)
               setIsLoading(false);
               setUploadError(null);
-              setActiveFilename(null);
+              activeFilename.current = null;
               updateStatus('Upload Complete (Synced)!', messageTypeEnum.INFO, 'Success!');
 
               setTimeout(() => {
@@ -227,12 +235,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO, rightText?: string) => {
     if (type === messageTypeEnum.ERROR) {
       setUploadError(text);
-      setUploadStatus(''); // Clear status on error
-      // Do NOT bubble up errors to the parent (avoid duplicate top banner)
+      uploadErrorRef.current = text;
+      setUploadStatus('');
+      uploadStatusRef.current = '';
     } else {
       setUploadStatus(text);
+      uploadStatusRef.current = text;
       setUploadError(null);
-      // Propagate INFO messages (for the top progress banner)
+      uploadErrorRef.current = null;
       onMessageChange({ type, text, rightText });
     }
   };
@@ -240,7 +250,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
-    setUploadError(null);
+    updateStatus('Initializing...', messageTypeEnum.INFO);
 
     if (!file) {
       setIsLoading(false);
@@ -269,9 +279,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         onMessageChange({ type: messageTypeEnum.NONE, text: '' });
 
         return;
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to queue offline file:', err);
-        updateStatus('Failed to save file for offline sync.', messageTypeEnum.ERROR);
+        const errorMsg = err?.message || err?.toString() || 'Unknown error';
+        updateStatus(`Failed to save file for offline sync: ${errorMsg}`, messageTypeEnum.ERROR);
         setIsLoading(false);
         return;
       }
@@ -293,17 +304,16 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
 
-      console.log('[DEBUG] Calling getPresignedUrl for:', file.name, 'in project:', projectId, 'type:', file.type);
-      const { upload_url, filename: uniqueFilename, key: fileKey } = await getPresignedUrl(file.name, projectId, file.type);
-
-      if (!uniqueFilename || uniqueFilename === 'undefined') {
-        console.error('[ERROR] handleUpload: received invalid filename from server:', uniqueFilename);
-        throw new Error('Server returned invalid filename. Please try again.');
+      const getUrlResult = await getPresignedUrl(file.name, projectId, file.type);
+      if (!getUrlResult.success) {
+        throw new Error(getUrlResult.error);
       }
 
-      console.log('[DEBUG] handleUpload: getPresignedUrl success:', { upload_url, uniqueFilename, fileKey });
+      const { upload_url, filename: uniqueFilename, key: fileKey } = getUrlResult.data!;
 
-      const result = await new Promise<any>((resolve, reject) => {
+      console.log('[DEBUG] getPresignedUrl success:', { upload_url, uniqueFilename, fileKey });
+
+      const uploadResult = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', upload_url);
         xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
@@ -329,12 +339,43 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         xhr.send(file);
       });
 
-      const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = result;
-      console.log('[DEBUG] handleUpload proceeding to analysis with:', { uploadedFilename, originalName, finalKey });
-      setActiveFilename(uploadedFilename);
+      const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = uploadResult;
+      activeFilename.current = uploadedFilename;
       await handlequeryDocument(uploadedFilename, originalName, finalKey);
     } catch (error: any) {
+      console.error('[ERROR] Upload failed:', error);
       setIsLoading(false);
+
+      // Check if it's a network error (offline or connection lost)
+      const isNetworkError = error.message?.includes('Network error') ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('network');
+
+      if (isNetworkError) {
+        // Save to IndexedDB for offline sync
+        try {
+          console.log('[OFFLINE] Saving file to IndexedDB for later sync');
+          updateStatus('Connection lost. Saving file for automatic upload...', messageTypeEnum.INFO);
+
+          await addOfflineFile(file, projectId);
+
+          // Notify other components
+          window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+
+          updateStatus('File saved! It will auto-upload when connection is restored.', messageTypeEnum.INFO, 'Queued');
+          setFile(null);
+          setPreview(null);
+          setIsVisible(false);
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+          return;
+        } catch (offlineError: any) {
+          console.error('[ERROR] Failed to save to IndexedDB:', offlineError);
+          updateStatus(`Network error and offline save failed: ${offlineError.message}`, messageTypeEnum.ERROR);
+          return;
+        }
+      }
+
+      // Other errors (not network-related)
       const errMsg = error.message || 'Error uploading a file';
       if (!checkLimitError(errMsg)) {
         updateStatus(errMsg, messageTypeEnum.ERROR);
@@ -355,8 +396,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       updateStatus('Queuing analysis...', messageTypeEnum.INFO, 'Processing in background...');
 
-      // Call the endpoint which now returns immediately (Background Task)
-      await queryDocument(projectId, filename, original_filename);
+      const result = await queryDocument(projectId, filename, original_filename);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       // We do NOT wait for result or call saveRecord anymore. 
       // The backend background task handles everything and emits 'record_created'.
@@ -445,14 +488,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 1. Get Presigned URL
       updateFileStatus({ status: 'uploading', progress: 10 });
-      console.log('[DEBUG] processSingleFile: Calling getPresignedUrl for:', file.name, 'type:', file.type);
-      const { upload_url, filename, key } = await getPresignedUrl(file.name, projectId, file.type);
+      const presignedResult = await getPresignedUrl(file.name, projectId, file.type);
 
-      if (!filename || filename === 'undefined') {
-        throw new Error("Server returned invalid filename for " + file.name);
+      if (!presignedResult.success) {
+        throw new Error(presignedResult.error);
       }
 
-      console.log('[DEBUG] processSingleFile: getPresignedUrl result:', { upload_url, filename, key });
+      const { upload_url, filename, key } = presignedResult.data!;
 
       // 2. Upload to S3
       updateFileStatus({ status: 'uploading', progress: 20 });
@@ -481,8 +523,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 3. Trigger Analysis (Async)
       updateFileStatus({ status: 'analyzing', progress: 60 });
-      console.log('[DEBUG] processSingleFile triggering queryDocument with:', { filename, original: file.name });
-      await queryDocument(projectId, filename, file.name);
+      const queryResult = await queryDocument(projectId, filename, file.name);
+
+      if (!queryResult.success) {
+        throw new Error(queryResult.error);
+      }
 
       updateFileStatus({ status: 'analyzing', progress: 60, result: { message: "Processing in background" } });
 
@@ -509,15 +554,21 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // Monitor when all files are complete
   useEffect(() => {
     if (files.length > 0) {
-      const allComplete = files.every(f => f.status === 'complete' || f.status === 'error');
+      const allDone = files.every(f => f.status === 'complete' || f.status === 'error');
+      const allSuccessful = files.every(f => f.status === 'complete');
 
-      if (allComplete && !isProcessing) {
-        console.log('[Bulk Upload] All files complete, closing popup...');
-        setTimeout(() => {
-          setFiles([]); // Clear files list
-          setIsVisible(false);
-          onMessageChange({ type: messageTypeEnum.NONE, text: '', });
-        }, 1500);
+      if (allDone && !isProcessing) {
+        // ONLY auto-close if EVERYTHING succeeded
+        if (allSuccessful) {
+          console.log('[Bulk Upload] All successful, closing popup...');
+          setTimeout(() => {
+            setFiles([]);
+            setIsVisible(false);
+            onMessageChange({ type: messageTypeEnum.NONE, text: '', });
+          }, 1500);
+        } else {
+          console.log('[Bulk Upload] Completed with errors. Staying open for review.');
+        }
       }
     }
   }, [files, isProcessing, setIsVisible, onMessageChange]);
@@ -682,15 +733,16 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         </div>
       )}
 
+      {/* Always show errors, even if file is cleared */}
+      {uploadError && (
+        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm">
+          <XCircle className="w-4 h-4" />
+          {uploadError}
+        </div>
+      )}
+
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">
-          {uploadError && (
-            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm">
-              <XCircle className="w-4 h-4" />
-              {uploadError}
-            </div>
-          )}
-
           {isLoading ? (
             <div className='flex flex-col justify-center items-center gap-2'>
               <div className="loader"></div>

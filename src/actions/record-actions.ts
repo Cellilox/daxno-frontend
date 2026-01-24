@@ -46,7 +46,7 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
   }
 };
 
-export async function getPresignedUrl(filename: string, projectId: string, contentType?: string): Promise<{ upload_url: string; filename: string; key: string }> {
+export async function getPresignedUrl(filename: string, projectId: string, contentType?: string): Promise<{ success: boolean; data?: { upload_url: string; filename: string; key: string }; error?: string }> {
   try {
     const path = `/records/presigned-url?filename=${encodeURIComponent(filename)}&project_id=${encodeURIComponent(projectId)}${contentType ? `&content_type=${encodeURIComponent(contentType)}` : ''}`;
     const fetchUrl = buildApiUrl(path);
@@ -57,29 +57,34 @@ export async function getPresignedUrl(filename: string, projectId: string, conte
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Frontend] getPresignedUrl failed:', response.status, errorText);
-      throw new Error(`Failed to get presigned URL: ${response.status}`);
+      let errorDetail = '';
+      try {
+        const errorData = await response.json();
+        errorDetail = errorData?.detail ? (typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)) : JSON.stringify(errorData);
+      } catch (e) {
+        errorDetail = await response.text();
+      }
+      console.error('[Frontend] getPresignedUrl failed:', response.status, errorDetail);
+      return { success: false, error: errorDetail || `Failed with status ${response.status}` };
     }
 
     const data = await response.json();
     console.log('[DEBUG] getPresignedUrl result:', data);
 
     if (!data.filename || data.filename === 'undefined') {
-      console.error('[ERROR] Backend returned invalid filename:', data);
-      throw new Error("Backend returned invalid storage filename");
+      return { success: false, error: "Backend returned invalid storage filename" };
     }
 
-    return data;
-  } catch (error) {
+    return { success: true, data };
+  } catch (error: any) {
     console.error('[Frontend] Error in getPresignedUrl action:', error);
-    throw error;
+    return { success: false, error: error.message || 'Unknown error occurred' };
   }
 }
 
 
 
-export async function queryDocument(projectId: string, filename: string, original_filename?: string) {
+export async function queryDocument(projectId: string, filename: string, original_filename?: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     let path = `/records/query-doc?project_id=${projectId}&filename=${filename}`;
     if (original_filename) {
@@ -99,15 +104,14 @@ export async function queryDocument(projectId: string, filename: string, origina
         errorDetail = await response.text();
       }
       console.error(`[Frontend] queryDocument failed: ${response.status}`, errorDetail);
-      throw new Error(errorDetail || 'Analysis failed. Please try again.');
+      return { success: false, error: errorDetail || 'Analysis failed. Please try again.' };
     }
 
     const data = await response.json();
-    return data;
+    return { success: true, data };
   } catch (error: any) {
     console.error('[Frontend] Error in queryDocument:', error);
-    // Re-throw the actual error message
-    throw error;
+    return { success: false, error: error.message || 'Internal connection error' };
   }
 }
 

@@ -107,7 +107,15 @@ export default function OfflineSyncManager() {
                     console.log('[OfflineSync] Processing:', originalName);
 
                     // Get Presigned URL
-                    const { upload_url, filename } = await getPresignedUrl(originalName, projectId, mimeType);
+                    const presignedResult = await getPresignedUrl(originalName, projectId, mimeType);
+
+                    if (!presignedResult.success) {
+                        console.error('[OfflineSync] Presigned URL failed:', presignedResult.error);
+                        await updateFileStatus(item.id, 'failed', presignedResult.error);
+                        continue;
+                    }
+
+                    const { upload_url, filename } = presignedResult.data!;
 
                     // Upload to S3
                     await new Promise((resolve, reject) => {
@@ -128,10 +136,15 @@ export default function OfflineSyncManager() {
                     notifyRefresh();
 
                     // Trigger backend processing and AWAIT confirmation
-                    // This is CRITICAL to ensure the record exists in DB before we remove local file
                     console.log('[OfflineSync] Triggering backend analysis for:', originalName);
                     try {
-                        await queryDocument(projectId, filename, originalName);
+                        const queryResult = await queryDocument(projectId, filename, originalName);
+
+                        if (!queryResult.success) {
+                            console.error('[OfflineSync] queryDocument failed:', queryResult.error);
+                            await updateFileStatus(item.id, 'failed', queryResult.error || 'Trigger failed');
+                            continue;
+                        }
                         console.log('[OfflineSync] Backend confirmed receipt of:', originalName);
 
                         // ONLY remove from IndexedDB if backend confirmed receipt
@@ -139,12 +152,10 @@ export default function OfflineSyncManager() {
                         console.log('[OfflineSync] Successfully synced and removed from queue:', originalName);
                     } catch (err: any) {
                         console.error('[OfflineSync] Backend trigger failed for:', originalName, err);
-                        // Mark as failed in DB so user sees it and we don't keep retrying a broken file
                         await updateFileStatus(item.id, 'failed', err.message || 'Backend processing failed');
                     }
 
                     notifyRefresh();
-
 
                 } catch (error: any) {
                     console.error('[OfflineSync] Failed to sync file:', item.metadata.originalName, error);
@@ -159,23 +170,13 @@ export default function OfflineSyncManager() {
                         continue;
                     }
 
-                    // Handle 401 (Auth Expired) - Pause sync loop (will retry after reload/reconnect)
+                    // Handle 401 (Auth Expired) - Pause sync loop
                     if (errorMsg.includes('401') || errorMsg.includes('Unauthorized')) {
-                        console.warn('[OfflineSync] Session unauthorized. Pausing sync for authentication refresh.');
-                        // We DO NOT mark as failed here, as the page reload will likely fix the session.
+                        console.warn('[OfflineSync] Session unauthorized. Pausing sync.');
                         break;
                     }
 
-                    // Handle 400/500 errors - Mark as failed but continue with next file
-                    if (errorMsg.includes('400') || errorMsg.includes('500') || errorMsg.includes('unexpected response')) {
-                        console.warn('[OfflineSync] Server error for file:', item.metadata.originalName, errorMsg);
-                        await updateFileStatus(item.id, 'failed', 'Server error. Project may not exist.');
-                        notifyRefresh();
-                        continue;
-                    }
-
-                    // Generic error - Mark as failed
-                    console.warn('[OfflineSync] Marking file as failed:', item.metadata.originalName);
+                    // Handle 400/500 errors - Mark as failed
                     await updateFileStatus(item.id, 'failed', errorMsg);
                     notifyRefresh();
                 } finally {
