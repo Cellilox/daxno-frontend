@@ -52,7 +52,11 @@ const Header = async () => {
         </div>
         <div className='text-right'>
           <SignedOut>
-            <SignInButton mode="modal" />
+            <SignInButton mode="modal">
+              <button data-testid="signin-button" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+                Sign in
+              </button>
+            </SignInButton>
           </SignedOut>
           <SignedIn>
             <UserButton afterSignOutUrl="/auth/logout" />

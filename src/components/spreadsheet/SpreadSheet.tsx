@@ -390,12 +390,12 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
   const hasRecords = localRecords.length > 0;
 
   if (!localRecords) {
-    return <div>Loading...</div>;
+    return <div data-testid="loading-records">Loading...</div>;
   }
 
   return (
     <div ref={scrollContainerRef} className="bg-white border border-gray-200 rounded-lg shadow-sm relative overflow-auto h-full">
-      <table className="w-full bg-white" style={{ tableLayout: 'fixed' }}>
+      <table data-testid="records-table" className="w-full bg-white" style={{ tableLayout: 'fixed' }}>
         <colgroup>
           {hasRecords && (
             <>

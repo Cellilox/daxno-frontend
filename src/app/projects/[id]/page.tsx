@@ -50,7 +50,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   if (!project || project.detail || !project.id) {
     console.error(`[ProjectView] Project ${id} not found or inaccessible:`, project);
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
+      <div data-testid="project-not-found" className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
         <div className="text-xl font-bold font-sans text-gray-800">Project not found</div>
         <p className="text-gray-500">The project you are looking for might have been deleted or moved.</p>
         <a
@@ -73,7 +73,17 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     getBillingConfigForUser(project.owner)
   ]);
 
-  const records = await recordsResponse.json()
+  let records: any = [];
+  try {
+    records = await recordsResponse.json();
+    if (!Array.isArray(records)) {
+      console.warn('[ProjectView] Records API returned non-array:', records);
+      records = [];
+    }
+  } catch (err) {
+    console.error('[ProjectView] Failed to parse records JSON:', err);
+    records = [];
+  }
   const is_project_owner = project.is_owner;
   const linkOwner = ""
   const chats = allProjectConversation?.flatMap((conv: Conversation) => conv.messages);
@@ -129,7 +139,10 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
           {/* Header Section */}
           <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <p className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans">
+              <p
+                data-testid="project-details-title"
+                className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans"
+              >
                 Project: {project.name}
               </p>
               <ExpandableDescription description={project.description} />

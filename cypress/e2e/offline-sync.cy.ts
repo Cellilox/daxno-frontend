@@ -13,6 +13,8 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
 
     it('should show offline status when network is disconnected', () => {
         cy.visit('/projects');
+        cy.location('hostname').should('eq', 'localhost');
+        cy.location('pathname').should('eq', '/projects');
         cy.contains('Projects', { timeout: 10000 }).should('be.visible');
 
         cy.goOffline();
@@ -33,7 +35,7 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
         cy.get('a[href*="/projects/"]', { timeout: 10000 }).first().click();
 
         cy.url().should('include', '/projects/');
-        cy.contains('Records', { timeout: 10000 }).should('be.visible');
+        cy.get('[data-testid="records-table"]', { timeout: 15000 }).should('be.visible');
 
         cy.goOffline();
         cy.contains('Offline Mode').should('be.visible');
@@ -77,8 +79,8 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
         cy.contains('Offline Mode').should('be.visible');
 
         // 4. Navigate to a project offline (should load from cached records)
-        cy.get('a[href*="/projects/"]', { timeout: 10000 }).first().click();
-        cy.contains('Records', { timeout: 10000 }).should('be.visible');
+        cy.get('[data-testid^="project-card-"]', { timeout: 10000 }).first().click();
+        cy.get('[data-testid="records-table"]', { timeout: 15000 }).should('be.visible');
 
         cy.goOnline();
     });
@@ -88,10 +90,11 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
         cy.get('a[href*="/projects/"]', { timeout: 10000 }).first().click();
 
         // Verify we have records
-        cy.get('.ag-row', { timeout: 10000 }).should('have.length.at.least', 1);
+        cy.get('[data-testid^="record-row-"]', { timeout: 10000 }).should('have.length.at.least', 1);
 
-        // Attempt to find and click a delete button (using best guess for selector)
-        cy.get('button[aria-label*="Delete"], .ag-row .delete-btn').first().should('be.visible').click();
+        // Attempt to find and click a delete button
+        cy.get('[data-testid="record-row-0"]').trigger('mouseenter');
+        cy.get('[data-testid="delete-row-0"]').should('be.visible').click();
 
         // Check if confirm modal appears
         cy.get('body').then(($body) => {

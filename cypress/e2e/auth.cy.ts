@@ -19,11 +19,12 @@ describe('Phase 1: Authentication & Page Protection', () => {
 
     describe('2. Visual Login Flow', () => {
         it('should visibly perform the full login interaction', () => {
-            // We call cy.login() which contains the robust cy.session logic
-            // This ensures we only define the session once
             cy.login();
 
-            cy.url().should('include', '/projects');
+            // Explicitly visit projects after login/restore
+            cy.visit('/projects');
+            cy.location('hostname').should('eq', 'localhost');
+            cy.location('pathname').should('eq', '/projects');
             cy.contains('Projects', { timeout: 10000 }).should('be.visible');
         });
     });
@@ -31,24 +32,26 @@ describe('Phase 1: Authentication & Page Protection', () => {
 
     describe('3. Authenticated Access', () => {
         beforeEach(() => {
-            // Reuse the session from step 2
             cy.login();
         });
 
         it('should allow access to /projects and show project list', () => {
             cy.visit('/projects');
-            cy.url().should('include', '/projects');
+            cy.location('hostname').should('eq', 'localhost');
+            cy.location('pathname').should('eq', '/projects');
             cy.contains('Projects', { timeout: 10000 }).should('be.visible');
             cy.get('[data-testid="add-project-button"]', { timeout: 10000 }).should('exist');
         });
 
         it('should allow access to other protected areas (Admin/Billing)', () => {
             cy.visit('/admin');
-            cy.url().should('include', '/admin');
+            cy.location('hostname').should('eq', 'localhost');
+            cy.location('pathname').should('eq', '/admin');
             cy.contains(/Admin|User Management/i).should('be.visible');
 
             cy.visit('/billing');
-            cy.url().should('include', '/billing');
+            cy.location('hostname').should('eq', 'localhost');
+            cy.location('pathname').should('eq', '/billing');
             cy.contains(/Billing|Subscription/i).should('be.visible');
         });
     });

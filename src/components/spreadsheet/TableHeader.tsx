@@ -143,9 +143,10 @@ export default function TableHeader({
             </th>
           </>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <th
             key={`column-${column.hidden_id}`}
+            data-testid={`column-header-${colIndex}`}
             className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors cursor-pointer"
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
@@ -167,6 +168,7 @@ export default function TableHeader({
                   className="font-semibold truncate flex-1 min-w-0"
                   onClick={() => startEditing(column)}
                   title={column.name}
+                  data-testid={`column-name-${colIndex}`}
                 >
                   {column.name}
                 </span>
@@ -189,6 +191,7 @@ export default function TableHeader({
                       e.stopPropagation();
                       onDeleteColumn(column);
                     }}
+                    data-testid={`delete-column-${colIndex}`}
                     className="p-1 hover:bg-gray-200 rounded transition-colors"
                   >
                     <Trash className="w-4 h-4 text-red-600" />
@@ -217,6 +220,7 @@ export default function TableHeader({
           {!showCreateColumn ? (
             <button
               onClick={() => setShowCreateColumn(true)}
+              data-testid="add-column-button"
               className="flex items-center gap-2 text-gray-500 hover:text-blue-600 w-full h-full justify-center"
             >
               <PlusCircle className="w-5 h-5" />

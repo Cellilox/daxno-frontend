@@ -41,5 +41,11 @@ declare namespace Cypress {
          * @example cy.waitForProcessing()
          */
         waitForProcessing(timeout?: number): Chainable<void>;
+
+        /**
+         * Custom command to select an existing project or create one
+         * @example cy.selectOrCreateProject('E2E Test')
+         */
+        selectOrCreateProject(projectName: string): Chainable<void>;
     }
 }
