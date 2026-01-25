@@ -105,6 +105,44 @@ export async function getCachedRecords(projectId: string) {
 
 // --- Smart Cache Cleanup Helpers ---
 
+export async function removeProjectFromCache(owner: string, projectId: string) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('projects', owner);
+    if (!cached || !cached.data) return;
+
+    const updatedData = cached.data.filter((p: any) => p.id !== projectId);
+
+    await db.put('projects', {
+        ...cached,
+        data: updatedData,
+        updatedAt: Date.now()
+    });
+
+    console.log(`[IndexedDB] Removed project ${projectId} from cache for owner ${owner}`);
+}
+
+export async function updateProjectInCache(owner: string, updatedProject: any) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('projects', owner);
+    if (!cached || !cached.data) return;
+
+    const updatedData = cached.data.map((p: any) =>
+        p.id === updatedProject.id ? { ...p, ...updatedProject } : p
+    );
+
+    await db.put('projects', {
+        ...cached,
+        data: updatedData,
+        updatedAt: Date.now()
+    });
+
+    console.log(`[IndexedDB] Updated project ${updatedProject.id} in cache for owner ${owner}`);
+}
+
 /**
  * Syncs project deletions by comparing server data with cached data.
  * Removes projects from cache that no longer exist on the server.

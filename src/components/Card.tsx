@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import FormModal from './ui/Popup';
 import StandardPopup from './ui/StandardPopup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
@@ -11,11 +12,13 @@ import ExpandableDescription from './ExpandableDescription';
 import { Project } from '@/types';
 
 type CardProps = {
-  project: Project
+  project: Project;
+  onDeleted?: (id: string) => void;
 };
 
-export default function Card({ project }: CardProps) {
+export default function Card({ project, onDeleted }: CardProps) {
   const router = useRouter()
+  const { user } = useUser()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
 
@@ -31,7 +34,21 @@ export default function Card({ project }: CardProps) {
     setIsLoading(true)
     try {
       await deleteProject(projectId)
+
+      // Update local cache immediately to prevent "zombie" projects on reload
+      if (user?.id) {
+        const { removeProjectFromCache } = await import('@/lib/db/indexedDB');
+        await removeProjectFromCache(user.id, projectId);
+      }
+
       setIsLoading(false)
+      setIsAlertVisible(false)
+      setSelectedProjectToDelete(null)
+
+      // Notify parent to remove from UI list immediately
+      if (onDeleted) {
+        onDeleted(projectId);
+      }
     } catch (error) {
       alert('Error deleting a project')
     }
@@ -57,6 +74,13 @@ export default function Card({ project }: CardProps) {
     };
     try {
       await updateProject(selectedProjectToUpdate?.id, updateData)
+
+      // Update local cache immediately
+      if (user?.id && selectedProjectToUpdate) {
+        const { updateProjectInCache } = await import('@/lib/db/indexedDB');
+        await updateProjectInCache(user.id, updateData);
+      }
+
       setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {

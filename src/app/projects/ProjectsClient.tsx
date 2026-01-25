@@ -73,6 +73,10 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     setTimeout(() => setIsRefreshing(false), 2000)
   };
 
+  const handleProjectDeleted = (deletedId: string) => {
+    setProjectsList(prev => prev.filter(p => p.id !== deletedId));
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="flex items-center justify-between mb-8">
@@ -112,7 +116,11 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
         {projectsList?.length >= 1 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {projectsList?.map((project: Project) => (
-              <Card project={project} key={project.id} />
+              <Card
+                project={project}
+                key={project.id}
+                onDeleted={handleProjectDeleted}
+              />
             ))}
           </div>
         ) : (
