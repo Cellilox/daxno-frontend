@@ -142,7 +142,34 @@ export default function OfflineSyncManager() {
 
                         if (!queryResult.success) {
                             console.error('[OfflineSync] queryDocument failed:', queryResult.error);
-                            await updateFileStatus(item.id, 'failed', queryResult.error || 'Trigger failed');
+
+                            // Check if this is a usage limit error
+                            let errorMsg = queryResult.error || 'Trigger failed';
+
+                            // Detection for HTML errors (Proxy/Load Balancer)
+                            if (errorMsg.includes('<!DOCTYPE html>') || errorMsg.includes('<html')) {
+                                errorMsg = "Our servers are experiencing high load. We are automatically retrying safely...";
+                            }
+
+                            const isLimitError = errorMsg.includes('On your Free plan') ||
+                                errorMsg.includes('DAILY_LIMIT_REACHED') ||
+                                errorMsg.includes('AI_CREDITS_EXHAUSTED') ||
+                                errorMsg.includes('exceed the limit');
+
+                            if (isLimitError) {
+                                // Dispatch custom event for limit errors so Global Handler can show popup
+                                console.log('[OfflineSync] Dispatching usage limit event');
+                                window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+                                    detail: {
+                                        error: errorMsg,
+                                        filename: originalName,
+                                        projectId
+                                    }
+                                }));
+                            }
+
+                            await updateFileStatus(item.id, 'failed', errorMsg);
+
                             continue;
                         }
                         console.log('[OfflineSync] Backend confirmed receipt of:', originalName);

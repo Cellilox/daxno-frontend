@@ -54,10 +54,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   }, [showCamera, onCameraToggle]);
 
 
-  // Limit Modal State
-  const [limitModalOpen, setLimitModalOpen] = useState(false);
-  const [limitModalMessage, setLimitModalMessage] = useState('');
-  const [limitModalType, setLimitModalType] = useState<'AI_EXHAUSTED' | 'DAILY_LIMIT'>('DAILY_LIMIT');
+
+
 
   const router = useRouter();
 
@@ -65,21 +63,25 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const cleanMsg = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
 
     if (cleanMsg.includes('AI_CREDITS_EXHAUSTED')) {
-      setLimitModalType('AI_EXHAUSTED');
-      setLimitModalMessage("All available platform credits are currently exhausted. Please try again later or Bring Your Own Key to continue instantly.");
-      setLimitModalOpen(true);
+      // Dispatch to global handler
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: 'AI_CREDITS_EXHAUSTED' }
+      }));
+
       setIsLoading(false);
-      // Also show in status message
-      updateStatus("Platform credits exhausted. Please try again later.", messageTypeEnum.ERROR);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
     if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
-      setLimitModalType('DAILY_LIMIT');
-      setLimitModalMessage(cleanMsg.replace(/"/g, ''));
-      setLimitModalOpen(true);
+      // Dispatch to global handler
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: cleanMsg }
+      }));
+
       setIsLoading(false);
-      // Also show in status message for clarity
-      updateStatus(cleanMsg.replace(/"/g, ''), messageTypeEnum.ERROR);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
     return false;
@@ -88,6 +90,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     // Enabled for testing on all plans
     setIsBulkUploadAllowed(true)
   }, [plan])
+
 
   // Single file upload handlers
   const handleSingleFileDrop = useCallback((acceptedFiles: File[]) => {
@@ -880,17 +883,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
       </div>
 
-      <UsageLimitModal
-        isOpen={limitModalOpen}
-        onClose={() => {
-          setLimitModalOpen(false);
-          setIsVisible(false); // Close the parent dropzone modal
-          onMessageChange({ type: messageTypeEnum.NONE, text: '' }); // Clear the status message
-          setUploadStatus(''); // Clear local status
-        }}
-        message={limitModalMessage}
-        type={limitModalType}
-      />
+      {/* Modal is now handled globally by GlobalUsageLimitHandler */}
     </>
   );
 }

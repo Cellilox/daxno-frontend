@@ -6,6 +6,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import Footer from "@/components/Footer";
 import Header from "@/components/header/header";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
+import GlobalUsageLimitHandler from "@/components/modals/GlobalUsageLimitHandler";
+
 
 const geistSans = localFont({
     src: "./fonts/GeistVF.woff",
@@ -41,7 +43,9 @@ export default function RootLayout({
                 >
                     <Header />
                     <OfflineSyncManager />
+                    <GlobalUsageLimitHandler />
                     {children}
+
                     <Footer />
 
                 </body>
