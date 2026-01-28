@@ -25,7 +25,7 @@ Cypress.Commands.add('login', () => {
         });
 
         // --- PLAN B: Force the redirect if we are still on localhost ---
-        // --- PLAN B: Force the redirect if we are still on localhost ---
+        // This handles cases where the button click doesn't immediately trigger navigation
         cy.location('pathname').then((pathname) => {
             if (pathname === '/' || pathname === '') {
                 cy.log('Plan B: Button click stuck on localhost. Forcing redirect via /projects...');
@@ -52,7 +52,7 @@ Cypress.Commands.add('login', () => {
         cy.visit('/projects');
 
         // STRICT CHECK: Ensure we are back on localhost and on the right path
-        cy.location('hostname').should('eq', 'localhost');
+        cy.location('hostname', { timeout: 20000 }).should('eq', 'localhost');
         cy.location('pathname').should('eq', '/projects');
 
         // Wait for the Clerk session cookie and UI to be definitive
@@ -71,7 +71,7 @@ Cypress.Commands.add('login', () => {
             // Also ensure the UI is in place and we haven't been pushed out
             cy.visit('/projects');
             cy.location('hostname').should('eq', 'localhost');
-            cy.location('pathname').should('eq', '/projects');
+            cy.location('pathname', { timeout: 15000 }).should('eq', '/projects');
             cy.get('h1').contains('Projects', { timeout: 15000 }).should('be.visible');
             cy.getCookie('__session').should('exist');
         }
@@ -84,17 +84,7 @@ Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
     cy.get('h1').contains('Projects', { timeout: 20000 }).should('be.visible');
 
     // Robustly clear IndexedDB to prevent "Internal error opening backing store"
-    cy.window().then(async (win) => {
-        const dbs = ['DaxnoOfflineDB', 'daxno-db']; // Clear both potential names
-        for (const dbName of dbs) {
-            try {
-                win.indexedDB.deleteDatabase(dbName);
-                console.log(`🗑️ Cleared DB: ${dbName}`);
-            } catch (e) {
-                console.warn(`⚠️ Failed to clear ${dbName}`, e);
-            }
-        }
-    });
+    cy.clearDatabase();
 
     // Wait a bit for IndexedDB/API to populate project list
     cy.log(`⌛ Checking for project: ${projectName}`);
@@ -127,44 +117,70 @@ Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
     cy.get('[data-testid="status-online"]', { timeout: 30000 })
         .should('be.visible')
         .and('contain', 'Live');
+});
 
-    // Robustly clear IndexedDB to prevent "Internal error opening backing store"
-    cy.window().then(async (win) => {
-        const dbs = ['DaxnoOfflineDB', 'daxno-db']; // Clear both potential names
-        for (const dbName of dbs) {
-            try {
-                const req = win.indexedDB.deleteDatabase(dbName);
-                req.onsuccess = () => cy.log(`🗑️ Cleared DB: ${dbName}`);
-                req.onerror = () => cy.log(`⚠️ Failed to clear ${dbName}`);
-                req.onblocked = () => cy.log(`⚠️ Blocked clearing ${dbName}`);
-            } catch (e) {
-                cy.log(`⚠️ Exception clearing ${dbName}: ${e}`);
-            }
+
+Cypress.Commands.add('deleteAllProjects', () => {
+    cy.log('🗑️ Deleting all projects...');
+    const apiUrl = 'http://localhost:8000';
+
+    // 1. Try API first (fast)
+    cy.request({
+        url: `${apiUrl}/projects/`,
+        failOnStatusCode: false,
+        timeout: 5000
+    }).then((response) => {
+        if (response.status === 200 && Array.isArray(response.body)) {
+            response.body.forEach((project: any) => {
+                cy.request({
+                    method: 'DELETE',
+                    url: `${apiUrl}/projects/${project.id}`,
+                    failOnStatusCode: false
+                });
+            });
         }
     });
 
-    cy.log('✅ Page is LIVE and connected');
+    // 2. Just visit and verify we are clean, or delete if visible
+    cy.visit('/projects');
+    cy.get('body').then(($body) => {
+        const cards = $body.find('[data-testid^="project-card-"]');
+        if (cards.length > 0) {
+            cy.log(`⚠️ Cleaning up ${cards.length} cards via UI...`);
+            cy.wrap(cards).each(() => {
+                cy.get('[data-testid^="project-card-"]').first().within(() => {
+                    cy.get('button[title="Delete project"]').click({ force: true });
+                });
+                cy.get('[data-testid="alert-dialog-confirm"]').click();
+                cy.wait(300);
+            });
+        }
+    });
 });
 
-// Custom command to clear IndexedDB
-Cypress.Commands.add('clearIndexedDB', () => {
-    cy.log('🗑️ Clearing IndexedDB...');
-    cy.window().then((win) => {
-        return new Promise((resolve, reject) => {
-            const req = win.indexedDB.deleteDatabase('DaxnoOfflineDB');
-            req.onsuccess = () => resolve(true);
-            req.onerror = () => reject(req.error);
-            req.onblocked = () => {
-                cy.log('Blocked clearing IndexedDB - probably open elsewhere');
-                resolve(false);
-            };
+Cypress.Commands.add('clearDatabase', () => {
+    cy.window().then(async (win) => {
+        // Clear LocalStorage / SessionStorage
+        win.localStorage.clear();
+        win.sessionStorage.clear();
+
+        // Clear IndexedDB for both Project and Clerk
+        const dbs = await win.indexedDB.databases();
+        dbs.forEach((db) => {
+            if (db.name) {
+                win.indexedDB.deleteDatabase(db.name);
+            }
         });
     });
 });
 
-// Custom command to inspect IndexedDB content
+// Legacy command required by some old tests
+Cypress.Commands.add('clearIndexedDB', () => {
+    cy.clearDatabase();
+});
+
 Cypress.Commands.add('inspectIndexedDB', (storeName) => {
-    cy.log(`Hacking into IndexedDB store: ${storeName}`);
+    cy.log(`Inspecting IndexedDB store: ${storeName}`);
     return cy.window().then((win) => {
         return new Promise((resolve, reject) => {
             const req = win.indexedDB.open('DaxnoOfflineDB');

@@ -14,9 +14,17 @@ Cypress.Commands.add('goOffline', () => {
             },
         })
     );
+    // Explicitly set navigator.onLine mock if possible, although CDP should handle it.
+    // Also dispatch events to the window
     cy.window().then((win) => {
+        Object.defineProperty(win.navigator, 'onLine', {
+            value: false,
+            configurable: true,
+            writable: true
+        });
         win.dispatchEvent(new Event('offline'));
     });
+    cy.wait(2000); // Increased wait
 });
 
 Cypress.Commands.add('goOnline', () => {
@@ -33,6 +41,8 @@ Cypress.Commands.add('goOnline', () => {
         })
     );
     cy.window().then((win) => {
+        Object.defineProperty(win.navigator, 'onLine', { value: true, configurable: true });
         win.dispatchEvent(new Event('online'));
     });
+    cy.wait(1000);
 });

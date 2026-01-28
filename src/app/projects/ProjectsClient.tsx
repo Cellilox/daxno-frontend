@@ -83,7 +83,10 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
           {!isOnline && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full border border-gray-200 shadow-sm animate-pulse">
+            <div
+              data-testid="offline-badge"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full border border-gray-200 shadow-sm"
+            >
               <WifiOff className="w-3.5 h-3.5" />
               <span className="text-xs font-bold uppercase tracking-wider">Offline</span>
             </div>

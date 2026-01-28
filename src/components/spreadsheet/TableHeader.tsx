@@ -146,7 +146,7 @@ export default function TableHeader({
         {columns.map((column, colIndex) => (
           <th
             key={`column-${column.hidden_id}`}
-            data-testid={`column-header-${colIndex}`}
+            data-testid={`column-header-${column.name}`}
             className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors cursor-pointer"
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
@@ -161,6 +161,7 @@ export default function TableHeader({
                   onBlur={() => saveEditing(column)}
                   onKeyDown={(e) => handleKeyDown(e, column)}
                   onClick={(e) => e.stopPropagation()}
+                  data-testid="column-edit-input"
                   className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
@@ -168,7 +169,7 @@ export default function TableHeader({
                   className="font-semibold truncate flex-1 min-w-0"
                   onClick={() => startEditing(column)}
                   title={column.name}
-                  data-testid={`column-name-${colIndex}`}
+                  data-testid="column-name-text"
                 >
                   {column.name}
                 </span>
@@ -191,8 +192,9 @@ export default function TableHeader({
                       e.stopPropagation();
                       onDeleteColumn(column);
                     }}
-                    data-testid={`delete-column-${colIndex}`}
-                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                    data-testid={`delete-column-${column.name}`}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors column-delete-trigger"
+                    title="Delete Column"
                   >
                     <Trash className="w-4 h-4 text-red-600" />
                   </button>

@@ -58,10 +58,10 @@ export default function SyncBanner() {
                             <div className="absolute w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm font-bold text-gray-900">
+                            <span className="text-sm font-bold text-gray-900" data-testid="sync-status-message">
                                 {isOnline ? 'Syncing your data...' : 'Waiting for connection...'}
                             </span>
-                            <span className="text-xs text-gray-500 font-medium">
+                            <span className="text-xs text-gray-500 font-medium" data-testid="sync-progress-count">
                                 {syncingCount + pendingCount} file(s) remaining
                             </span>
                         </div>

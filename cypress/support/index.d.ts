@@ -19,6 +19,12 @@ declare namespace Cypress {
         goOnline(): Chainable<void>;
 
         /**
+         * Custom command to clear all IndexedDB instances for a fresh start
+         * @example cy.clearDatabase()
+         */
+        clearDatabase(): Chainable<void>;
+
+        /**
          * Custom command to clear IndexedDB for testing
          * @example cy.clearIndexedDB()
          */
@@ -47,5 +53,11 @@ declare namespace Cypress {
          * @example cy.selectOrCreateProject('E2E Test')
          */
         selectOrCreateProject(projectName: string): Chainable<void>;
+
+        /**
+         * Custom command to delete ALL projects for the test account
+         * @example cy.deleteAllProjects()
+         */
+        deleteAllProjects(): Chainable<void>;
     }
 }
