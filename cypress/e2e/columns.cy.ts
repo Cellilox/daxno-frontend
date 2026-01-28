@@ -5,7 +5,7 @@ describe('Column Management CRUD', () => {
         cy.exec('docker exec daxno-backend python src/scripts/maintenance/truncate_all_tables.py --force', { failOnNonZeroExit: false })
             .then((result) => {
                 if (result.code !== 0) {
-                    cy.log('⚠️ Backend truncation warning/failure. Check logs.', result.stderr);
+                    cy.log(`⚠️ Backend truncation warning/failure: ${result.stderr}`);
                 } else {
                     cy.log('✅ Backend tables truncated');
                 }
