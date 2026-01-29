@@ -227,9 +227,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
         const handleAiStart = () => setProcessingStatus('AI Analyzing document...');
         const handleBackfillComplete = (data: any) => {
-            setOnlineRecords(data.records);
-            setColumns(data.fields);
+            console.log('[BACKFILL] Sync complete:', data.field_id);
+            if (data.records) setOnlineRecords(data.records);
+            if (data.fields) setColumns(data.fields);
+            setBackfillingFieldId(null);
             setProcessingStatus(null);
+            loadOnlineData(); // Final refresh
         };
 
         socket.on('connect', handleConnect);
@@ -278,11 +281,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }));
         });
 
-        socket.on('backfill_complete', (data: { field_id: string }) => {
-            console.log('[BACKFILL] Entire project sync complete');
-            setBackfillingFieldId(null);
-            loadOnlineData(); // Final refresh
-        });
 
         return () => {
             socket.off('connect', handleConnect);

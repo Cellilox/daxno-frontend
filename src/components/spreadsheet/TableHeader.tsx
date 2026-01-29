@@ -156,13 +156,6 @@ export default function TableHeader({
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
           >
-            {backfillingFieldId === column.hidden_id && (
-              <div className="absolute top-0 inset-x-0 flex justify-center z-50">
-                <div className="bg-purple-600 text-white text-[7px] px-2 py-0.5 rounded-b-full font-bold uppercase tracking-widest shadow-md animate-bounce transform translate-y-0">
-                  Backfilling
-                </div>
-              </div>
-            )}
             <div className="flex items-center justify-between h-full gap-2 px-1">
               {editingColumnId === column.hidden_id ? (
                 <input
