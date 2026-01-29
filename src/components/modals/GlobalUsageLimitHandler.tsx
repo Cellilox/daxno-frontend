@@ -14,8 +14,6 @@ export default function GlobalUsageLimitHandler() {
         const customEvent = event as CustomEvent
         const { error } = customEvent.detail
 
-        console.log('[GlobalLimitHandler] Received limit event:', error)
-
         const cleanMsg = typeof error === 'string' ? error : JSON.stringify(error)
 
         if (cleanMsg.includes('AI_CREDITS_EXHAUSTED')) {

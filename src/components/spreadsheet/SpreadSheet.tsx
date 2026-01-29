@@ -129,7 +129,7 @@ export default function SpreadSheet({
     }
 
     if (localColumns.length > prevColumnsLength.current) {
-      // Column added
+      // No change needed to SpreadSheet.tsx for now, verifying Records.tsx interactions
       if (scrollContainerRef.current) {
         // Scroll to the end (right)
         // Use setTimeout to allow DOM to update with new column

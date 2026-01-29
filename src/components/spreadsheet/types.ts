@@ -32,6 +32,7 @@ export type DocumentRecord = {
   created_at: string;
   updated_at: string;
   pages: number;
+  _isRowBackfilling?: boolean;
 };
 
 export type SpreadSheetProps = {

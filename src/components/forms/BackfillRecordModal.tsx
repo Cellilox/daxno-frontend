@@ -10,14 +10,16 @@ type BackfillRecordModalProps = {
     projectId: string;
     recordId: string | null;
     filename: string | null;
+    onStart?: (id: string) => void;
 };
 
-export default function BackfillRecordModal({ isOpen, onClose, projectId, recordId, filename }: BackfillRecordModalProps) {
+export default function BackfillRecordModal({ isOpen, onClose, projectId, recordId, filename, onStart }: BackfillRecordModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
 
     if (!isOpen || !recordId) return null;
 
     const handleBackfill = async () => {
+        if (onStart && recordId) onStart(recordId); // Optimistic update
         setIsProcessing(true);
         try {
             onClose(); // Close immediately for maximum responsiveness

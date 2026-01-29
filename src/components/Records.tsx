@@ -298,6 +298,31 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }));
         });
 
+        // ERROR HANDLER: Catch 402/Quota errors to show Global Popup
+        socket.on('processing_error', (data: { message: string, record_id?: string }) => {
+            // Robust check for exhaustion keywords (recursive/stringified)
+            const rawMsg = JSON.stringify(data);
+            if (rawMsg.includes('AI_CREDITS_EXHAUSTED') || rawMsg.includes('402')) {
+                // Dispatch event expected by GlobalUsageLimitHandler
+                const event = new CustomEvent('daxno:usage-limit-reached', {
+                    detail: { error: 'AI_CREDITS_EXHAUSTED' }
+                });
+                window.dispatchEvent(event);
+            }
+
+            // Always clear "Analyzing..." state on error so row isn't stuck
+            // This handles both optimistic state and server-sent state
+            setBackfillingFieldId(null);
+            setBackfillingRecordId(null);
+            setOnlineRecords(prev => prev.map(rec => {
+                if (rec._isRowBackfilling || rec.id === data.record_id) {
+                    return { ...rec, _isRowBackfilling: false };
+                }
+                return rec;
+            }));
+            setProcessingStatus(null);
+        });
+
         socket.on('backfill_record_complete', (data: { record_id: string, field_id: string, answer: any }) => {
             console.log('[BACKFILL] Record processing complete:', data.record_id);
             setOnlineRecords(prev => prev.map(rec => {
@@ -330,6 +355,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('backfill_complete', handleBackfillComplete);
             socket.off('backfill_record_all_fields_start', handleRecordBackfillStart);
             socket.off('backfill_record_all_fields_complete', handleRecordBackfillComplete);
+            socket.off('processing_error'); // Remove error listeners
             socket.disconnect();
             socketRef.current = null;
         };
@@ -455,6 +481,15 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     projectId={projectId}
                     recordId={selectedRecordForBackfill?.id || null}
                     filename={selectedRecordForBackfill?.filename || null}
+                    onStart={(id: string) => {
+                        setBackfillingRecordId(id);
+                        setOnlineRecords(prev => prev.map(rec => {
+                            if (rec.id === id) {
+                                return { ...rec, _isRowBackfilling: true };
+                            }
+                            return rec;
+                        }));
+                    }}
                 />
             </div>
         </SmartAuthGuard>

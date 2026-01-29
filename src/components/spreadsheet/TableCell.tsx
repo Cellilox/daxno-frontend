@@ -59,6 +59,16 @@ export default function TableCell({
                     className="w-full bg-white focus:outline-none resize-none overflow-hidden text-sm leading-relaxed p-0 m-0 block"
                     placeholder="..."
                 />
+            ) : (isRowBackfilling || editedRow.answers[column.hidden_id]?.text === '__BACKFILLING__') ? (
+                <div className="flex items-center gap-2.5 px-3 py-1.5 bg-purple-50/80 border border-purple-100 rounded-lg shadow-sm animate-pulse w-full max-w-fit">
+                    <div className="relative flex items-center justify-center">
+                        <div className="w-3.5 h-3.5 border-2 border-purple-200 rounded-full"></div>
+                        <div className="absolute inset-0 w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider whitespace-nowrap">
+                        Analyzing...
+                    </span>
+                </div>
             ) : editedRow.answers?.__status__ === 'queued' ? (
                 <div className="flex items-center gap-1.5 text-yellow-600 bg-yellow-50/50 px-2 py-1 rounded border border-yellow-100">
                     <span className="text-[10px] font-bold uppercase">🟡 Queued</span>
@@ -86,20 +96,8 @@ export default function TableCell({
                 </div>
             ) : (
                 <div className="line-clamp-3 min-h-[1.5em] flex items-center">
-                    {isRowBackfilling || editedRow.answers[column.hidden_id]?.text === '__BACKFILLING__' ? (
-                        <div className="flex items-center gap-2.5 px-3 py-1.5 bg-purple-50/80 border border-purple-100 rounded-lg shadow-sm animate-pulse w-full max-w-fit">
-                            <div className="relative flex items-center justify-center">
-                                <div className="w-3.5 h-3.5 border-2 border-purple-200 rounded-full"></div>
-                                <div className="absolute inset-0 w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                            <span className="text-[11px] font-bold text-purple-700 uppercase tracking-wider whitespace-nowrap">
-                                Analyzing...
-                            </span>
-                        </div>
-                    ) : (
-                        editedRow.answers[column.hidden_id]?.text || (
-                            <span className="text-gray-300 italic text-xs">Click to edit</span>
-                        )
+                    {editedRow.answers[column.hidden_id]?.text || (
+                        <span className="text-gray-300 italic text-xs">Click to edit</span>
                     )}
                 </div>
             )}
