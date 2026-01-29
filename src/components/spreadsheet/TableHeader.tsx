@@ -15,6 +15,9 @@ type TableHeaderProps = {
   onColumnResize: (id: string, width: number) => void;
   onUpdateColumn: (column: Field, newName: string) => void;
   onBackfillColumn: (column: Field) => void;
+  selectedCount?: number;
+  totalCount?: number;
+  onSelectAll?: (checked: boolean) => void;
 };
 
 export default function TableHeader({
@@ -28,7 +31,10 @@ export default function TableHeader({
   columnWidths,
   onColumnResize,
   onUpdateColumn,
-  onBackfillColumn
+  onBackfillColumn,
+  selectedCount = 0,
+  totalCount = 0,
+  onSelectAll
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
@@ -95,9 +101,20 @@ export default function TableHeader({
       <tr>
         {hasRecords && (
           <>
+            {/* Checkbox Column */}
+            <th className="px-3 py-2 border-r border-gray-200 sticky left-0 z-30 bg-gray-50 text-center w-[40px]">
+              <input
+                type="checkbox"
+                checked={totalCount > 0 && selectedCount === totalCount}
+                ref={el => { if (el) el.indeterminate = selectedCount > 0 && selectedCount < totalCount }}
+                onChange={e => onSelectAll && onSelectAll(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </th>
+
             <th
               key="actions"
-              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
+              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-[40px] bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
             >
               Actions
               {/* Resize Handle */}
@@ -126,9 +143,10 @@ export default function TableHeader({
             </th>
           </>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <th
             key={`column-${column.hidden_id}`}
+            data-testid={`column-header-${column.name}`}
             className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors cursor-pointer"
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
@@ -143,6 +161,7 @@ export default function TableHeader({
                   onBlur={() => saveEditing(column)}
                   onKeyDown={(e) => handleKeyDown(e, column)}
                   onClick={(e) => e.stopPropagation()}
+                  data-testid="column-edit-input"
                   className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
@@ -150,6 +169,7 @@ export default function TableHeader({
                   className="font-semibold truncate flex-1 min-w-0"
                   onClick={() => startEditing(column)}
                   title={column.name}
+                  data-testid="column-name-text"
                 >
                   {column.name}
                 </span>
@@ -172,7 +192,9 @@ export default function TableHeader({
                       e.stopPropagation();
                       onDeleteColumn(column);
                     }}
-                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                    data-testid={`delete-column-${column.name}`}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors column-delete-trigger"
+                    title="Delete Column"
                   >
                     <Trash className="w-4 h-4 text-red-600" />
                   </button>
@@ -200,6 +222,7 @@ export default function TableHeader({
           {!showCreateColumn ? (
             <button
               onClick={() => setShowCreateColumn(true)}
+              data-testid="add-column-button"
               className="flex items-center gap-2 text-gray-500 hover:text-blue-600 w-full h-full justify-center"
             >
               <PlusCircle className="w-5 h-5" />

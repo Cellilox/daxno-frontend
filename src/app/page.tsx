@@ -2,6 +2,8 @@ import Link from "next/link";
 // import Testimonial from "@/components/Testimonial";
 import Demo from "@/components/Demo";
 
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">

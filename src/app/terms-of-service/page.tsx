@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: 'Read the terms of service for using Cellilox. Understand your rights and responsibilities as a user.'
 };
 
+export const dynamic = "force-dynamic";
+
 export default function TermsOfServicePage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
@@ -351,10 +353,10 @@ export default function TermsOfServicePage() {
         <li>
           When received by us at:
           <pre className="bg-gray-100 p-4 text-black rounded text-sm overflow-x-auto">
-Cellilox Limited
-Attn: Legal Department
-Email: hello@support.cellilox.com
-Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga
+            Cellilox Limited
+            Attn: Legal Department
+            Email: hello@support.cellilox.com
+            Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga
           </pre>
         </li>
       </ul>
@@ -367,9 +369,9 @@ Address: Rwanda - Kigali - Gasabo - Rusororo - Kabuga
 
       <h2>18. Contact Information</h2>
       <p>If you have any questions, concerns, or requests regarding these Terms of Service, please contact us:</p>
-  <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
-Support
-Email: hello@support.cellilox.com
+      <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
+        Support
+        Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

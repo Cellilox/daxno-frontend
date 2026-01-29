@@ -71,6 +71,7 @@ export default function CreateColumn({ projectId, onSuccess, onCancel }: CreateC
                 <input
                     type="text"
                     {...register('name')}
+                    data-testid="column-name-input"
                     className="w-full py-1.5 px-3 text-sm rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white placeholder-gray-400"
                     placeholder="Column Name"
                     autoFocus

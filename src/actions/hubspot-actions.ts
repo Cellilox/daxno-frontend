@@ -1,10 +1,11 @@
 "use server"
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-export type HubSpotExportType = 'contacts' | 'companies' | 'deals'; 
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
+export type HubSpotExportType = 'contacts' | 'companies' | 'deals';
 
 export const checkConnection = async (): Promise<boolean> => {
   try {
-    const response = await fetchAuthed(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/status`);
+    const url = buildApiUrl('/export/hubspot/status');
+    const response = await fetchAuthed(url);
     if (!response.ok) {
       throw new Error('Failed to check connection status');
     }
@@ -18,7 +19,8 @@ export const checkConnection = async (): Promise<boolean> => {
 
 export const handleConnect = async (): Promise<void> => {
   try {
-    const response = await fetchAuthed(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/auth`);
+    const url = buildApiUrl('/export/hubspot/auth');
+    const response = await fetchAuthed(url);
     if (!response.ok) {
       throw new Error('Failed to get authorization URL');
     }
@@ -43,7 +45,8 @@ interface HubSpotPropertiesResponse {
 
 export const getHubSpotProperties = async (object_type: string): Promise<HubSpotPropertiesResponse> => {
   try {
-    const response = await fetchAuthed(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/properties?object_type=${object_type}`);
+    const url = buildApiUrl(`/export/hubspot/properties?object_type=${object_type}`);
+    const response = await fetchAuthed(url);
     if (!response.ok) {
       throw new Error(`Failed to get ${object_type} properties for your account`);
     }
@@ -68,8 +71,9 @@ export const exportToHubSpot = async (
   };
 
   try {
+    const url = buildApiUrl(`/export/hubspot/${type}/batch-upsert`);
     const response = await fetchAuthedJson(
-      `${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/${type}/batch-upsert`,
+      url,
       {
         method: 'POST',
         body: JSON.stringify(payload)
@@ -95,10 +99,11 @@ export const exportToHubSpot = async (
 
 export async function DisconnectHubspot() {
   try {
-    const response = await fetchAuthedJson(`${process.env.NEXT_PUBLIC_API_URL}/export/hubspot/disconnect`, {
+    const url = buildApiUrl('/export/hubspot/disconnect');
+    const response = await fetchAuthedJson(url, {
       method: 'DELETE'
     });
-  
+
     if (!response.ok) {
       throw new Error('Failed to disconnect HubSpot');
     }

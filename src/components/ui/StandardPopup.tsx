@@ -9,6 +9,7 @@ interface StandardPopupProps {
     icon?: React.ReactNode;
     children: React.ReactNode;
     widthClassName?: string;
+    closeOnOutsideClick?: boolean;
 }
 
 export default function StandardPopup({
@@ -18,7 +19,8 @@ export default function StandardPopup({
     subtitle,
     icon,
     children,
-    widthClassName = 'max-w-md'
+    widthClassName = 'max-w-md',
+    closeOnOutsideClick = true
 }: StandardPopupProps) {
 
     if (!isOpen) return null;
@@ -26,7 +28,7 @@ export default function StandardPopup({
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             {/* Click outside to close */}
-            <div className="absolute inset-0" onClick={onClose} />
+            <div className="absolute inset-0" onClick={() => closeOnOutsideClick && onClose()} />
 
             <div className={`relative w-full ${widthClassName} bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200`}>
                 {/* Header/Banner */}

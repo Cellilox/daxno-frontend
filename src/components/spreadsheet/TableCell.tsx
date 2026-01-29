@@ -55,6 +55,21 @@ export default function TableCell({
                     className="w-full bg-white focus:outline-none resize-none overflow-hidden text-sm leading-relaxed p-0 m-0 block"
                     placeholder="..."
                 />
+            ) : editedRow.answers?.__status__ === 'queued' ? (
+                <div className="flex items-center gap-1.5 text-yellow-600 bg-yellow-50/50 px-2 py-1 rounded border border-yellow-100">
+                    <span className="text-[10px] font-bold uppercase">🟡 Queued</span>
+                    <span className="text-[10px] truncate">Waiting for sync...</span>
+                </div>
+            ) : editedRow.answers?.__status__ === 'syncing' ? (
+                <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50/50 px-2 py-1 rounded border border-blue-100">
+                    <span className="text-[10px] font-bold uppercase">🔵 Syncing</span>
+                    <span className="text-[10px] truncate">Uploading...</span>
+                </div>
+            ) : editedRow.answers?.__status__ === 'failed' ? (
+                <div className="flex items-center gap-1.5 text-red-600 bg-red-50/50 px-2 py-1 rounded border border-red-100">
+                    <span className="text-[10px] font-bold uppercase">🔴 Failed</span>
+                    <span className="text-[10px] truncate">{editedRow.answers.__error__ || 'Sync failed'}</span>
+                </div>
             ) : editedRow.answers?.__status__ === 'processing' ? (
                 <div className="flex flex-col gap-1.5 py-1">
                     <div className="h-2 w-full bg-gray-100 animate-pulse rounded-full"></div>

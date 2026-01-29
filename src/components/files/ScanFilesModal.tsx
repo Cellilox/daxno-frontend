@@ -45,12 +45,15 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
     }
   };
 
+  const [isCameraActive, setIsCameraActive] = useState(false);
+
   return (
     <>
       {/* Only show button in uncontrolled mode */}
       {externalIsOpen === undefined && (
         <button
           onClick={handleOpen}
+          data-testid="scan-files-button"
           className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
         >
           <Upload size={16} />
@@ -65,6 +68,7 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
         subtitle="Upload documents or images for processing"
         icon={<Upload size={24} />}
         widthClassName="max-w-2xl"
+        closeOnOutsideClick={!isCameraActive}
       >
         <div className="flex flex-col">
           {message.text && (
@@ -83,9 +87,10 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
             setIsVisible={setIsVisible}
             onMessageChange={setMessage}
             plan={plan}
+            onCameraToggle={setIsCameraActive}
           />
         </div>
       </StandardPopup>
     </>
   );
-} 
+}

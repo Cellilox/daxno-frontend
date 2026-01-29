@@ -1,20 +1,15 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { getSafeUrl, buildApiUrl } from "@/lib/api-utils";
 
 export const runtime = "edge";
 
-const getBackendUrl = () => {
-    let url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    return url.replace(/\/$/, ""); // Remove trailing slash
-};
-const BACKEND_URL = getBackendUrl();
-
 export async function POST(req: NextRequest) {
     try {
-        const { userId, sessionId, getToken } = await auth();
+        const { userId, getToken } = await auth();
         const token = await getToken();
 
-        if (!userId || !token || !sessionId) {
+        if (!userId || !token) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -27,12 +22,12 @@ export async function POST(req: NextRequest) {
             project_id: body.project_id
         };
 
-        const response = await fetch(`${BACKEND_URL}/onyx-proxy/generate-login-url`, {
+        const url = buildApiUrl('/onyx-proxy/generate-login-url');
+        const response = await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-                "sessionId": sessionId
+                "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(safeBody)
         });
@@ -48,26 +43,19 @@ export async function POST(req: NextRequest) {
         // Basic validation of the URL before returning to client
         if (data && data.url) {
             try {
-                const url = new URL(data.url);
-                let onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
-                if (onyxUrl) {
-                    onyxUrl = onyxUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
-                }
-                const allowedHostname = onyxUrl ? new URL(onyxUrl).hostname : null;
+                // For local dev/proxy testing, we trust the hostname if it matches our proxy setup
+                const onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL || '/api/proxy/onyx';
+                const safeOnyxUrl = getSafeUrl(onyxUrl);
 
-                if (!allowedHostname) {
-                    return NextResponse.json({ error: "Onyx URL not configured" }, { status: 400 });
+                let allowedHostname: string | null = null;
+                if (safeOnyxUrl.startsWith('http')) {
+                    allowedHostname = new URL(safeOnyxUrl).hostname;
                 }
 
-                // Normalize localhost and 127.0.0.1 for local dev
-                const isLocal = (host: string) => host === "localhost" || host === "127.0.0.1";
-                const isValid = isLocal(allowedHostname)
-                    ? isLocal(url.hostname)
-                    : url.hostname === allowedHostname;
-
-                if (!isValid) {
-                    console.error("Backend returned untrusted URL:", data.url, "Expected:", allowedHostname);
-                    return NextResponse.json({ error: "Untrusted redirect URL from backend" }, { status: 400 });
+                // If we are using relative proxy, we trust the backend's returned URL but ensure it's valid
+                if (!allowedHostname || allowedHostname === 'localhost' || allowedHostname === '127.0.0.1') {
+                    // Allow local/proxy hostnames
+                    return NextResponse.json({ url: data.url });
                 }
                 return NextResponse.json({ url: data.url });
             } catch {

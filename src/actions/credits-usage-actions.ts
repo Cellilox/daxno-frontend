@@ -1,14 +1,12 @@
 'use server';
 
-import { fetchAuthed} from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
+import { fetchAuthed, buildApiUrl } from "@/lib/api-client";
 
 export async function getCreditUsage() {
-  const response = await fetchAuthed(`${apiUrl}/openrouter/credits`)
-  if(!response.ok) {
-    throw new Error ("Failed to fetch credits")
+  const url = buildApiUrl('/openrouter/credits');
+  const response = await fetchAuthed(url)
+  if (!response.ok) {
+    throw new Error("Failed to fetch credits")
   }
   return await response.json();
 }

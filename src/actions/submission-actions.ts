@@ -1,12 +1,11 @@
 'use server';
-import { fetchAuthed } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, buildApiUrl } from "@/lib/api-client";
 
 export async function getProject(token: string) {
     const shareableLink = `${process.env.NEXT_PUBLIC_CLIENT_URL}/submissions/${token}`
     try {
-        const response = await fetchAuthed(`${apiUrl}/links/validate-link?shareable_link=${shareableLink}`);
+        const url = buildApiUrl(`/links/validate-link?shareable_link=${shareableLink}`);
+        const response = await fetchAuthed(url);
         if (!response.ok) {
             return null;
         }
