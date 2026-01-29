@@ -27,3 +27,29 @@ export async function backfillColumn(project_id: string, field_id: string, field
         throw error;
     }
 }
+
+export async function backfillRecord(projectId: string, recordId: string) {
+    try {
+        const url = buildApiUrl(`/records/backfill-record?project_id=${projectId}&record_id=${recordId}`);
+        const response = await fetchAuthed(
+            url,
+            {
+                method: 'POST',
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('[Frontend] Backfill record failed:', response.status, errorData);
+            throw new Error(`Backfill failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        // Remove revalidatePath to prevent full page re-render, 
+        // we use Socket.IO for live updates.
+        return result;
+    } catch (error) {
+        console.error('[Frontend] backfillRecord error:', error);
+        throw error;
+    }
+}

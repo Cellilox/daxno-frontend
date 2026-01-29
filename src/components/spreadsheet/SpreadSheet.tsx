@@ -13,7 +13,21 @@ import { deleteFileUrl } from '@/actions/aws-url-actions';
 import BackfillModal from '../forms/BackfillModal';
 import AlertDialog from '../ui/AlertDialog';
 
-export default function SpreadSheet({ columns, records, projectId, project, onDeleteRecord, onDeleteBatch, backfillingFieldId }: SpreadSheetProps & { backfillingFieldId?: string | null }) {
+export default function SpreadSheet({
+  columns,
+  records,
+  projectId,
+  project,
+  onDeleteRecord,
+  onDeleteBatch,
+  backfillingFieldId,
+  backfillingRecordId,
+  onBackfillRecord
+}: SpreadSheetProps & {
+  backfillingFieldId?: string | null,
+  backfillingRecordId?: string | null,
+  onBackfillRecord?: (id: string, filename: string) => void
+}) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
   const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -452,6 +466,9 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
               columnWidths={columnWidths}
               isSelected={selectedRecordIds.has(row.id)}
               onSelect={(checked) => handleSelectRecord(row.id, checked)}
+              backfillingFieldId={backfillingFieldId}
+              isRowBackfilling={backfillingRecordId === row.id || (row as any)._isRowBackfilling}
+              onBackfillRecord={() => onBackfillRecord && onBackfillRecord(row.id, row.original_filename)}
             />
           ))}
 

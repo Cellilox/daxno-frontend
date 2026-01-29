@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import TableCell from './TableCell';
-import { Pencil, Trash, MessageCircle, Eye } from 'lucide-react';
+import { Pencil, Trash, MessageCircle, Eye, Sparkles } from 'lucide-react';
 import { Field, DocumentRecord } from './types';
 
 type TableRowProps = {
@@ -20,6 +20,8 @@ type TableRowProps = {
   isSelected?: boolean;
   onSelect?: (checked: boolean) => void;
   backfillingFieldId?: string | null;
+  isRowBackfilling?: boolean;
+  onBackfillRecord?: () => void;
 };
 
 export default function TableRow({
@@ -39,7 +41,9 @@ export default function TableRow({
   columnWidths,
   isSelected = false,
   onSelect,
-  backfillingFieldId
+  backfillingFieldId,
+  isRowBackfilling,
+  onBackfillRecord
 }: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -131,6 +135,13 @@ export default function TableRow({
                 <Pencil className="w-3.5 h-3.5 text-blue-600" />
               </button>
               <button
+                onClick={() => onBackfillRecord && onBackfillRecord()}
+                className="p-1 hover:bg-purple-50 rounded transition-colors group/backfill"
+                title="Re-analyze Document"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              </button>
+              <button
                 onClick={() => handleReviewRecord(row)}
                 className="p-1 hover:bg-gray-100 rounded transition-colors"
                 title="Review Document"
@@ -161,6 +172,7 @@ export default function TableRow({
           onSaveRow={onSaveRow}
           onCancelEdit={onCancelEdit}
           backfillingFieldId={backfillingFieldId}
+          isRowBackfilling={isRowBackfilling}
         />
       ))}
       {/* Empty spacer cell removed as per user request to prevent covering data cells */}

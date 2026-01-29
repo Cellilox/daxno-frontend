@@ -6,6 +6,7 @@ import SpreadSheet from './spreadsheet/SpreadSheet';
 import SyncBanner from './SyncBanner';
 import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
+import BackfillRecordModal from './forms/BackfillRecordModal';
 import { getOfflineFiles, removeOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { deleteBatchRecords, deleteRecord, getRecords } from '@/actions/record-actions';
@@ -31,6 +32,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
     const [backfillingFieldId, setBackfillingFieldId] = useState<string | null>(null);
+    const [backfillingRecordId, setBackfillingRecordId] = useState<string | null>(null);
+    const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
+    const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -234,6 +238,33 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setProcessingStatus(null);
             loadOnlineData(); // Final refresh
         };
+        const handleRecordBackfillStart = (data: { record_id: string }) => {
+            console.log('[BACKFILL] Single record re-analysis started:', data.record_id);
+            setBackfillingRecordId(data.record_id);
+            // We update the row answers to show the analyzing state in all cells
+            setOnlineRecords(prev => prev.map(rec => {
+                if (rec.id === data.record_id) {
+                    const updatedAnswers = { ...rec.answers };
+                    // Set all visible fields temporarily to backfilling state
+                    // The Cells will handle this via isRowBackfilling prop or the magic string
+                    // For logic simplicity, let's just mark the record as being backfilled
+                    return { ...rec, _isRowBackfilling: true };
+                }
+                return rec;
+            }));
+        };
+        const handleRecordBackfillComplete = (data: { record: DocumentRecord, fields: Field[] }) => {
+            console.log('[BACKFILL] Single record re-analysis complete:', data.record.id);
+            setOnlineRecords(prev => prev.map(rec => {
+                if (rec.id === data.record.id) {
+                    // Update data and clear the manual backfill indicator
+                    return { ...data.record, _isRowBackfilling: false };
+                }
+                return rec;
+            }));
+            setColumns(data.fields);
+            setBackfillingRecordId(null);
+        };
 
         socket.on('connect', handleConnect);
         socket.on('disconnect', handleDisconnect);
@@ -247,6 +278,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
         socket.on('backfill_complete', handleBackfillComplete);
+        socket.on('backfill_record_all_fields_start', handleRecordBackfillStart);
+        socket.on('backfill_record_all_fields_complete', handleRecordBackfillComplete);
 
         socket.on('backfill_record_start', (data: { record_id: string, field_id: string }) => {
             console.log('[BACKFILL] Record processing started:', data.record_id);
@@ -295,6 +328,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);
             socket.off('backfill_complete', handleBackfillComplete);
+            socket.off('backfill_record_all_fields_start', handleRecordBackfillStart);
+            socket.off('backfill_record_all_fields_complete', handleRecordBackfillComplete);
             socket.disconnect();
             socketRef.current = null;
         };
@@ -401,6 +436,11 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         onDeleteRecord={handleDeleteRecord}
                         onDeleteBatch={handleDeleteBatch}
                         backfillingFieldId={backfillingFieldId}
+                        backfillingRecordId={backfillingRecordId}
+                        onBackfillRecord={(id: string, filename: string) => {
+                            setSelectedRecordForBackfill({ id, filename });
+                            setIsRecordBackfillModalOpen(true);
+                        }}
                     />
                 </div>
                 <ColumnReorderPopup
@@ -408,6 +448,13 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     isOpen={isReorderPopupVisible}
                     onClose={() => setIsReorderPopupVisible(false)}
                     onReorder={setColumns}
+                />
+                <BackfillRecordModal
+                    isOpen={isRecordBackfillModalOpen}
+                    onClose={() => setIsRecordBackfillModalOpen(false)}
+                    projectId={projectId}
+                    recordId={selectedRecordForBackfill?.id || null}
+                    filename={selectedRecordForBackfill?.filename || null}
                 />
             </div>
         </SmartAuthGuard>

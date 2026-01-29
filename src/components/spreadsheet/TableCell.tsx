@@ -11,6 +11,7 @@ type TableCellProps = {
     onSaveRow: (rowIndex: number) => void;
     onCancelEdit: (rowIndex: number) => void;
     backfillingFieldId?: string | null;
+    isRowBackfilling?: boolean;
 };
 
 export default function TableCell({
@@ -22,7 +23,8 @@ export default function TableCell({
     onCellChange,
     onSaveRow,
     onCancelEdit,
-    backfillingFieldId
+    backfillingFieldId,
+    isRowBackfilling
 }: TableCellProps) {
     // Callback ref to auto-resize textarea - now at top level of component
     const textareaRef = useCallback((node: HTMLTextAreaElement | null) => {
@@ -84,7 +86,7 @@ export default function TableCell({
                 </div>
             ) : (
                 <div className="line-clamp-3 min-h-[1.5em] flex items-center">
-                    {editedRow.answers[column.hidden_id]?.text === '__BACKFILLING__' ? (
+                    {isRowBackfilling || editedRow.answers[column.hidden_id]?.text === '__BACKFILLING__' ? (
                         <div className="flex items-center gap-2.5 px-3 py-1.5 bg-purple-50/80 border border-purple-100 rounded-lg shadow-sm animate-pulse w-full max-w-fit">
                             <div className="relative flex items-center justify-center">
                                 <div className="w-3.5 h-3.5 border-2 border-purple-200 rounded-full"></div>
