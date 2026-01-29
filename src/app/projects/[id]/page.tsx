@@ -162,6 +162,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
                 fields={fields}
                 records={records}
                 plan={plan?.plan_name}
+                subscriptionType={plan?.subscription_type}
                 models={displayedModels}
                 tenantModal={tenantModel.selected_model}
                 chats={chats}
@@ -182,6 +183,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
               fields={fields}
               records={records}
               plan={plan?.plan_name}
+              subscriptionType={plan?.subscription_type}
               models={displayedModels}
               tenantModal={tenantModel.selected_model}
               chats={chats}

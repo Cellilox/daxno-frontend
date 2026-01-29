@@ -10,12 +10,13 @@ type ScanFilesModalProps = {
   projectId: string
   linkOwner: string
   plan: string;
+  subscriptionType?: string;
   // Optional controlled mode
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: externalIsOpen, onClose: externalOnClose }: ScanFilesModalProps) {
+export default function ScanFilesModal({ linkOwner, projectId, plan, subscriptionType, isOpen: externalIsOpen, onClose: externalOnClose }: ScanFilesModalProps) {
   const [internalIsVisible, setInternalIsVisible] = useState(false)
 
   // Use external state if provided, otherwise use internal
@@ -87,6 +88,7 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
             setIsVisible={setIsVisible}
             onMessageChange={setMessage}
             plan={plan}
+            subscriptionType={subscriptionType}
             onCameraToggle={setIsCameraActive}
           />
         </div>

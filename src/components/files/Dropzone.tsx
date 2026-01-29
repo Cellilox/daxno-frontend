@@ -17,6 +17,10 @@ import { addOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { CameraCapture } from '../Camera/CameraCapture';
 import { Camera } from 'lucide-react';
+import * as pdfjs from 'pdfjs-dist/webpack';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
 type MyDropzoneProps = {
   projectId: string;
@@ -24,10 +28,11 @@ type MyDropzoneProps = {
   setIsVisible: (isVisible: boolean) => void;
   onMessageChange: (message: messageType) => void;
   plan: string;
+  subscriptionType?: string;
   onCameraToggle?: (active: boolean) => void;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, onCameraToggle }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, subscriptionType, onCameraToggle }: MyDropzoneProps) {
   const { getToken, sessionId } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -40,6 +45,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // New state for local feedback
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [batchError, setBatchError] = useState<string | null>(null); // New batch error state
   const uploadStatusRef = useRef<string>('');
   const uploadErrorRef = useRef<string | null>(null);
   const activeFilename = useRef<string | null>(null);
@@ -250,6 +256,22 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   };
 
+  const validatePdfPageCount = async (file: File, limit: number = 3): Promise<number> => {
+    try {
+      if (file.type !== 'application/pdf') return 1;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const count = pdf.numPages;
+
+      console.log(`[Validation] PDF has ${count} pages`);
+      return count;
+    } catch (e: any) {
+      console.error('[Validation Error]', e);
+      throw e;
+    }
+  };
+
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
@@ -259,6 +281,26 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       setIsLoading(false);
       setIsVisible(false);
       router.push(`/projects/${projectId}`);
+      return;
+    }
+
+    try {
+      // 0. Early Client-Side Validation (Before Offline Queueing)
+      const subType = subscriptionType || 'standard';
+      if (plan === 'Free' && subType === 'standard') {
+        updateStatus('Checking permissions...', messageTypeEnum.INFO);
+        const count = await validatePdfPageCount(file);
+        if (count > 3) {
+          throw new Error(`File has ${count} pages. You exceed the limit of 3 pages per document on the Free plan.`);
+        }
+      }
+    } catch (e: any) {
+      setIsLoading(false);
+      const errMsg = e.message || 'Validation failed';
+      // Trigger global limit popup if applicable
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
       return;
     }
 
@@ -305,6 +347,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     try {
+      updateStatus('Validating file...', messageTypeEnum.INFO);
+
+      // Client-Side Page Count Check (Only if Free plan AND standard subscription)
+      // If plan is Free but BYOK (subscriptionType != standard), we do NOT block.
+
       updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
 
       const getUrlResult = await getPresignedUrl(file.name, projectId, file.type);
@@ -450,7 +497,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   };
 
   // Bulk upload handlers
-  const handleBulkDrop = useCallback((acceptedFiles: File[]) => {
+  const handleBulkDrop = useCallback(async (acceptedFiles: File[]) => {
+    setBatchError(null); // Reset batch error
     // If multiple files are dropped and isBulkUploadAllowed is false, show error
     if (acceptedFiles.length > 1 && !isBulkUploadAllowed) {
       onMessageChange({
@@ -460,14 +508,49 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       return;
     }
 
-    const newFiles = acceptedFiles.map(file => ({
+    // 1. Validate Batch Page Count (Sum of all pages)
+    try {
+      const subType = subscriptionType || 'standard';
+      if (plan === 'Free' && subType === 'standard') {
+        let totalPages = 0;
+        updateStatus('Checking batch limits...', messageTypeEnum.INFO);
+
+        // Iterate all to sum pages
+        for (const file of acceptedFiles) {
+          if (file.type === 'application/pdf') {
+            const count = await validatePdfPageCount(file);
+            totalPages += count;
+          } else {
+            // Count non-PDFs as 1 page safety
+            totalPages += 1;
+          }
+        }
+
+        if (totalPages > 3) {
+          throw new Error(`Batch total is ${totalPages} pages. You exceed the limit of 3 pages total on the Free plan.`);
+        }
+        updateStatus('', messageTypeEnum.NONE); // Clear status if valid
+      }
+    } catch (e: any) {
+      // Trigger Limit Popup
+      const errMsg = e.message || 'Limit exceeded';
+      if (checkLimitError(errMsg)) {
+        return; // Exit if popup triggered (modal closed)
+      }
+      setBatchError(errMsg);
+      // Do NOT add files
+      return;
+    }
+
+    const processedFiles = acceptedFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file),
       progress: 0,
-      status: 'pending' as const,
+      status: 'pending' as const
     }));
-    setFiles(prev => [...prev, ...newFiles]);
-  }, [isBulkUploadAllowed, onMessageChange]);
+
+    setFiles(prev => [...prev, ...processedFiles]);
+  }, [isBulkUploadAllowed, onMessageChange, plan, subscriptionType]);
 
   const processSingleFile = async (fileStatus: FileStatus) => {
     const updateFileStatus = (update: Partial<FileStatus>) => {
@@ -478,6 +561,9 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
+
+      // 0. Client-Side Validation (Moved to handleBulkDrop)
+      // Double check or skip? Skip for performance since handleBulkDrop filters them out of 'pending' status.
 
       // Check if offline
       if (!isOnline || !navigator.onLine) {
@@ -812,7 +898,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       {files.length > 0 && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-medium">{files.length} files selected</h3>
+            <div className="flex flex-col">
+              <h3 className="font-medium">{files.length} files selected</h3>
+              {batchError && <span className="text-red-500 text-sm font-medium">{batchError}</span>}
+            </div>
             <button
               onClick={handleProcessAll}
               disabled={isProcessing}
