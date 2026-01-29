@@ -23,12 +23,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const socketRef = useRef<Socket | null>(null);
     const { isOnline } = useSyncStatus();
     const [isConnected, setIsConnected] = useState(false);
+    const [showConnecting, setShowConnecting] = useState(false);
     const [onlineRecords, setOnlineRecords] = useState<DocumentRecord[]>(initialRecords);
     const [offlineRecords, setOfflineRecords] = useState<DocumentRecord[]>([]);
     const [cachedRecords, setCachedRecords] = useState<DocumentRecord[]>([]);
     const [columns, setColumns] = useState<Field[]>(initialFields || [])
     const [isReorderPopupVisible, setIsReorderPopupVisible] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string | null>(null);
+    const [backfillingFieldId, setBackfillingFieldId] = useState<string | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -155,6 +157,18 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [offlineRecords, loadOnlineData, loadOfflineData]);
 
     useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isOnline && !isConnected) {
+            timer = setTimeout(() => {
+                setShowConnecting(true);
+            }, 2000);
+        } else {
+            setShowConnecting(false);
+        }
+        return () => clearTimeout(timer);
+    }, [isOnline, isConnected]);
+
+    useEffect(() => {
         loadOnlineData();
         loadOfflineData();
         const handleOfflineFilesUpdate = () => loadOfflineData();
@@ -231,6 +245,45 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('ai_start', handleAiStart);
         socket.on('backfill_complete', handleBackfillComplete);
 
+        socket.on('backfill_record_start', (data: { record_id: string, field_id: string }) => {
+            console.log('[BACKFILL] Record processing started:', data.record_id);
+            setBackfillingFieldId(data.field_id);
+            setOnlineRecords(prev => prev.map(rec => {
+                if (rec.id === data.record_id) {
+                    return {
+                        ...rec,
+                        answers: {
+                            ...rec.answers,
+                            [data.field_id]: { text: '__BACKFILLING__', page: 0 }
+                        }
+                    };
+                }
+                return rec;
+            }));
+        });
+
+        socket.on('backfill_record_complete', (data: { record_id: string, field_id: string, answer: any }) => {
+            console.log('[BACKFILL] Record processing complete:', data.record_id);
+            setOnlineRecords(prev => prev.map(rec => {
+                if (rec.id === data.record_id) {
+                    return {
+                        ...rec,
+                        answers: {
+                            ...rec.answers,
+                            [data.field_id]: data.answer
+                        }
+                    };
+                }
+                return rec;
+            }));
+        });
+
+        socket.on('backfill_complete', (data: { field_id: string }) => {
+            console.log('[BACKFILL] Entire project sync complete');
+            setBackfillingFieldId(null);
+            loadOnlineData(); // Final refresh
+        });
+
         return () => {
             socket.off('connect', handleConnect);
             socket.off('disconnect', handleDisconnect);
@@ -294,12 +347,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     <span className='text-xs font-medium text-gray-500 uppercase tracking-wider'>Live</span>
                                 </div>
-                            ) : (
+                            ) : showConnecting ? (
                                 <div className="flex items-center gap-1.6 animate-pulse" data-testid="status-connecting">
                                     <div className="w-2 h-2 bg-red-400 rounded-full"></div>
                                     <span className='text-xs font-medium text-gray-400 uppercase tracking-wider'>Connecting</span>
                                 </div>
-                            )}
+                            ) : null}
                         </div>
                         {columns.length >= 2 && (
                             <button
@@ -349,6 +402,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         project={project}
                         onDeleteRecord={handleDeleteRecord}
                         onDeleteBatch={handleDeleteBatch}
+                        backfillingFieldId={backfillingFieldId}
                     />
                 </div>
                 <ColumnReorderPopup

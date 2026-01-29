@@ -19,6 +19,7 @@ type TableRowProps = {
   handleReviewRecord: (row: DocumentRecord) => void;
   isSelected?: boolean;
   onSelect?: (checked: boolean) => void;
+  backfillingFieldId?: string | null;
 };
 
 export default function TableRow({
@@ -37,7 +38,8 @@ export default function TableRow({
   handleReviewRecord,
   columnWidths,
   isSelected = false,
-  onSelect
+  onSelect,
+  backfillingFieldId
 }: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -158,6 +160,7 @@ export default function TableRow({
           onCellChange={onCellChange}
           onSaveRow={onSaveRow}
           onCancelEdit={onCancelEdit}
+          backfillingFieldId={backfillingFieldId}
         />
       ))}
       {/* Empty spacer cell removed as per user request to prevent covering data cells */}

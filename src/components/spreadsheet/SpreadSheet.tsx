@@ -13,7 +13,7 @@ import { deleteFileUrl } from '@/actions/aws-url-actions';
 import BackfillModal from '../forms/BackfillModal';
 import AlertDialog from '../ui/AlertDialog';
 
-export default function SpreadSheet({ columns, records, projectId, project, onDeleteRecord, onDeleteBatch }: SpreadSheetProps) {
+export default function SpreadSheet({ columns, records, projectId, project, onDeleteRecord, onDeleteBatch, backfillingFieldId }: SpreadSheetProps & { backfillingFieldId?: string | null }) {
   const [localColumns, setLocalColumns] = useState<Field[]>([]);
   const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
@@ -430,6 +430,7 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
           selectedCount={selectedRecordIds.size}
           totalCount={localRecords.length}
           onSelectAll={handleSelectAll}
+          backfillingFieldId={backfillingFieldId}
         />
         <tbody>
           {localRecords.map((row, rowIndex) => (

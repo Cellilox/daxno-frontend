@@ -18,6 +18,7 @@ type TableHeaderProps = {
   selectedCount?: number;
   totalCount?: number;
   onSelectAll?: (checked: boolean) => void;
+  backfillingFieldId?: string | null;
 };
 
 export default function TableHeader({
@@ -34,7 +35,8 @@ export default function TableHeader({
   onBackfillColumn,
   selectedCount = 0,
   totalCount = 0,
-  onSelectAll
+  onSelectAll,
+  backfillingFieldId
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
@@ -147,10 +149,20 @@ export default function TableHeader({
           <th
             key={`column-${column.hidden_id}`}
             data-testid={`column-header-${column.name}`}
-            className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors cursor-pointer"
+            className={`px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold tracking-wide relative border-r border-gray-200 transition-all cursor-pointer group
+              ${backfillingFieldId === column.hidden_id
+                ? 'bg-purple-50 text-purple-900 border-b-2 border-b-purple-400'
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
           >
+            {backfillingFieldId === column.hidden_id && (
+              <div className="absolute top-0 inset-x-0 flex justify-center z-50">
+                <div className="bg-purple-600 text-white text-[7px] px-2 py-0.5 rounded-b-full font-bold uppercase tracking-widest shadow-md animate-bounce transform translate-y-0">
+                  Backfilling
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between h-full gap-2 px-1">
               {editingColumnId === column.hidden_id ? (
                 <input
