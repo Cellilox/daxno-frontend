@@ -80,6 +80,7 @@ export default function TableRow({
               </button>
               <button
                 onClick={() => onDeleteRow(row)}
+                data-testid={`delete-row-${rowIndex}`}
                 className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
                 title="Delete"
               >

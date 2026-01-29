@@ -121,10 +121,25 @@ Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
 
 
 Cypress.Commands.add('deleteAllProjects', () => {
-    cy.log('🗑️ Deleting all projects...');
+    cy.log('🗑️ Resetting backend database and deleting all projects...');
+
+    // 1. Reset backend DB to clear usage limits and business data
+    // This runs the maintenance script inside the backend container
+    cy.exec('docker exec daxno-backend python3 src/scripts/maintenance/truncate_all_tables.py --force', { failOnNonZeroExit: false })
+        .then((result: any) => {
+            if (result.code === 0) {
+                cy.log('✅ Backend database truncated successfully');
+            } else {
+                cy.log('⚠️ Backend truncation failed or timed out: ' + result.stderr);
+            }
+        });
+
+    // 2. Clear IndexedDB and local state
+    cy.clearDatabase();
+
     const apiUrl = 'http://localhost:8000';
 
-    // 1. Try API first (fast)
+    // 3. Try API first (fast)
     cy.request({
         url: `${apiUrl}/projects/`,
         failOnStatusCode: false,

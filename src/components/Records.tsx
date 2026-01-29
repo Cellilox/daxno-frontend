@@ -90,22 +90,50 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [projectId]);
 
     const handleDeleteRecord = useCallback(async (recordId: string) => {
+        // Optimistic UI update
         setOnlineRecords(prev => prev.filter(r => r.id !== recordId));
         setOfflineRecords(prev => prev.filter(r => r.id !== recordId));
+        setCachedRecords(prev => prev.filter(r => r.id !== recordId));
+
         try {
-            const isOffline = offlineRecords.some(r => r.id === recordId);
-            if (isOffline) {
+            const isQueuedOffline = offlineRecords.some(r => r.id === recordId);
+            if (isQueuedOffline) {
+                // Case 1: Deleting a file that was never uploaded (just in the offline queue)
                 await removeOfflineFile(recordId);
                 window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+            } else if (!isOnline) {
+                // Case 2: Deleting a synced record while offline (queue it)
+                const { queueDeletion, getCachedRecords, cacheRecords } = await import('@/lib/db/indexedDB');
+                await queueDeletion(recordId, projectId);
+
+                // Also remove from local cache so it doesn't reappear on reload
+                const cached = await getCachedRecords(projectId);
+                if (cached) {
+                    const filteredData = cached.data.filter((r: any) => r.id !== recordId);
+                    await cacheRecords(projectId, filteredData, cached.fields);
+                }
+
+                window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
             } else {
+                // Case 3: Online deletion
                 await deleteRecord(recordId);
+
+                // Update cache if online so it stays in sync
+                const { getCachedRecords, cacheRecords } = await import('@/lib/db/indexedDB');
+                const cached = await getCachedRecords(projectId);
+                if (cached) {
+                    const filteredData = cached.data.filter((r: any) => r.id !== recordId);
+                    await cacheRecords(projectId, filteredData, cached.fields);
+                }
             }
         } catch (err) {
             console.error('[Records] Delete failed:', err);
-            loadOnlineData();
+            if (isOnline) {
+                loadOnlineData();
+            }
             loadOfflineData();
         }
-    }, [offlineRecords, loadOnlineData, loadOfflineData]);
+    }, [offlineRecords, isOnline, projectId, loadOnlineData, loadOfflineData]);
 
     const handleDeleteBatch = useCallback(async (ids: string[]) => {
         const idSet = new Set(ids);

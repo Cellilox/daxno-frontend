@@ -34,10 +34,18 @@ interface DaxnoDB extends DBSchema {
             updatedAt: number;
         };
     };
+    pendingDeletions: {
+        key: string; // recordId
+        value: {
+            id: string;
+            projectId: string;
+            createdAt: number;
+        };
+    };
 }
 
 const DB_NAME = 'daxno-offline';
-const DB_VERSION = 3; // Bumped version
+const DB_VERSION = 4; // Bumped version
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
@@ -59,6 +67,11 @@ export async function getDB() {
                     }
                     if (!db.objectStoreNames.contains('cachedRecords')) {
                         db.createObjectStore('cachedRecords', { keyPath: 'projectId' });
+                    }
+                }
+                if (oldVersion < 4) {
+                    if (!db.objectStoreNames.contains('pendingDeletions')) {
+                        db.createObjectStore('pendingDeletions', { keyPath: 'id' });
                     }
                 }
             },
@@ -317,4 +330,30 @@ export async function clearAllOfflineFiles() {
     const db = await getDB();
     if (!db) return;
     await db.clear('offlineFiles');
+}
+
+// --- Deletion Queue Helpers ---
+
+export async function queueDeletion(recordId: string, projectId: string) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('pendingDeletions', {
+        id: recordId,
+        projectId,
+        createdAt: Date.now()
+    });
+    console.log(`[IndexedDB] Queued deletion for record ${recordId} in project ${projectId}`);
+}
+
+export async function getPendingDeletions() {
+    const db = await getDB();
+    if (!db) return [];
+    return await db.getAll('pendingDeletions');
+}
+
+export async function removePendingDeletion(recordId: string) {
+    const db = await getDB();
+    if (!db) return;
+    await db.delete('pendingDeletions', recordId);
+    console.log(`[IndexedDB] Removed pending deletion for record ${recordId}`);
 }

@@ -4,6 +4,7 @@ describe('Column Management CRUD', () => {
         // Using direct --force without pipes as the script supports it natively
         cy.exec('docker exec daxno-backend python src/scripts/maintenance/truncate_all_tables.py --force', { failOnNonZeroExit: false })
             .then((result) => {
+                //@ts-ignore
                 if (result.code !== 0) {
                     cy.log(`⚠️ Backend truncation warning/failure: ${result.stderr}`);
                 } else {

@@ -206,7 +206,7 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
       setIsAlertVisible(false);
       setSelectedColumnToDelete(null);
     } catch (error) {
-      alert('Error deleting column');
+      console.error('Error deleting column:', error);
       setIsLoading(false);
     }
   };
@@ -312,9 +312,13 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
         await onDeleteRecord(selectedRecordToDelete.id);
       }
 
-      // Cleanup S3 file if it exists
-      if (selectedRecordToDelete.file_key) {
-        await handleDeleteFileUrl(selectedRecordToDelete.file_key, projectId);
+      // Cleanup S3 file if it exists and we are online
+      if (selectedRecordToDelete.file_key && navigator.onLine) {
+        try {
+          await handleDeleteFileUrl(selectedRecordToDelete.file_key, projectId);
+        } catch (s3Err) {
+          console.warn('[SpreadSheet] S3 cleanup failed (non-critical):', s3Err);
+        }
       }
 
       // Also clear from selection if it was selected
@@ -326,7 +330,7 @@ export default function SpreadSheet({ columns, records, projectId, project, onDe
 
       setIsAlertVisible(false);
     } catch (error) {
-      alert('Error deleting a record');
+      console.error('[SpreadSheet] Delete failed:', error);
     } finally {
       setIsLoading(false);
       setSelectedRecordToDelete(null);

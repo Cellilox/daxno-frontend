@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { getOfflineFiles } from '@/lib/db/indexedDB';
+import { getOfflineFiles, getPendingDeletions } from '@/lib/db/indexedDB';
 
 export default function SyncBanner() {
     const { isOnline } = useSyncStatus();
@@ -14,8 +14,12 @@ export default function SyncBanner() {
     const isFinishedRef = useRef(false);
 
     const updateCounts = async () => {
-        const files = await getOfflineFiles();
-        const pending = files.filter(f => f.status === 'pending').length;
+        const [files, deletions] = await Promise.all([
+            getOfflineFiles(),
+            getPendingDeletions()
+        ]);
+
+        const pending = files.filter(f => f.status === 'pending').length + deletions.length;
         const syncing = files.filter(f => f.status === 'syncing').length;
 
         setPendingCount(pending);

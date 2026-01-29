@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded } from '@/lib/db/indexedDB';
-import { getPresignedUrl, queryDocument } from '@/actions/record-actions';
+import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded, getPendingDeletions, removePendingDeletion } from '@/lib/db/indexedDB';
+import { getPresignedUrl, queryDocument, deleteRecord } from '@/actions/record-actions';
 
 const GLOBAL_SYNCING_IDS = new Set<string>();
 let IS_GLOBAL_SYNCING = false;
@@ -31,10 +31,14 @@ export default function OfflineSyncManager() {
                         }
                     }
                 }
-                window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+                notifyRefresh();
             } catch (err) {
                 console.error('[OfflineSync] Failed to cleanup stuck files:', err);
             }
+        };
+
+        const handleUpdate = () => {
+            if (isOnline) syncOfflineFiles();
         };
 
         if (isOnline) {
@@ -43,7 +47,12 @@ export default function OfflineSyncManager() {
                 cleanupStuckFiles().then(() => syncOfflineFiles());
             }, 1000);
 
-            return () => clearTimeout(timeoutId);
+            window.addEventListener('daxno:offline-files-updated', handleUpdate);
+
+            return () => {
+                clearTimeout(timeoutId);
+                window.removeEventListener('daxno:offline-files-updated', handleUpdate);
+            };
         }
     }, [isOnline]);
 
@@ -78,7 +87,27 @@ export default function OfflineSyncManager() {
             IS_GLOBAL_SYNCING = true;
             setIsSyncing(true);
 
-            const pendingFiles = await getPendingFiles();
+            const [pendingFiles, pendingDeletions] = await Promise.all([
+                getPendingFiles(),
+                getPendingDeletions()
+            ]);
+
+            if (pendingFiles.length === 0 && pendingDeletions.length === 0) return;
+
+            if (pendingDeletions.length > 0) {
+                console.log(`[OfflineSync] Syncing ${pendingDeletions.length} offline deletions...`);
+                for (const del of pendingDeletions) {
+                    try {
+                        await deleteRecord(del.id);
+                        await removePendingDeletion(del.id);
+                        console.log(`[OfflineSync] Successfully synced deletion for record: ${del.id}`);
+                    } catch (err) {
+                        console.error(`[OfflineSync] Failed to sync deletion for ${del.id}:`, err);
+                    }
+                }
+                notifyRefresh();
+            }
+
             if (pendingFiles.length === 0) return;
 
             console.log(`[OfflineSync] Syncing ${pendingFiles.length} offline files...`);
