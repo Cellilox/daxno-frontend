@@ -12,6 +12,7 @@ type TableCellProps = {
     onCancelEdit: (rowIndex: number) => void;
     backfillingFieldId?: string | null;
     isRowBackfilling?: boolean;
+    isOnline?: boolean;
 };
 
 export default function TableCell({
@@ -24,7 +25,8 @@ export default function TableCell({
     onSaveRow,
     onCancelEdit,
     backfillingFieldId,
-    isRowBackfilling
+    isRowBackfilling,
+    isOnline = true
 }: TableCellProps) {
     // Callback ref to auto-resize textarea - now at top level of component
     const textareaRef = useCallback((node: HTMLTextAreaElement | null) => {
@@ -39,8 +41,8 @@ export default function TableCell({
     return (
         <td
             key={column.hidden_id}
-            className={`px-3 md:px-4 py-2 text-sm text-gray-900 border-r overflow-hidden leading-relaxed cursor-pointer transition-colors relative ${isCellEditing ? 'bg-blue-50/10 ring-2 ring-blue-400 ring-inset' : 'hover:bg-gray-100/30'}`}
-            onClick={() => !isCellEditing && onEditCell(rowIndex, column.hidden_id)}
+            className={`px-3 md:px-4 py-2 text-sm text-gray-900 border-r overflow-hidden leading-relaxed transition-colors relative ${isCellEditing ? 'bg-blue-50/10 ring-2 ring-blue-400 ring-inset' : isOnline ? 'hover:bg-gray-100/30 cursor-pointer' : 'cursor-default'}`}
+            onClick={() => isOnline && !isCellEditing && onEditCell(rowIndex, column.hidden_id)}
         >
             {isCellEditing ? (
                 <textarea

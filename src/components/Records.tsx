@@ -9,8 +9,8 @@ import ColumnReorderPopup from './forms/ColumnReorderPopup';
 import BackfillRecordModal from './forms/BackfillRecordModal';
 import { getOfflineFiles, removeOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { deleteBatchRecords, deleteRecord, getRecords } from '@/actions/record-actions';
-import { getColumns } from '@/actions/column-actions';
+import { deleteBatchRecords, deleteRecord, getRecords, updateRecord } from '@/actions/record-actions';
+import { deleteColumn, getColumns, updateColumn } from '@/actions/column-actions';
 import SmartAuthGuard from '@/components/auth/SmartAuthGuard';
 
 type RecordsProps = {
@@ -96,39 +96,21 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [projectId]);
 
     const handleDeleteRecord = useCallback(async (recordId: string) => {
-        // 1. Optimistic UI update
+        if (!isOnline) return; // Disable offline deletion
+
+        // Optimistic UI update
         setOnlineRecords(prev => prev.filter(r => r.id !== recordId));
-        setOfflineRecords(prev => prev.filter(r => r.id !== recordId));
         setCachedRecords(prev => prev.filter(r => r.id !== recordId));
 
         try {
-            const isQueuedOffline = offlineRecords.some(r => r.id === recordId);
-            const { removeRecordFromCache, queueDeletion, removeOfflineFile } = await import('@/lib/db/indexedDB');
-
-            // 2. Clear from local cache immediately so it stays deleted on reload
+            const { removeRecordFromCache } = await import('@/lib/db/indexedDB');
             await removeRecordFromCache(projectId, recordId);
-
-            if (isQueuedOffline) {
-                // Case 1: Deleting a file that was never uploaded
-                await removeOfflineFile(recordId);
-                window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
-            } else if (!isOnline) {
-                // Case 2: Deleting a synced record while offline (queue it)
-                await queueDeletion(recordId, projectId);
-                window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
-            } else {
-                // Case 3: Online deletion
-                await deleteRecord(recordId);
-            }
+            await deleteRecord(recordId);
         } catch (err) {
             console.error('[Records] Delete failed:', err);
-            // Revert optimistic update only on critical failure
-            if (isOnline) {
-                loadOnlineData();
-            }
-            loadOfflineData();
+            loadOnlineData();
         }
-    }, [offlineRecords, isOnline, projectId, loadOnlineData, loadOfflineData]);
+    }, [isOnline, projectId, loadOnlineData]);
 
     const handleDeleteBatch = useCallback(async (ids: string[]) => {
         const idSet = new Set(ids);
@@ -167,6 +149,53 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             loadOfflineData();
         }
     }, [offlineRecords, isOnline, projectId, loadOnlineData, loadOfflineData]);
+
+    const handleUpdateRecord = useCallback(async (recordId: string, updatedRecord: any) => {
+        if (!isOnline) return; // Disable offline update
+
+        // Optimistic UI update
+        const applyUpdate = (prev: any[]) => prev.map(r => r.id === recordId ? { ...r, ...updatedRecord } : r);
+        setOnlineRecords(applyUpdate);
+        setCachedRecords(applyUpdate);
+
+        try {
+            const { updateRecordInCache } = await import('@/lib/db/indexedDB');
+            await updateRecordInCache(projectId, { id: recordId, ...updatedRecord });
+            await updateRecord(recordId, updatedRecord);
+        } catch (err) {
+            console.error('[Records] Update record failed:', err);
+            loadOnlineData();
+        }
+    }, [projectId, isOnline, loadOnlineData]);
+
+    const handleUpdateColumn = useCallback(async (columnId: string, name: string) => {
+        if (!isOnline) return; // Disable offline column update
+
+        setColumns(prev => prev.map(c => c.hidden_id === columnId ? { ...c, name } : c));
+
+        try {
+            await updateColumn(columnId, projectId, { name });
+            loadOnlineData(); // Ensure cache is in sync
+        } catch (err) {
+            console.error('[Records] Update column failed:', err);
+            loadOnlineData();
+        }
+    }, [projectId, isOnline, loadOnlineData]);
+
+    const handleDeleteColumn = useCallback(async (columnId: string) => {
+        if (!isOnline) return; // Disable offline column deletion
+
+        setColumns(prev => prev.filter(c => c.hidden_id !== columnId));
+
+        try {
+            const { removeColumnFromCache } = await import('@/lib/db/indexedDB');
+            await removeColumnFromCache(projectId, columnId);
+            await deleteColumn(columnId, projectId);
+        } catch (err) {
+            console.error('[Records] Delete column failed:', err);
+            loadOnlineData();
+        }
+    }, [projectId, isOnline, loadOnlineData]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -463,12 +492,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 </div>
                 <div className="flex-1 min-h-0">
                     <SpreadSheet
+                        isOnline={isOnline}
                         records={rowData}
                         columns={columns}
                         projectId={projectId}
                         project={project}
                         onDeleteRecord={handleDeleteRecord}
                         onDeleteBatch={handleDeleteBatch}
+                        onUpdateRecord={handleUpdateRecord}
+                        onUpdateColumn={handleUpdateColumn}
+                        onDeleteColumn={handleDeleteColumn}
                         backfillingFieldId={backfillingFieldId}
                         backfillingRecordId={backfillingRecordId}
                         onBackfillRecord={(id: string, filename: string) => {

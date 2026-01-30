@@ -111,11 +111,11 @@ export default function OfflineSyncManager() {
                         }
                         await removePendingProjectAction(action.id);
                         console.log(`[OfflineSync] Successfully synced ${action.type} for project: ${action.id}`);
+                        notifyRefresh();
                     } catch (err) {
                         console.error(`[OfflineSync] Project sync failed for ${action.id}:`, err);
                     }
                 }
-                notifyRefresh();
             }
 
             // 2. Sync Column Actions
@@ -130,11 +130,11 @@ export default function OfflineSyncManager() {
                         }
                         await removePendingColumnAction(action.id);
                         console.log(`[OfflineSync] Successfully synced ${action.type} for column: ${action.id}`);
+                        notifyRefresh();
                     } catch (err) {
                         console.error(`[OfflineSync] Column sync failed for ${action.id}:`, err);
                     }
                 }
-                notifyRefresh();
             }
 
             // 3. Sync Record Updates (Deletions are handled next)
@@ -145,11 +145,11 @@ export default function OfflineSyncManager() {
                         await updateRecord(action.id, action.data);
                         await removePendingRecordAction(action.id);
                         console.log(`[OfflineSync] Successfully synced update for record: ${action.id}`);
+                        notifyRefresh();
                     } catch (err) {
                         console.error(`[OfflineSync] Record update sync failed for ${action.id}:`, err);
                     }
                 }
-                notifyRefresh();
             }
 
             // 4. Sync Record Deletions (Handles older single-queue approach)
@@ -161,11 +161,11 @@ export default function OfflineSyncManager() {
                         await deleteRecord(del.id);
                         await removePendingDeletion(del.id);
                         console.log(`[OfflineSync] Successfully synced deletion for record: ${del.id}`);
+                        notifyRefresh();
                     } catch (err) {
                         console.error(`[OfflineSync] Failed to sync deletion for ${del.id}:`, err);
                     }
                 }
-                notifyRefresh();
             }
 
             if (pendingFiles.length === 0) return;

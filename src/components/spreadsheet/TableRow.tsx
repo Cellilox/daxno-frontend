@@ -22,6 +22,7 @@ type TableRowProps = {
   backfillingFieldId?: string | null;
   isRowBackfilling?: boolean;
   onBackfillRecord?: () => void;
+  isOnline?: boolean;
 };
 
 export default function TableRow({
@@ -43,7 +44,8 @@ export default function TableRow({
   onSelect,
   backfillingFieldId,
   isRowBackfilling,
-  onBackfillRecord
+  onBackfillRecord,
+  isOnline = true
 }: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -124,7 +126,7 @@ export default function TableRow({
           )}
 
           {/* Floating actions for larger screens - moved to top-right */}
-          {hoveredRow === rowIndex && !isRowEditing && (
+          {hoveredRow === rowIndex && !isRowEditing && isOnline && (
             <div className="hidden md:flex items-center gap-1.5 absolute right-2 top-2 bg-white/90 backdrop-blur-sm shadow-sm rounded-lg px-2 py-1.5 z-20 border border-gray-100 group-hover/filename:opacity-100 opacity-0 transition-opacity">
               <button
                 onClick={() => onEditCell(rowIndex, columns[0]?.hidden_id)}
@@ -158,6 +160,11 @@ export default function TableRow({
               </button>
             </div>
           )}
+          {hoveredRow === rowIndex && !isRowEditing && !isOnline && (
+            <div className="hidden md:flex items-center gap-1.5 absolute right-2 top-2 bg-white/80 backdrop-blur-sm shadow-sm rounded-lg px-2 py-1.5 z-20 border border-gray-100 opacity-100 italic text-[10px] text-gray-400">
+              Read Only Offline
+            </div>
+          )}
         </div>
       </td>
       {columns.map((column) => (
@@ -173,6 +180,7 @@ export default function TableRow({
           onCancelEdit={onCancelEdit}
           backfillingFieldId={backfillingFieldId}
           isRowBackfilling={isRowBackfilling}
+          isOnline={isOnline}
         />
       ))}
       {/* Empty spacer cell removed as per user request to prevent covering data cells */}

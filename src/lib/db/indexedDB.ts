@@ -300,6 +300,24 @@ export async function removeColumnFromCache(projectId: string, fieldId: string) 
     });
 }
 
+export async function updateColumnInCache(projectId: string, columnId: string, updates: any) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('cachedRecords', projectId);
+    if (!cached || !cached.fields) return;
+
+    const updatedFields = cached.fields.map((f: any) =>
+        f.hidden_id === columnId ? { ...f, ...updates } : f
+    );
+
+    await db.put('cachedRecords', {
+        ...cached,
+        fields: updatedFields,
+        updatedAt: Date.now()
+    });
+}
+
 
 export async function addOfflineFile(file: File | Blob, projectId: string) {
     const db = await getDB();

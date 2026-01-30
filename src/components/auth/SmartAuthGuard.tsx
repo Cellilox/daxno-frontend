@@ -3,26 +3,46 @@
 import { RedirectToSignIn, useUser } from "@clerk/nextjs";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function SmartAuthGuard({ children }: { children: React.ReactNode }) {
-    const { isLoaded, isSignedIn, user } = useUser();
+    const { isLoaded, isSignedIn } = useUser();
     const { isOnline } = useSyncStatus();
     const pathname = usePathname();
+    const [showRetry, setShowRetry] = useState(false);
+    const [allowBypass, setAllowBypass] = useState(false);
     const wasOffline = useRef<boolean>(!isOnline);
 
-    // Monitor online state transitions and trigger re-auth check
     useEffect(() => {
-        // If we transitioned from offline → online, force Clerk to reload session
-        if (wasOffline.current && isOnline) {
-            console.log("[SmartAuthGuard] Network restored. Re-checking authentication...");
-            // Clerk will automatically re-sync when the component re-renders
-            // The wasOffline flag ensures this only happens once per transition
-        }
-        wasOffline.current = !isOnline;
-    }, [isOnline]);
+        let retryTimer: NodeJS.Timeout;
+        let bypassTimer: NodeJS.Timeout;
 
-    // 1. Loading Shell - Used during initialization AND redirection
+        if (isOnline && !isLoaded) {
+            // Show retry button after 8 seconds
+            retryTimer = setTimeout(() => {
+                setShowRetry(true);
+            }, 8000);
+
+            // Allow bypass after 15 seconds if Clerk never loads
+            bypassTimer = setTimeout(() => {
+                console.warn('[SmartAuthGuard] Clerk initialization timeout - allowing bypass');
+                setAllowBypass(true);
+            }, 15000);
+
+            return () => {
+                clearTimeout(retryTimer);
+                clearTimeout(bypassTimer);
+            };
+        } else {
+            setShowRetry(false);
+            setAllowBypass(false);
+        }
+    }, [isOnline, isLoaded]);
+
+    const handleRetry = () => {
+        window.location.reload();
+    };
+
     const LoadingShell = ({ message, testId }: { message: string, testId?: string }) => (
         <div data-testid={testId || "auth-guard-loading"} className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -31,19 +51,34 @@ export default function SmartAuthGuard({ children }: { children: React.ReactNode
         </div>
     );
 
-    // 2. Logic: If we are OFFLINE, we skip the cloud auth check and render content immediately.
-    // This allows the PWA to display cached data from IndexedDB without a delay.
     if (!isOnline) {
         return <>{children}</>;
     }
 
-    // 3. While Clerk is still initializing (Online Only)
-    if (!isLoaded) {
-        return <LoadingShell message="Checking authorization..." />;
+    // If Clerk hasn't loaded and we haven't allowed bypass yet, show loading
+    if (!isLoaded && !allowBypass) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh]">
+                <LoadingShell message="Checking authorization..." />
+                {showRetry && (
+                    <div className="absolute mt-48 animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-col items-center">
+                        <p className="text-sm text-gray-500 mb-4 text-center px-6 max-w-sm">
+                            This is taking longer than expected. The connection might be unstable.
+                        </p>
+                        <button
+                            onClick={handleRetry}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition-all active:scale-95"
+                        >
+                            Retry Now
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
     }
 
-    // 4. If we are online and NOT signed in, redirect smoothly
-    if (!isSignedIn) {
+    // If we bypassed (timeout) or Clerk loaded, check sign-in status
+    if (isLoaded && !isSignedIn) {
         return (
             <>
                 <LoadingShell message="Redirecting to login..." testId="auth-guard-redirecting" />
@@ -52,6 +87,5 @@ export default function SmartAuthGuard({ children }: { children: React.ReactNode
         );
     }
 
-    // 5. If signed in (Online), render actual content
     return <>{children}</>;
 }

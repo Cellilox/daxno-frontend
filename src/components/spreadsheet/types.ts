@@ -41,6 +41,10 @@ export type SpreadSheetProps = {
   projectId: string;
   project: any;
   user?: any;
+  isOnline?: boolean;
   onDeleteRecord?: (id: string) => Promise<void>;
   onDeleteBatch?: (ids: string[]) => Promise<void>;
+  onUpdateRecord?: (id: string, data: any) => void;
+  onUpdateColumn?: (id: string, name: string) => void;
+  onDeleteColumn?: (id: string) => void;
 };
