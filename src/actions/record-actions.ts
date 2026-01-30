@@ -46,9 +46,12 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
   }
 };
 
-export async function getPresignedUrl(filename: string, projectId: string, contentType?: string): Promise<{ success: boolean; data?: { upload_url: string; filename: string; key: string }; error?: string }> {
+export async function getPresignedUrl(filename: string, projectId: string, contentType?: string, linkToken?: string): Promise<{ success: boolean; data?: { upload_url: string; filename: string; key: string }; error?: string }> {
   try {
-    const path = `/records/presigned-url?filename=${encodeURIComponent(filename)}&project_id=${encodeURIComponent(projectId)}${contentType ? `&content_type=${encodeURIComponent(contentType)}` : ''}`;
+    let path = `/records/presigned-url?filename=${encodeURIComponent(filename)}&project_id=${encodeURIComponent(projectId)}${contentType ? `&content_type=${encodeURIComponent(contentType)}` : ''}`;
+    if (linkToken) {
+      path += `&link_token=${encodeURIComponent(linkToken)}`;
+    }
     const fetchUrl = buildApiUrl(path);
 
     const response = await fetchAuthedJson(fetchUrl, {
@@ -84,11 +87,14 @@ export async function getPresignedUrl(filename: string, projectId: string, conte
 
 
 
-export async function queryDocument(projectId: string, filename: string, original_filename?: string): Promise<{ success: boolean; data?: any; error?: string }> {
+export async function queryDocument(projectId: string, filename: string, original_filename?: string, linkToken?: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     let path = `/records/query-doc?project_id=${projectId}&filename=${filename}`;
     if (original_filename) {
       path += `&original_filename=${encodeURIComponent(original_filename)}`;
+    }
+    if (linkToken) {
+      path += `&link_token=${encodeURIComponent(linkToken)}`;
     }
     const fetchUrl = buildApiUrl(path);
     const response = await fetchAuthed(fetchUrl, {

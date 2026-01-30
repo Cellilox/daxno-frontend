@@ -17,10 +17,7 @@ import { addOfflineFile } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { CameraCapture } from '../Camera/CameraCapture';
 import { Camera } from 'lucide-react';
-import * as pdfjs from 'pdfjs-dist/webpack';
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+// PDF.js worker will be configured dynamically in validatePdfPageCount
 
 type MyDropzoneProps = {
   projectId: string;
@@ -30,9 +27,10 @@ type MyDropzoneProps = {
   plan: string;
   subscriptionType?: string;
   onCameraToggle?: (active: boolean) => void;
+  linkToken?: string;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, subscriptionType, onCameraToggle }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, subscriptionType, onCameraToggle, linkToken }: MyDropzoneProps) {
   const { getToken, sessionId } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -261,6 +259,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       if (file.type !== 'application/pdf') return 1;
 
       const arrayBuffer = await file.arrayBuffer();
+
+      // Dynamically import PDF.js only on the client to avoid SSR errors
+      const pdfjs = await import('pdfjs-dist/webpack');
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
       const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
       const count = pdf.numPages;
 
@@ -353,8 +356,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       // If plan is Free but BYOK (subscriptionType != standard), we do NOT block.
 
       updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
-
-      const getUrlResult = await getPresignedUrl(file.name, projectId, file.type);
+      const getUrlResult = await getPresignedUrl(file.name, projectId, file.type, linkToken);
       if (!getUrlResult.success) {
         throw new Error(getUrlResult.error);
       }
@@ -446,7 +448,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       updateStatus('Queuing analysis...', messageTypeEnum.INFO, 'Processing in background...');
 
-      const result = await queryDocument(projectId, filename, original_filename);
+      const result = await queryDocument(projectId, filename, original_filename, linkToken);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -577,7 +579,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 1. Get Presigned URL
       updateFileStatus({ status: 'uploading', progress: 10 });
-      const presignedResult = await getPresignedUrl(file.name, projectId, file.type);
+      const presignedResult = await getPresignedUrl(file.name, projectId, file.type, linkToken);
 
       if (!presignedResult.success) {
         throw new Error(presignedResult.error);
@@ -612,7 +614,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 3. Trigger Analysis (Async)
       updateFileStatus({ status: 'analyzing', progress: 60 });
-      const queryResult = await queryDocument(projectId, filename, file.name);
+      const queryResult = await queryDocument(projectId, filename, file.name, linkToken);
 
       if (!queryResult.success) {
         throw new Error(queryResult.error);
