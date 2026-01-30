@@ -42,10 +42,39 @@ interface DaxnoDB extends DBSchema {
             createdAt: number;
         };
     };
+    pendingProjectActions: {
+        key: string; // projectId
+        value: {
+            id: string;
+            type: 'delete' | 'update';
+            data?: any;
+            timestamp: number;
+        };
+    };
+    pendingColumnActions: {
+        key: string; // columnId
+        value: {
+            id: string;
+            projectId: string;
+            type: 'delete' | 'update';
+            data?: any;
+            timestamp: number;
+        };
+    };
+    pendingRecordActions: {
+        key: string; // recordId
+        value: {
+            id: string;
+            projectId: string;
+            type: 'update';
+            data: any;
+            timestamp: number;
+        };
+    };
 }
 
 const DB_NAME = 'daxno-offline';
-const DB_VERSION = 4; // Bumped version
+const DB_VERSION = 5; // Bumped to 5 for new action stores
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
@@ -72,6 +101,17 @@ export async function getDB() {
                 if (oldVersion < 4) {
                     if (!db.objectStoreNames.contains('pendingDeletions')) {
                         db.createObjectStore('pendingDeletions', { keyPath: 'id' });
+                    }
+                }
+                if (oldVersion < 5) {
+                    if (!db.objectStoreNames.contains('pendingProjectActions')) {
+                        db.createObjectStore('pendingProjectActions', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('pendingColumnActions')) {
+                        db.createObjectStore('pendingColumnActions', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('pendingRecordActions')) {
+                        db.createObjectStore('pendingRecordActions', { keyPath: 'id' });
                     }
                 }
             },
@@ -200,6 +240,64 @@ export async function syncRecordDeletions(projectId: string, serverRecords: any[
     }
 
     return { removed: 0, retained: cached.data.length };
+}
+
+export async function updateRecordInCache(projectId: string, updatedRecord: any) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('cachedRecords', projectId);
+    if (!cached || !cached.data) return;
+
+    const updatedData = cached.data.map((r: any) =>
+        r.id === updatedRecord.id ? { ...r, ...updatedRecord } : r
+    );
+
+    await db.put('cachedRecords', {
+        ...cached,
+        data: updatedData,
+        updatedAt: Date.now()
+    });
+}
+
+export async function removeRecordFromCache(projectId: string, recordId: string) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('cachedRecords', projectId);
+    if (!cached || !cached.data) return;
+
+    const updatedData = cached.data.filter((r: any) => r.id !== recordId);
+
+    await db.put('cachedRecords', {
+        ...cached,
+        data: updatedData,
+        updatedAt: Date.now()
+    });
+}
+
+export async function removeColumnFromCache(projectId: string, fieldId: string) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('cachedRecords', projectId);
+    if (!cached) return;
+
+    const updatedFields = cached.fields.filter((f: any) => f.hidden_id !== fieldId);
+
+    // Also remove values from all records in that project
+    const updatedRecords = cached.data.map((rec: any) => {
+        const newAnswers = { ...rec.answers };
+        delete newAnswers[fieldId];
+        return { ...rec, answers: newAnswers };
+    });
+
+    await db.put('cachedRecords', {
+        ...cached,
+        fields: updatedFields,
+        data: updatedRecords,
+        updatedAt: Date.now()
+    });
 }
 
 
@@ -356,4 +454,80 @@ export async function removePendingDeletion(recordId: string) {
     if (!db) return;
     await db.delete('pendingDeletions', recordId);
     console.log(`[IndexedDB] Removed pending deletion for record ${recordId}`);
+}
+
+// --- New Action Queue Helpers ---
+
+export async function queueProjectAction(id: string, type: 'delete' | 'update', data?: any) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('pendingProjectActions', {
+        id,
+        type,
+        data,
+        timestamp: Date.now()
+    });
+    console.log(`[IndexedDB] Queued ${type} action for project ${id}`);
+}
+
+export async function getPendingProjectActions() {
+    const db = await getDB();
+    if (!db) return [];
+    return await db.getAll('pendingProjectActions');
+}
+
+export async function removePendingProjectAction(id: string) {
+    const db = await getDB();
+    if (!db) return;
+    await db.delete('pendingProjectActions', id);
+}
+
+export async function queueColumnAction(id: string, projectId: string, type: 'delete' | 'update', data?: any) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('pendingColumnActions', {
+        id,
+        projectId,
+        type,
+        data,
+        timestamp: Date.now()
+    });
+    console.log(`[IndexedDB] Queued ${type} action for column ${id} in project ${projectId}`);
+}
+
+export async function getPendingColumnActions() {
+    const db = await getDB();
+    if (!db) return [];
+    return await db.getAll('pendingColumnActions');
+}
+
+export async function removePendingColumnAction(id: string) {
+    const db = await getDB();
+    if (!db) return;
+    await db.delete('pendingColumnActions', id);
+}
+
+export async function queueRecordAction(id: string, projectId: string, type: 'update', data: any) {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('pendingRecordActions', {
+        id,
+        projectId,
+        type,
+        data,
+        timestamp: Date.now()
+    });
+    console.log(`[IndexedDB] Queued ${type} action for record ${id} in project ${projectId}`);
+}
+
+export async function getPendingRecordActions() {
+    const db = await getDB();
+    if (!db) return [];
+    return await db.getAll('pendingRecordActions');
+}
+
+export async function removePendingRecordAction(id: string) {
+    const db = await getDB();
+    if (!db) return;
+    await db.delete('pendingRecordActions', id);
 }

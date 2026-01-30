@@ -33,24 +33,33 @@ export default function Card({ project, onDeleted }: CardProps) {
   const handleDeleteProject = async (projectId: string) => {
     setIsLoading(true)
     try {
-      await deleteProject(projectId)
+      const { removeProjectFromCache, queueProjectAction } = await import('@/lib/db/indexedDB');
 
-      // Update local cache immediately to prevent "zombie" projects on reload
+      // 1. Update local cache immediately
       if (user?.id) {
-        const { removeProjectFromCache } = await import('@/lib/db/indexedDB');
         await removeProjectFromCache(user.id, projectId);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue deletion
+        await queueProjectAction(projectId, 'delete');
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await deleteProject(projectId)
       }
 
       setIsLoading(false)
       setIsAlertVisible(false)
       setSelectedProjectToDelete(null)
 
-      // Notify parent to remove from UI list immediately
+      // Notify parent to remove from UI list immediately (Optimistic)
       if (onDeleted) {
         onDeleted(projectId);
       }
     } catch (error) {
       alert('Error deleting a project')
+      setIsLoading(false)
     }
   }
 
@@ -68,23 +77,33 @@ export default function Card({ project, onDeleted }: CardProps) {
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedProjectToUpdate) return;
     setIsLoading(true)
     const updateData = {
       ...selectedProjectToUpdate
     };
     try {
-      await updateProject(selectedProjectToUpdate?.id, updateData)
+      const { updateProjectInCache, queueProjectAction } = await import('@/lib/db/indexedDB');
 
-      // Update local cache immediately
-      if (user?.id && selectedProjectToUpdate) {
-        const { updateProjectInCache } = await import('@/lib/db/indexedDB');
+      // 1. Update local cache immediately
+      if (user?.id) {
         await updateProjectInCache(user.id, updateData);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue update
+        await queueProjectAction(selectedProjectToUpdate.id, 'update', updateData);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await updateProject(selectedProjectToUpdate.id, updateData)
       }
 
       setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
+      setIsLoading(false)
     }
   }
 

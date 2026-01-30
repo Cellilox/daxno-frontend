@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded, getPendingDeletions, removePendingDeletion } from '@/lib/db/indexedDB';
-import { getPresignedUrl, queryDocument, deleteRecord } from '@/actions/record-actions';
+import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded, getPendingDeletions, removePendingDeletion, getPendingProjectActions, removePendingProjectAction, getPendingColumnActions, removePendingColumnAction, getPendingRecordActions, removePendingRecordAction } from '@/lib/db/indexedDB';
+import { getPresignedUrl, queryDocument, deleteRecord, updateRecord, deleteBatchRecords } from '@/actions/record-actions';
+import { deleteProject, updateProject } from '@/actions/project-actions';
+import { deleteColumn, updateColumn } from '@/actions/column-actions';
 
 const GLOBAL_SYNCING_IDS = new Set<string>();
 let IS_GLOBAL_SYNCING = false;
@@ -87,15 +89,73 @@ export default function OfflineSyncManager() {
             IS_GLOBAL_SYNCING = true;
             setIsSyncing(true);
 
-            const [pendingFiles, pendingDeletions] = await Promise.all([
+            const [pendingFiles, pendingDeletions, pendingProjectActions, pendingColumnActions, pendingRecordActions] = await Promise.all([
                 getPendingFiles(),
-                getPendingDeletions()
+                getPendingDeletions(),
+                getPendingProjectActions(),
+                getPendingColumnActions(),
+                getPendingRecordActions()
             ]);
 
-            if (pendingFiles.length === 0 && pendingDeletions.length === 0) return;
+            if (pendingFiles.length === 0 && pendingDeletions.length === 0 && pendingProjectActions.length === 0 && pendingColumnActions.length === 0 && pendingRecordActions.length === 0) return;
 
+            // 1. Sync Project Actions
+            if (pendingProjectActions.length > 0) {
+                console.log(`[OfflineSync] Syncing ${pendingProjectActions.length} project actions...`);
+                for (const action of pendingProjectActions) {
+                    try {
+                        if (action.type === 'delete') {
+                            await deleteProject(action.id);
+                        } else if (action.type === 'update') {
+                            await updateProject(action.id, action.data);
+                        }
+                        await removePendingProjectAction(action.id);
+                        console.log(`[OfflineSync] Successfully synced ${action.type} for project: ${action.id}`);
+                    } catch (err) {
+                        console.error(`[OfflineSync] Project sync failed for ${action.id}:`, err);
+                    }
+                }
+                notifyRefresh();
+            }
+
+            // 2. Sync Column Actions
+            if (pendingColumnActions.length > 0) {
+                console.log(`[OfflineSync] Syncing ${pendingColumnActions.length} column actions...`);
+                for (const action of pendingColumnActions) {
+                    try {
+                        if (action.type === 'delete') {
+                            await deleteColumn(action.id, action.projectId);
+                        } else if (action.type === 'update') {
+                            await updateColumn(action.id, action.projectId, action.data);
+                        }
+                        await removePendingColumnAction(action.id);
+                        console.log(`[OfflineSync] Successfully synced ${action.type} for column: ${action.id}`);
+                    } catch (err) {
+                        console.error(`[OfflineSync] Column sync failed for ${action.id}:`, err);
+                    }
+                }
+                notifyRefresh();
+            }
+
+            // 3. Sync Record Updates (Deletions are handled next)
+            if (pendingRecordActions.length > 0) {
+                console.log(`[OfflineSync] Syncing ${pendingRecordActions.length} record updates...`);
+                for (const action of pendingRecordActions) {
+                    try {
+                        await updateRecord(action.id, action.data);
+                        await removePendingRecordAction(action.id);
+                        console.log(`[OfflineSync] Successfully synced update for record: ${action.id}`);
+                    } catch (err) {
+                        console.error(`[OfflineSync] Record update sync failed for ${action.id}:`, err);
+                    }
+                }
+                notifyRefresh();
+            }
+
+            // 4. Sync Record Deletions (Handles older single-queue approach)
             if (pendingDeletions.length > 0) {
                 console.log(`[OfflineSync] Syncing ${pendingDeletions.length} offline deletions...`);
+                // Group by project if possible for batching? For now keep it safe and simple.
                 for (const del of pendingDeletions) {
                     try {
                         await deleteRecord(del.id);

@@ -169,8 +169,20 @@ export default function SpreadSheet({
       related_project: projectId
     };
 
+    // 1. Optimistic UI update
+    setLocalColumns(prev => prev.map(c => c.hidden_id === column.hidden_id ? { ...c, name: newName } : c));
+
     try {
-      await updateColumn(column.hidden_id, projectId, updateData);
+      const { queueColumnAction } = await import('@/lib/db/indexedDB');
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue and update cache (Cache update for columns is handled via Records.tsx refresh if we trigger event)
+        await queueColumnAction(column.hidden_id, projectId, 'update', updateData);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await updateColumn(column.hidden_id, projectId, updateData);
+      }
       setIsLoading(false);
     } catch (error) {
       console.error('Error updating column:', error);
@@ -180,20 +192,32 @@ export default function SpreadSheet({
 
   const handleUpdateColumnSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedColumnToUpdate) return;
     setIsLoading(true);
     const updateData = {
-      id: selectedColumnToUpdate?.id,
-      name: selectedColumnToUpdate?.name,
-      description: selectedColumnToUpdate?.description,
+      id: selectedColumnToUpdate.id,
+      name: selectedColumnToUpdate.name,
+      description: selectedColumnToUpdate.description,
       related_project: projectId
     };
 
+    // 1. Optimistic UI update
+    setLocalColumns(prev => prev.map(c => c.hidden_id === selectedColumnToUpdate.hidden_id ? { ...c, name: selectedColumnToUpdate.name || '' } : c));
+
     try {
-      await updateColumn(selectedColumnToUpdate?.hidden_id, projectId, updateData);
+      const { queueColumnAction } = await import('@/lib/db/indexedDB');
+
+      if (!navigator.onLine) {
+        await queueColumnAction(selectedColumnToUpdate.hidden_id, projectId, 'update', updateData);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        await updateColumn(selectedColumnToUpdate.hidden_id, projectId, updateData);
+      }
       setIsLoading(false);
       setIsPopupVisible(false);
     } catch (error) {
-      console.error('Error updating project:', error);
+      console.error('Error updating column:', error);
+      setIsLoading(false);
     }
   };
 
@@ -214,8 +238,24 @@ export default function SpreadSheet({
 
   const handleDeleteColumn = async (columnId: string) => {
     setIsLoading(true);
+    // 1. Optimistic UI update
+    setLocalColumns(prev => prev.filter(c => c.hidden_id !== columnId));
+
     try {
-      await deleteColumn(columnId, projectId);
+      const { queueColumnAction, removeColumnFromCache } = await import('@/lib/db/indexedDB');
+
+      // 2. Clear from local cache immediately
+      await removeColumnFromCache(projectId, columnId);
+
+      if (!navigator.onLine) {
+        // 3. Offline: Queue
+        await queueColumnAction(columnId, projectId, 'delete');
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 4. Online: API call
+        await deleteColumn(columnId, projectId);
+      }
+
       setIsLoading(false);
       setIsAlertVisible(false);
       setSelectedColumnToDelete(null);
@@ -295,8 +335,24 @@ export default function SpreadSheet({
 
     if (!editedRecord) return;
 
+    // 1. Optimistic UI update
+    setLocalRecords(prev => prev.map((r, i) => i === rowIndex ? editedRecord : r));
+
     try {
-      await updateRecord(editedRecord.id, editedRecord);
+      const { updateRecordInCache, queueRecordAction } = await import('@/lib/db/indexedDB');
+
+      // 2. Update local cache immediately
+      await updateRecordInCache(projectId, editedRecord);
+
+      if (!navigator.onLine) {
+        // 3. Offline: Queue
+        await queueRecordAction(editedRecord.id, projectId, 'update', editedRecord);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 4. Online: API call
+        await updateRecord(editedRecord.id, editedRecord);
+      }
+
       setEditedRecords((prev) => {
         const newState = { ...prev };
         delete newState[rowIndex];

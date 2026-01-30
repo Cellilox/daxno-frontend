@@ -96,44 +96,33 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [projectId]);
 
     const handleDeleteRecord = useCallback(async (recordId: string) => {
-        // Optimistic UI update
+        // 1. Optimistic UI update
         setOnlineRecords(prev => prev.filter(r => r.id !== recordId));
         setOfflineRecords(prev => prev.filter(r => r.id !== recordId));
         setCachedRecords(prev => prev.filter(r => r.id !== recordId));
 
         try {
             const isQueuedOffline = offlineRecords.some(r => r.id === recordId);
+            const { removeRecordFromCache, queueDeletion, removeOfflineFile } = await import('@/lib/db/indexedDB');
+
+            // 2. Clear from local cache immediately so it stays deleted on reload
+            await removeRecordFromCache(projectId, recordId);
+
             if (isQueuedOffline) {
-                // Case 1: Deleting a file that was never uploaded (just in the offline queue)
+                // Case 1: Deleting a file that was never uploaded
                 await removeOfflineFile(recordId);
                 window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
             } else if (!isOnline) {
                 // Case 2: Deleting a synced record while offline (queue it)
-                const { queueDeletion, getCachedRecords, cacheRecords } = await import('@/lib/db/indexedDB');
                 await queueDeletion(recordId, projectId);
-
-                // Also remove from local cache so it doesn't reappear on reload
-                const cached = await getCachedRecords(projectId);
-                if (cached) {
-                    const filteredData = cached.data.filter((r: any) => r.id !== recordId);
-                    await cacheRecords(projectId, filteredData, cached.fields);
-                }
-
                 window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
             } else {
                 // Case 3: Online deletion
                 await deleteRecord(recordId);
-
-                // Update cache if online so it stays in sync
-                const { getCachedRecords, cacheRecords } = await import('@/lib/db/indexedDB');
-                const cached = await getCachedRecords(projectId);
-                if (cached) {
-                    const filteredData = cached.data.filter((r: any) => r.id !== recordId);
-                    await cacheRecords(projectId, filteredData, cached.fields);
-                }
             }
         } catch (err) {
             console.error('[Records] Delete failed:', err);
+            // Revert optimistic update only on critical failure
             if (isOnline) {
                 loadOnlineData();
             }
@@ -143,22 +132,41 @@ export default function Records({ projectId, initialFields, initialRecords, proj
 
     const handleDeleteBatch = useCallback(async (ids: string[]) => {
         const idSet = new Set(ids);
+        // 1. Optimistic UI update
         setOnlineRecords(prev => prev.filter(r => !idSet.has(r.id)));
         setOfflineRecords(prev => prev.filter(r => !idSet.has(r.id)));
+        setCachedRecords(prev => prev.filter(r => !idSet.has(r.id)));
+
         try {
-            const offlineIds = ids.filter(id => offlineRecords.some(r => r.id === id));
-            const onlineIds = ids.filter(id => !offlineIds.includes(id));
-            await Promise.all([
-                ...offlineIds.map(id => removeOfflineFile(id)),
-                onlineIds.length > 0 ? deleteBatchRecords(onlineIds) : Promise.resolve()
-            ]);
-            if (offlineIds.length > 0) window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+            const { removeRecordFromCache, queueDeletion, removeOfflineFile } = await import('@/lib/db/indexedDB');
+
+            // 2. Update local cache and queue/perform deletions
+            for (const id of ids) {
+                await removeRecordFromCache(projectId, id);
+
+                const isQueuedOffline = offlineRecords.some(r => r.id === id);
+                if (isQueuedOffline) {
+                    await removeOfflineFile(id);
+                } else if (!isOnline) {
+                    await queueDeletion(id, projectId);
+                }
+            }
+
+            // 3. Perform online batch delete if online
+            const onlineIds = ids.filter(id => !offlineRecords.some(r => r.id === id));
+            if (isOnline && onlineIds.length > 0) {
+                await deleteBatchRecords(onlineIds);
+            }
+
+            window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
         } catch (err) {
             console.error('[Records] Batch delete failed:', err);
-            loadOnlineData();
+            if (isOnline) {
+                loadOnlineData();
+            }
             loadOfflineData();
         }
-    }, [offlineRecords, loadOnlineData, loadOfflineData]);
+    }, [offlineRecords, isOnline, projectId, loadOnlineData, loadOfflineData]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
