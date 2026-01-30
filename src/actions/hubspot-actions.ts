@@ -83,7 +83,10 @@ export const exportToHubSpot = async (
     if (!response.ok) {
       const errorData = await response.json();
       console.error('HubSpot API Error Response:', errorData);
-      throw new Error(`HubSpot API Error: ${JSON.stringify(errorData)}`);
+
+      // Extract the detail message from the error response
+      const errorMessage = errorData.detail || errorData.message || 'Failed to export to HubSpot';
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();

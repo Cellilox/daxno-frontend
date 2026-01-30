@@ -61,6 +61,61 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
     isCheckingConnection: true
   });
 
+  // Define required fields by HubSpot object type
+  const REQUIRED_FIELDS = {
+    contacts: {
+      primary: ['email'],
+      alternative: [['firstname', 'lastname']],
+      message: 'Contacts typically require "email" OR both "firstname" and "lastname" for best results in HubSpot.'
+    },
+    companies: {
+      primary: ['name'],
+      alternative: [['domain']],
+      message: 'Companies typically require "name" OR "domain" for best results in HubSpot.'
+    },
+    deals: {
+      primary: ['dealname', 'dealstage', 'pipeline'],
+      alternative: [],
+      message: 'Deals typically require "dealname", "dealstage", and "pipeline" for best results in HubSpot.'
+    }
+  };
+
+  // Check if required fields are mapped
+  const checkRequiredFields = (): { isValid: boolean; missingFields: string[] } => {
+    if (!selectedType) return { isValid: true, missingFields: [] };
+
+    const required = REQUIRED_FIELDS[selectedType];
+    const mappedHubSpotFields = Array.from(propertyMappings.values());
+
+    // Check if primary required fields are mapped
+    const hasPrimary = required.primary.every(field =>
+      mappedHubSpotFields.includes(field)
+    );
+
+    // Check if any alternative combination is mapped
+    const hasAlternative = required.alternative.some(combo =>
+      combo.every(field => mappedHubSpotFields.includes(field))
+    );
+
+    if (hasPrimary || hasAlternative) {
+      return { isValid: true, missingFields: [] };
+    }
+
+    // Determine which fields are missing
+    const missingFields = [...required.primary];
+    if (required.alternative.length > 0) {
+      const altText = required.alternative.map(combo => combo.join(' + ')).join(' OR ');
+      return {
+        isValid: false,
+        missingFields: [`${missingFields.join(', ')} OR ${altText}`]
+      };
+    }
+
+    return { isValid: false, missingFields };
+  };
+
+  const requiredFieldsCheck = checkRequiredFields();
+
   useEffect(() => {
     const initConnection = async () => {
       try {
@@ -115,6 +170,12 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
   };
 
   const handleExport = async () => {
+    // Validate that at least one field is mapped
+    if (propertyMappings.size === 0) {
+      setValidationError('Please map at least one field to a HubSpot property before exporting.');
+      return;
+    }
+
     if (!selectedType || !records.length) {
       setValidationError('No records to export or type not selected');
       return;
@@ -175,10 +236,26 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
 
       if (error instanceof Error) {
         try {
+          // Try to parse structured error from backend
           if (error.message.includes('HubSpot API Error:')) {
-            const hubspotError = JSON.parse(error.message.split('HubSpot API Error:')[1].trim());
-            if (hubspotError.detail) {
-              errorMessage = hubspotError.detail;
+            const errorParts = error.message.split('HubSpot API Error:');
+            if (errorParts.length > 1) {
+              const hubspotError = errorParts[1].trim();
+              try {
+                const parsedError = JSON.parse(hubspotError);
+                errorMessage = parsedError.detail || hubspotError;
+              } catch {
+                // If not JSON, use the raw message
+                errorMessage = hubspotError;
+              }
+            }
+          } else if (error.message.includes('detail')) {
+            // Try to extract detail from error message
+            try {
+              const errorObj = JSON.parse(error.message);
+              errorMessage = errorObj.detail || error.message;
+            } catch {
+              errorMessage = error.message;
             }
           } else {
             errorMessage = error.message;
@@ -304,6 +381,28 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
                 Last exported: {new Date(status.lastExportDate).toLocaleString()}
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Warning for missing required fields */}
+      {status.isConnected && selectedType && propertyMappings.size > 0 && !requiredFieldsCheck.isValid && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start space-x-3">
+          <div className="flex-shrink-0">
+            <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-amber-800">
+              Missing Recommended Fields
+            </h4>
+            <p className="text-sm text-amber-700 mt-1">
+              {REQUIRED_FIELDS[selectedType].message}
+            </p>
+            <p className="text-xs text-amber-600 mt-2">
+              You can still export, but these records may be less useful in HubSpot without these fields.
+            </p>
           </div>
         </div>
       )}
@@ -506,10 +605,23 @@ const HubSpotExport: React.FC<HubSpotExportProps> = ({
 
               {/* Fixed export button */}
               <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
+                {/* Show mapped fields count */}
+                <div className="mb-2 text-sm text-gray-600">
+                  {propertyMappings.size > 0 ? (
+                    <span className="text-green-600 font-medium">
+                      ✓ {propertyMappings.size} field{propertyMappings.size !== 1 ? 's' : ''} mapped
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 font-medium">
+                      ⚠ No fields mapped yet
+                    </span>
+                  )}
+                </div>
                 <button
                   onClick={handleExport}
                   disabled={status.isLoading || propertyMappings.size === 0}
                   className="w-full bg-[#FF7A59] text-white py-2 px-4 rounded-md hover:bg-[#FF8A69] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  title={propertyMappings.size === 0 ? "Please map at least one field before exporting" : "Export to HubSpot"}
                 >
                   {status.isLoading ? (
                     <div className="flex items-center justify-center">
