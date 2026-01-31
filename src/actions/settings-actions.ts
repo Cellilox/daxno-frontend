@@ -18,13 +18,13 @@ export async function getBillingConfig() {
         }
         const data = await response.json();
 
-        // SECURITY: Redact sensitive fields before returning to client
+        // For managed subscription, backend sends actual decrypted key
+        // For BYOK, backend sends masked key
+        // Don't re-mask it here - just pass it through
         return {
             subscription_type: data.subscription_type,
             has_byok_key: !!data.byok_api_key && data.byok_api_key !== "••••••••",
-            // Do NOT return byok_api_key (raw or masked) if not needed for display.
-            // If strictly needed for UI "masked state", ensure it is "••••••••" from backend.
-            byok_api_key: data.byok_api_key ? "••••••••" : undefined,
+            byok_api_key: data.byok_api_key,  // Pass through - backend handles masking logic
             byok_provider: data.byok_provider,
             preferred_models: data.preferred_models
         };
