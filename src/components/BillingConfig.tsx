@@ -123,8 +123,36 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [providerModels, setProviderModels] = useState<ModelInfo[]>([]);
     const [modelsFetchError, setModelsFetchError] = useState<string | null>(null);
     const [isConnectingKey, setIsConnectingKey] = useState(false);
+    // Unified verification logic: Verified if standard OR matches existing configuration
+    const [isKeyVerified, setIsKeyVerified] = useState(() => {
+        const initialSub = initialConfig?.subscription_type;
+        const hasSavedKey = !!initialConfig?.byok_api_key;
+        return initialSub === 'standard' || hasSavedKey;
+    });
+
+    // Track the last verified key to know when user is typing a NEW one
+    const lastVerifiedKeyRef = useRef(initialConfig?.byok_api_key || '');
+
+    // Auto-verify if user switches back to their currently saved provider
+    useEffect(() => {
+        if (billingType === 'byok' && provider === initialConfig?.byok_provider && initialConfig?.byok_api_key) {
+            setIsKeyVerified(true);
+            setApiKey(initialConfig.byok_api_key);
+            lastVerifiedKeyRef.current = initialConfig.byok_api_key;
+        }
+    }, [provider, billingType, initialConfig]);
+
+    // Handle state restoration when user reverts to saved configuration
+    useEffect(() => {
+        if (billingType === 'byok' && provider === initialConfig?.byok_provider && initialConfig?.byok_api_key) {
+            // Restore the saved api key (usually the mask '••••••••')
+            setApiKey(initialConfig.byok_api_key);
+            // No need to set isKeyVerified here because isEffectivelyVerified handles the matching logic
+        }
+    }, [provider, billingType, initialConfig]);
 
     const ACTIVITY_LIMIT = 10;
+
 
 
     // Fetch usage and activity on mount if BYOK/Managed
@@ -253,7 +281,11 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         setModelsFetchError(null);
         // Reset search term for fresh start
         setSearchTerm('');
-
+        setIsKeyVerified(
+            type === 'standard' ||
+            (type === 'managed' && initialConfig?.subscription_type === 'managed' && !!initialConfig?.byok_api_key) ||
+            (type === 'byok' && initialConfig?.subscription_type === 'byok' && !!initialConfig?.byok_api_key)
+        );
         // Sync to URL for deep linking and auto-scroll behavior
         const params = new URLSearchParams(searchParams.toString());
         params.set('option', type);
@@ -764,8 +796,11 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                             setProviderModels={setProviderModels}
                                             setPreferredModels={setPreferredModels}
                                             setDefaultModel={setDefaultModel}
+                                            isVerified={isKeyVerified}
+                                            setIsVerified={setIsKeyVerified}
                                         />
                                     </div>
+
                                 </div>
                             </div>
                         )}
@@ -805,8 +840,40 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             </div>
                         )}
 
+                        {/* Model selection disabled notice for BYOK without verified key */}
+                        {billingType === 'byok' && !isKeyVerified && (
+                            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-blue-900">Verify your API key first</p>
+                                        <p className="text-xs text-blue-700 mt-1">Connect your provider API key above to access model selection.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        {/* Warning when no models selected */}
+                        {(billingType === 'byok' || billingType === 'managed') && isKeyVerified && preferredModels.length === 0 && (
+                            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-pulse">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-amber-900">Select a default model to complete setup</p>
+                                        <p className="text-xs text-amber-700 mt-1">Choose at least one model from the list below and set it as your default.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
                         {/* Only show Preferred Models section when not loading and no error */}
-                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && (
+                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && (billingType === 'standard' || isKeyVerified) && (
                             <button
                                 onClick={async () => {
                                     const isOpening = !isModelsOpen;
@@ -844,15 +911,23 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                         }
                                     }
                                 }}
-                                className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors mb-4"
+                                disabled={!isKeyVerified}
+                                className={`w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 transition-colors mb-4 ${!isKeyVerified
+                                    ? 'opacity-50 cursor-not-allowed'
+                                    : 'hover:bg-gray-100 cursor-pointer'
+                                    }`}
                             >
                                 <div className="flex items-center">
                                     <h3 className="text-sm font-semibold text-gray-900">Preferred Models</h3>
                                     <span className="ml-2 px-2 py-0.5 bg-customBlue text-white text-[10px] font-bold rounded-full">{preferredModels.length}</span>
+                                    {preferredModels.length === 0 && (billingType === 'byok' || billingType === 'managed') && isKeyVerified && (
+                                        <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">Required</span>
+                                    )}
                                 </div>
                                 {isModelsOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
                             </button>
                         )}
+
 
                         {isModelsOpen && !modelsFetchError && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
