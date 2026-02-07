@@ -12,6 +12,8 @@ interface BYOKConfigProps {
     setProviderModels: (models: ModelInfo[]) => void;
     setPreferredModels: (models: string[]) => void;
     setDefaultModel: (model: string) => void;
+    isVerified: boolean;
+    setIsVerified: (verified: boolean) => void;
 }
 
 export default function BYOKConfig({
@@ -22,24 +24,30 @@ export default function BYOKConfig({
     providerModels,
     setProviderModels,
     setPreferredModels,
-    setDefaultModel
+    setDefaultModel,
+    isVerified,
+    setIsVerified
 }: BYOKConfigProps) {
     const [isVerifying, setIsVerifying] = useState(false);
-    const [isVerified, setIsVerified] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
-        if (apiKey === '••••••••') {
-            if (providerModels.length > 0) {
-                setIsVerified(true);
-            }
-        } else {
+        const isMasked = apiKey === '••••••••' || apiKey === '********';
+        if (isMasked) {
+            setIsVerified(true);
+        } else if (!apiKey) {
             setIsVerified(false);
             setSuccessMessage(null);
             setError(null);
+        } else if (!isVerified) {
+            // Reset messages only when starting to type a new, unverified key
+            setSuccessMessage(null);
+            setError(null);
         }
-    }, [apiKey, providerModels.length]);
+    }, [apiKey, isVerified, setIsVerified]);
+
+
 
     const handleVerify = async () => {
         if (!apiKey || !provider) return;
@@ -49,6 +57,7 @@ export default function BYOKConfig({
         setSuccessMessage(null);
 
         try {
+            const { verifyProviderKey } = await import('@/actions/settings-actions');
             const result = await verifyProviderKey(provider, apiKey);
 
             if (result.success && result.models) {
@@ -70,6 +79,7 @@ export default function BYOKConfig({
             setIsVerifying(false);
         }
     };
+
 
     const getProviderLabel = (p: string) => {
         switch (p) {

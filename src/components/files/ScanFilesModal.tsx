@@ -10,12 +10,13 @@ type ScanFilesModalProps = {
   projectId: string
   linkOwner: string
   plan: string;
+  subscriptionType?: string;
   // Optional controlled mode
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: externalIsOpen, onClose: externalOnClose }: ScanFilesModalProps) {
+export default function ScanFilesModal({ linkOwner, projectId, plan, subscriptionType, isOpen: externalIsOpen, onClose: externalOnClose }: ScanFilesModalProps) {
   const [internalIsVisible, setInternalIsVisible] = useState(false)
 
   // Use external state if provided, otherwise use internal
@@ -45,12 +46,15 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
     }
   };
 
+  const [isCameraActive, setIsCameraActive] = useState(false);
+
   return (
     <>
       {/* Only show button in uncontrolled mode */}
       {externalIsOpen === undefined && (
         <button
           onClick={handleOpen}
+          data-testid="scan-files-button"
           className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
         >
           <Upload size={16} />
@@ -65,6 +69,7 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
         subtitle="Upload documents or images for processing"
         icon={<Upload size={24} />}
         widthClassName="max-w-2xl"
+        closeOnOutsideClick={!isCameraActive}
       >
         <div className="flex flex-col">
           {message.text && (
@@ -83,9 +88,11 @@ export default function ScanFilesModal({ linkOwner, projectId, plan, isOpen: ext
             setIsVisible={setIsVisible}
             onMessageChange={setMessage}
             plan={plan}
+            subscriptionType={subscriptionType}
+            onCameraToggle={setIsCameraActive}
           />
         </div>
       </StandardPopup>
     </>
   );
-} 
+}

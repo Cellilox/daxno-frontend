@@ -32,6 +32,7 @@ export type DocumentRecord = {
   created_at: string;
   updated_at: string;
   pages: number;
+  _isRowBackfilling?: boolean;
 };
 
 export type SpreadSheetProps = {
@@ -39,4 +40,11 @@ export type SpreadSheetProps = {
   records: DocumentRecord[];
   projectId: string;
   project: any;
+  user?: any;
+  isOnline?: boolean;
+  onDeleteRecord?: (id: string) => Promise<void>;
+  onDeleteBatch?: (ids: string[]) => Promise<void>;
+  onUpdateRecord?: (id: string, data: any) => void;
+  onUpdateColumn?: (id: string, name: string) => void;
+  onDeleteColumn?: (id: string) => void;
 };

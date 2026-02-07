@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import TableCell from './TableCell';
-import { Pencil, Trash, MessageCircle, Eye } from 'lucide-react';
+import { Pencil, Trash, MessageCircle, Eye, Sparkles } from 'lucide-react';
 import { Field, DocumentRecord } from './types';
 
 type TableRowProps = {
@@ -17,6 +17,12 @@ type TableRowProps = {
   onEditCell: (rowIndex: number, columnId: string) => void;
   onDeleteRow: (row: DocumentRecord) => void;
   handleReviewRecord: (row: DocumentRecord) => void;
+  isSelected?: boolean;
+  onSelect?: (checked: boolean) => void;
+  backfillingFieldId?: string | null;
+  isRowBackfilling?: boolean;
+  onBackfillRecord?: () => void;
+  isOnline?: boolean;
 };
 
 export default function TableRow({
@@ -33,7 +39,13 @@ export default function TableRow({
   onEditCell,
   onDeleteRow,
   handleReviewRecord,
-  columnWidths
+  columnWidths,
+  isSelected = false,
+  onSelect,
+  backfillingFieldId,
+  isRowBackfilling,
+  onBackfillRecord,
+  isOnline = true
 }: TableRowProps & { columnWidths: { [key: string]: number } }) {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
@@ -41,11 +53,22 @@ export default function TableRow({
   return (
     <tr
       key={row.id}
-      className="border-b hover:bg-gray-50 bg-white transition-colors"
+      className={`border-b transition-colors group ${isSelected ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-gray-50 bg-white'}`}
+      data-testid={`record-row-${rowIndex}`}
       onMouseEnter={() => setHoveredRow(rowIndex)}
       onMouseLeave={() => setHoveredRow(null)}
     >
-      <td className="z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-0 bg-white shadow-r md:hidden border-r">
+      {/* Checkbox Column - Sticky Left */}
+      <td className={`px-3 py-2 border-r border-gray-100 sticky left-0 z-20 w-[40px] text-center ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => onSelect && onSelect(e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+        />
+      </td>
+
+      <td className={`z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-[40px] shadow-r md:hidden border-r ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
         <div className="flex items-center justify-center gap-3">
           {!isRowEditing && (
             <>
@@ -65,6 +88,7 @@ export default function TableRow({
               </button>
               <button
                 onClick={() => onDeleteRow(row)}
+                data-testid={`delete-row-${rowIndex}`}
                 className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
                 title="Delete"
               >
@@ -76,28 +100,48 @@ export default function TableRow({
       </td>
       <td className="px-3 md:px-4 py-2 text-sm text-gray-900 border-r overflow-hidden leading-relaxed relative group/filename">
         <div className="flex items-center h-full gap-2">
-          <span className="relative z-0 truncate block font-medium text-gray-800">{row.original_filename}</span>
-          {row.answers?.__status__ === 'processing' && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full flex-shrink-0 animate-pulse">
+          <span className="relative z-0 truncate block font-medium text-gray-800" data-testid={`record-filename-${rowIndex}`}>{row.original_filename}</span>
+          {(isRowBackfilling || row.answers?.__status__ === 'processing') && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full flex-shrink-0 animate-pulse" data-testid={`record-status-processing-${rowIndex}`}>
               <div className="w-2 h-2 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Analyzing</span>
             </div>
           )}
-          {row.answers?.__status__ === 'error' && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 border border-red-100 rounded-full flex-shrink-0">
+          {!isRowBackfilling && row.answers?.__status__ === 'error' && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-50 border border-red-100 rounded-full flex-shrink-0" data-testid={`record-status-error-${rowIndex}`}>
               <span className="text-[10px] font-bold text-red-600 uppercase tracking-tight">Failed</span>
+            </div>
+          )}
+          {row.answers?.__status__ === 'queued' && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-50 border border-yellow-100 rounded-full flex-shrink-0" data-testid={`record-status-queued-${rowIndex}`}>
+              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-tight">Queued (Offline)</span>
+            </div>
+          )}
+          {row.answers?.__status__ === 'syncing' && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 border border-green-100 rounded-full flex-shrink-0" data-testid={`record-status-syncing-${rowIndex}`}>
+              <div className="w-2 h-2 border border-green-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">Syncing</span>
             </div>
           )}
 
           {/* Floating actions for larger screens - moved to top-right */}
-          {hoveredRow === rowIndex && !isRowEditing && (
+          {hoveredRow === rowIndex && !isRowEditing && isOnline && (
             <div className="hidden md:flex items-center gap-1.5 absolute right-2 top-2 bg-white/90 backdrop-blur-sm shadow-sm rounded-lg px-2 py-1.5 z-20 border border-gray-100 group-hover/filename:opacity-100 opacity-0 transition-opacity">
               <button
                 onClick={() => onEditCell(rowIndex, columns[0]?.hidden_id)}
+                data-testid={`edit-row-${rowIndex}`}
                 className="p-1 hover:bg-blue-50 rounded transition-colors group/edit"
                 title="Edit Cell"
               >
                 <Pencil className="w-3.5 h-3.5 text-blue-600" />
+              </button>
+              <button
+                onClick={() => onBackfillRecord && onBackfillRecord()}
+                className="p-1 hover:bg-purple-50 rounded transition-colors group/backfill"
+                title="Re-analyze Document"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
               </button>
               <button
                 onClick={() => handleReviewRecord(row)}
@@ -108,11 +152,17 @@ export default function TableRow({
               </button>
               <button
                 onClick={() => onDeleteRow(row)}
+                data-testid={`delete-row-${rowIndex}`}
                 className="p-1 hover:bg-red-50 rounded transition-colors"
                 title="Delete Row"
               >
                 <Trash className="w-3.5 h-3.5 text-red-500" />
               </button>
+            </div>
+          )}
+          {hoveredRow === rowIndex && !isRowEditing && !isOnline && (
+            <div className="hidden md:flex items-center gap-1.5 absolute right-2 top-2 bg-white/80 backdrop-blur-sm shadow-sm rounded-lg px-2 py-1.5 z-20 border border-gray-100 opacity-100 italic text-[10px] text-gray-400">
+              Read Only Offline
             </div>
           )}
         </div>
@@ -128,6 +178,9 @@ export default function TableRow({
           onCellChange={onCellChange}
           onSaveRow={onSaveRow}
           onCancelEdit={onCancelEdit}
+          backfillingFieldId={backfillingFieldId}
+          isRowBackfilling={isRowBackfilling}
+          isOnline={isOnline}
         />
       ))}
       {/* Empty spacer cell removed as per user request to prevent covering data cells */}

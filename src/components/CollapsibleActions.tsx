@@ -24,6 +24,7 @@ interface CollapsibleActionsProps {
   isLinkActive: boolean;
   address: string;
   plan: string;
+  subscriptionType?: string;
   is_project_owner: boolean;
   linkOwner: string;
   fields: Field[]
@@ -40,6 +41,7 @@ export default function CollapsibleActions({
   isLinkActive,
   address,
   plan,
+  subscriptionType,
   is_project_owner,
   linkOwner,
   fields,
@@ -80,6 +82,7 @@ export default function CollapsibleActions({
                 linkOwner={linkOwner}
                 projectId={projectId}
                 plan={plan}
+                subscriptionType={subscriptionType}
               />
 
               {is_project_owner && (

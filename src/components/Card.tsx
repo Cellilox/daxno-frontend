@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import FormModal from './ui/Popup';
 import StandardPopup from './ui/StandardPopup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
@@ -11,11 +12,13 @@ import ExpandableDescription from './ExpandableDescription';
 import { Project } from '@/types';
 
 type CardProps = {
-  project: Project
+  project: Project;
+  onDeleted?: (id: string) => void;
 };
 
-export default function Card({ project }: CardProps) {
+export default function Card({ project, onDeleted }: CardProps) {
   const router = useRouter()
+  const { user } = useUser()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
 
@@ -29,12 +32,34 @@ export default function Card({ project }: CardProps) {
 
   const handleDeleteProject = async (projectId: string) => {
     setIsLoading(true)
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
     try {
-      await deleteProject(projectId)
+      const { removeProjectFromCache, queueProjectAction } = await import('@/lib/db/indexedDB');
+
+      // 1. Update local cache immediately
+      if (user?.id) {
+        await removeProjectFromCache(user.id, projectId);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue deletion
+        await queueProjectAction(projectId, 'delete');
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await deleteProject(projectId)
+      }
+
       setIsLoading(false)
+      setIsAlertVisible(false)
+      setSelectedProjectToDelete(null)
+
+      // Notify parent to remove from UI list immediately (Optimistic)
+      if (onDeleted) {
+        onDeleted(projectId);
+      }
     } catch (error) {
       alert('Error deleting a project')
+      setIsLoading(false)
     }
   }
 
@@ -52,16 +77,33 @@ export default function Card({ project }: CardProps) {
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedProjectToUpdate) return;
     setIsLoading(true)
     const updateData = {
       ...selectedProjectToUpdate
     };
     try {
-      await updateProject(selectedProjectToUpdate?.id, updateData)
+      const { updateProjectInCache, queueProjectAction } = await import('@/lib/db/indexedDB');
+
+      // 1. Update local cache immediately
+      if (user?.id) {
+        await updateProjectInCache(user.id, updateData);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue update
+        await queueProjectAction(selectedProjectToUpdate.id, 'update', updateData);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await updateProject(selectedProjectToUpdate.id, updateData)
+      }
+
       setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
+      setIsLoading(false)
     }
   }
 
@@ -81,6 +123,7 @@ export default function Card({ project }: CardProps) {
       <div
         className="group relative bg-white border border-gray-200 hover:border-blue-400 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full"
         onClick={handleNavigateToProjectPage}
+        data-testid={`project-card-${project.id}`}
       >
 
 
@@ -101,6 +144,7 @@ export default function Card({ project }: CardProps) {
                 <button
                   className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                   title="Edit project"
+                  data-testid={`edit-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectUpdateForm(project)
@@ -111,6 +155,7 @@ export default function Card({ project }: CardProps) {
                 <button
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete project"
+                  data-testid={`delete-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectDeleteAlert(project)

@@ -26,18 +26,18 @@ export default function BackfillModal({ isOpen, onClose, projectId, field, recor
     const handleBackfill = async () => {
         setIsProcessing(true);
         try {
-            const response = await backfillColumn(projectId, field.hidden_id, field.name);
-            setResult(response);
+            // Trigger the background task - backend returns immediately with "started"
+            await backfillColumn(projectId, field.hidden_id, field.name);
+            onClose(); // Close immediately to show the "Column Highlight" UX
         } catch (error) {
             console.error('Backfill failed:', error);
-            setResult({ success: false, records_updated: 0, records_failed: recordCount });
+            alert('Failed to start backfill process');
         } finally {
             setIsProcessing(false);
         }
     };
 
     const handleClose = () => {
-        setResult(null);
         setIsProcessing(false);
         onClose();
     };

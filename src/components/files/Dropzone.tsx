@@ -13,6 +13,11 @@ import { messageType, messageTypeEnum } from '@/types';
 import UsageLimitModal from '../modals/UsageLimitModal';
 import { FileStatus } from './types';
 import { getTransactions } from '@/actions/transaction-actions';
+import { addOfflineFile } from '@/lib/db/indexedDB';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { CameraCapture } from '../Camera/CameraCapture';
+import { Camera } from 'lucide-react';
+// PDF.js worker will be configured dynamically in validatePdfPageCount
 
 type MyDropzoneProps = {
   projectId: string;
@@ -20,9 +25,12 @@ type MyDropzoneProps = {
   setIsVisible: (isVisible: boolean) => void;
   onMessageChange: (message: messageType) => void;
   plan: string;
+  subscriptionType?: string;
+  onCameraToggle?: (active: boolean) => void;
+  linkToken?: string;
 };
 
-export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan }: MyDropzoneProps) {
+export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessageChange, plan, subscriptionType, onCameraToggle, linkToken }: MyDropzoneProps) {
   const { getToken, sessionId } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -35,13 +43,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // New state for local feedback
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [activeFilename, setActiveFilename] = useState<string | null>(null);
+  const [batchError, setBatchError] = useState<string | null>(null); // New batch error state
+  const uploadStatusRef = useRef<string>('');
+  const uploadErrorRef = useRef<string | null>(null);
+  const activeFilename = useRef<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const { isOnline } = useSyncStatus();
+
+  // Notify parent of camera state changes
+  useEffect(() => {
+    if (onCameraToggle) {
+      onCameraToggle(showCamera);
+    }
+  }, [showCamera, onCameraToggle]);
 
 
-  // Limit Modal State
-  const [limitModalOpen, setLimitModalOpen] = useState(false);
-  const [limitModalMessage, setLimitModalMessage] = useState('');
-  const [limitModalType, setLimitModalType] = useState<'AI_EXHAUSTED' | 'DAILY_LIMIT'>('DAILY_LIMIT');
+
+
 
   const router = useRouter();
 
@@ -49,17 +67,25 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     const cleanMsg = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
 
     if (cleanMsg.includes('AI_CREDITS_EXHAUSTED')) {
-      setLimitModalType('AI_EXHAUSTED');
-      setLimitModalMessage("All available platform credits are currently exhausted. Please try again later or Bring Your Own Key to continue instantly.");
-      setLimitModalOpen(true);
+      // Dispatch to global handler
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: 'AI_CREDITS_EXHAUSTED' }
+      }));
+
       setIsLoading(false);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
     if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
-      setLimitModalType('DAILY_LIMIT');
-      setLimitModalMessage(cleanMsg.replace(/"/g, ''));
-      setLimitModalOpen(true);
+      // Dispatch to global handler
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: cleanMsg }
+      }));
+
       setIsLoading(false);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
     return false;
@@ -68,6 +94,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     // Enabled for testing on all plans
     setIsBulkUploadAllowed(true)
   }, [plan])
+
 
   // Single file upload handlers
   const handleSingleFileDrop = useCallback((acceptedFiles: File[]) => {
@@ -82,10 +109,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   }, []);
 
   useEffect(() => {
-    // Initialize Socket.IO connection for real-time feedback
+    // Initialize Socket.IO connection for real-time feedback (proxy-aware)
     if (!socketRef.current && projectId) {
-      socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
-        path: '/ws/records/sockets',
+      const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const socketPath = '/ws/records/sockets';
+
+      socketRef.current = io(socketUrl, {
+        path: socketPath,
         auth: { projectId },
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -95,27 +125,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       const socket = socketRef.current;
 
       socket.on('ocr_start', (data: { status: string }) => {
-        // Resurrect loading state if it was killed by a timeout but backend is still going
         setIsLoading(true);
-        setUploadError(null);
+        // Don't clear errors
         updateStatus('OCR Processing...', messageTypeEnum.INFO, 'Starting OCR...');
       });
 
       socket.on('ocr_progress', (data: { current: number; total: number }) => {
         setIsLoading(true);
-        setUploadError(null);
         updateStatus('OCR Processing...', messageTypeEnum.INFO, `Page ${data.current} of ${data.total}`);
       });
 
       socket.on('ai_start', (data: { status: string }) => {
         setIsLoading(true);
-        setUploadError(null);
         updateStatus('AI Analysis...', messageTypeEnum.INFO, 'Thinking...');
       });
 
       socket.on('record_created', (data: { record: any }) => {
         setIsLoading(false);
-        setUploadError(null);
         updateStatus('Upload Complete!', messageTypeEnum.INFO, 'Success!');
 
         // Close modal after success
@@ -145,12 +171,18 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       socket.on('connect', async () => {
         console.log('Socket reconnected');
 
+        // Check LATEST error via ref to avoid stale closure
+        if (uploadErrorRef.current) {
+          console.log('[Socket] Preserving displayed error during reconnect:', uploadErrorRef.current);
+          return;
+        }
+
         // If we were loading, check if the record was actually finished OR failed while we were offline
-        if (isLoading && activeFilename) {
+        if (isLoading && activeFilename.current) {
           updateStatus('Reconnected. Checking status...', messageTypeEnum.INFO, 'Syncing...');
 
           // Check if record exists in DB (returns Record object or null)
-          const record = await checkRecordStatus(projectId, activeFilename);
+          const record = await checkRecordStatus(projectId, activeFilename.current);
 
           if (record) {
             // Check internal status from answers field
@@ -174,7 +206,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
               // 3. Success (Normal answers)
               setIsLoading(false);
               setUploadError(null);
-              setActiveFilename(null);
+              activeFilename.current = null;
               updateStatus('Upload Complete (Synced)!', messageTypeEnum.INFO, 'Success!');
 
               setTimeout(() => {
@@ -210,26 +242,98 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   const updateStatus = (text: string, type: messageTypeEnum = messageTypeEnum.INFO, rightText?: string) => {
     if (type === messageTypeEnum.ERROR) {
       setUploadError(text);
-      setUploadStatus(''); // Clear status on error
-      // Do NOT bubble up errors to the parent (avoid duplicate top banner)
+      uploadErrorRef.current = text;
+      setUploadStatus('');
+      uploadStatusRef.current = '';
     } else {
       setUploadStatus(text);
+      uploadStatusRef.current = text;
       setUploadError(null);
-      // Propagate INFO messages (for the top progress banner)
+      uploadErrorRef.current = null;
       onMessageChange({ type, text, rightText });
+    }
+  };
+
+  const validatePdfPageCount = async (file: File, limit: number = 3): Promise<number> => {
+    try {
+      if (file.type !== 'application/pdf') return 1;
+
+      const arrayBuffer = await file.arrayBuffer();
+
+      // Dynamically import PDF.js only on the client to avoid SSR errors
+      const pdfjs = await import('pdfjs-dist/webpack');
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const count = pdf.numPages;
+
+      console.log(`[Validation] PDF has ${count} pages`);
+      return count;
+    } catch (e: any) {
+      console.error('[Validation Error]', e);
+      throw e;
     }
   };
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
-    setUploadError(null);
+    updateStatus('Initializing...', messageTypeEnum.INFO);
 
     if (!file) {
       setIsLoading(false);
       setIsVisible(false);
       router.push(`/projects/${projectId}`);
       return;
+    }
+
+    try {
+      // 0. Early Client-Side Validation (Before Offline Queueing)
+      const subType = subscriptionType || 'standard';
+      if (plan === 'Free' && subType === 'standard') {
+        updateStatus('Checking permissions...', messageTypeEnum.INFO);
+        const count = await validatePdfPageCount(file);
+        if (count > 3) {
+          throw new Error(`File has ${count} pages. You exceed the limit of 3 pages per document on the Free plan.`);
+        }
+      }
+    } catch (e: any) {
+      setIsLoading(false);
+      const errMsg = e.message || 'Validation failed';
+      // Trigger global limit popup if applicable
+      if (!checkLimitError(errMsg)) {
+        updateStatus(errMsg, messageTypeEnum.ERROR);
+      }
+      return;
+    }
+
+    // ✅ NEW: Check if offline
+    if (!isOnline || !navigator.onLine) {
+      try {
+        updateStatus('You are offline. Queueing for upload...', messageTypeEnum.INFO, 'Waiting for network...');
+
+        await addOfflineFile(file, projectId);
+
+        // Notify other components to refresh their display
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+
+        updateStatus('Saved successfully! It will upload auto-sync once you are back online.', messageTypeEnum.INFO, 'Queued');
+
+        // Clear file state and close modal immediately
+        setFile(null);
+        setPreview(null);
+        setIsLoading(false);
+        setIsVisible(false);
+        onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+
+        return;
+      } catch (err: any) {
+        console.error('Failed to queue offline file:', err);
+        const errorMsg = err?.message || err?.toString() || 'Unknown error';
+        updateStatus(`Failed to save file for offline sync: ${errorMsg}`, messageTypeEnum.ERROR);
+        setIsLoading(false);
+        return;
+      }
     }
 
     if (file.size > MAX_FILE_SIZE) {
@@ -246,19 +350,22 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     try {
+      updateStatus('Validating file...', messageTypeEnum.INFO);
+
+      // Client-Side Page Count Check (Only if Free plan AND standard subscription)
+      // If plan is Free but BYOK (subscriptionType != standard), we do NOT block.
+
       updateStatus('Uploading file...', messageTypeEnum.INFO, '0%');
-
-      console.log('[DEBUG] Calling getPresignedUrl for:', file.name, 'in project:', projectId, 'type:', file.type);
-      const { upload_url, filename: uniqueFilename, key: fileKey } = await getPresignedUrl(file.name, projectId, file.type);
-
-      if (!uniqueFilename || uniqueFilename === 'undefined') {
-        console.error('[ERROR] handleUpload: received invalid filename from server:', uniqueFilename);
-        throw new Error('Server returned invalid filename. Please try again.');
+      const getUrlResult = await getPresignedUrl(file.name, projectId, file.type, linkToken);
+      if (!getUrlResult.success) {
+        throw new Error(getUrlResult.error);
       }
 
-      console.log('[DEBUG] handleUpload: getPresignedUrl success:', { upload_url, uniqueFilename, fileKey });
+      const { upload_url, filename: uniqueFilename, key: fileKey } = getUrlResult.data!;
 
-      const result = await new Promise<any>((resolve, reject) => {
+      console.log('[DEBUG] getPresignedUrl success:', { upload_url, uniqueFilename, fileKey });
+
+      const uploadResult = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('PUT', upload_url);
         xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
@@ -284,12 +391,43 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         xhr.send(file);
       });
 
-      const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = result;
-      console.log('[DEBUG] handleUpload proceeding to analysis with:', { uploadedFilename, originalName, finalKey });
-      setActiveFilename(uploadedFilename);
+      const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = uploadResult;
+      activeFilename.current = uploadedFilename;
       await handlequeryDocument(uploadedFilename, originalName, finalKey);
     } catch (error: any) {
+      console.error('[ERROR] Upload failed:', error);
       setIsLoading(false);
+
+      // Check if it's a network error (offline or connection lost)
+      const isNetworkError = error.message?.includes('Network error') ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('network');
+
+      if (isNetworkError) {
+        // Save to IndexedDB for offline sync
+        try {
+          console.log('[OFFLINE] Saving file to IndexedDB for later sync');
+          updateStatus('Connection lost. Saving file for automatic upload...', messageTypeEnum.INFO);
+
+          await addOfflineFile(file, projectId);
+
+          // Notify other components
+          window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+
+          updateStatus('File saved! It will auto-upload when connection is restored.', messageTypeEnum.INFO, 'Queued');
+          setFile(null);
+          setPreview(null);
+          setIsVisible(false);
+          onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+          return;
+        } catch (offlineError: any) {
+          console.error('[ERROR] Failed to save to IndexedDB:', offlineError);
+          updateStatus(`Network error and offline save failed: ${offlineError.message}`, messageTypeEnum.ERROR);
+          return;
+        }
+      }
+
+      // Other errors (not network-related)
       const errMsg = error.message || 'Error uploading a file';
       if (!checkLimitError(errMsg)) {
         updateStatus(errMsg, messageTypeEnum.ERROR);
@@ -310,8 +448,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       updateStatus('Queuing analysis...', messageTypeEnum.INFO, 'Processing in background...');
 
-      // Call the endpoint which now returns immediately (Background Task)
-      await queryDocument(projectId, filename, original_filename);
+      const result = await queryDocument(projectId, filename, original_filename, linkToken);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       // We do NOT wait for result or call saveRecord anymore. 
       // The backend background task handles everything and emits 'record_created'.
@@ -359,7 +499,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   };
 
   // Bulk upload handlers
-  const handleBulkDrop = useCallback((acceptedFiles: File[]) => {
+  const handleBulkDrop = useCallback(async (acceptedFiles: File[]) => {
+    setBatchError(null); // Reset batch error
     // If multiple files are dropped and isBulkUploadAllowed is false, show error
     if (acceptedFiles.length > 1 && !isBulkUploadAllowed) {
       onMessageChange({
@@ -369,14 +510,49 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       return;
     }
 
-    const newFiles = acceptedFiles.map(file => ({
+    // 1. Validate Batch Page Count (Sum of all pages)
+    try {
+      const subType = subscriptionType || 'standard';
+      if (plan === 'Free' && subType === 'standard') {
+        let totalPages = 0;
+        updateStatus('Checking batch limits...', messageTypeEnum.INFO);
+
+        // Iterate all to sum pages
+        for (const file of acceptedFiles) {
+          if (file.type === 'application/pdf') {
+            const count = await validatePdfPageCount(file);
+            totalPages += count;
+          } else {
+            // Count non-PDFs as 1 page safety
+            totalPages += 1;
+          }
+        }
+
+        if (totalPages > 3) {
+          throw new Error(`Batch total is ${totalPages} pages. You exceed the limit of 3 pages total on the Free plan.`);
+        }
+        updateStatus('', messageTypeEnum.NONE); // Clear status if valid
+      }
+    } catch (e: any) {
+      // Trigger Limit Popup
+      const errMsg = e.message || 'Limit exceeded';
+      if (checkLimitError(errMsg)) {
+        return; // Exit if popup triggered (modal closed)
+      }
+      setBatchError(errMsg);
+      // Do NOT add files
+      return;
+    }
+
+    const processedFiles = acceptedFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file),
       progress: 0,
-      status: 'pending' as const,
+      status: 'pending' as const
     }));
-    setFiles(prev => [...prev, ...newFiles]);
-  }, [isBulkUploadAllowed, onMessageChange]);
+
+    setFiles(prev => [...prev, ...processedFiles]);
+  }, [isBulkUploadAllowed, onMessageChange, plan, subscriptionType]);
 
   const processSingleFile = async (fileStatus: FileStatus) => {
     const updateFileStatus = (update: Partial<FileStatus>) => {
@@ -387,16 +563,29 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
     try {
       const { file } = fileStatus;
-      // 1. Get Presigned URL
-      updateFileStatus({ status: 'uploading', progress: 10 });
-      console.log('[DEBUG] processSingleFile: Calling getPresignedUrl for:', file.name, 'type:', file.type);
-      const { upload_url, filename, key } = await getPresignedUrl(file.name, projectId, file.type);
 
-      if (!filename || filename === 'undefined') {
-        throw new Error("Server returned invalid filename for " + file.name);
+      // 0. Client-Side Validation (Moved to handleBulkDrop)
+      // Double check or skip? Skip for performance since handleBulkDrop filters them out of 'pending' status.
+
+      // Check if offline
+      if (!isOnline || !navigator.onLine) {
+        console.log('[Bulk Upload] Offline - queuing file:', file.name);
+        updateFileStatus({ status: 'pending', progress: 0 });
+        await addOfflineFile(file, projectId);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+        updateFileStatus({ status: 'complete', progress: 100, result: { message: "Queued for sync when online" } });
+        return;
       }
 
-      console.log('[DEBUG] processSingleFile: getPresignedUrl result:', { upload_url, filename, key });
+      // 1. Get Presigned URL
+      updateFileStatus({ status: 'uploading', progress: 10 });
+      const presignedResult = await getPresignedUrl(file.name, projectId, file.type, linkToken);
+
+      if (!presignedResult.success) {
+        throw new Error(presignedResult.error);
+      }
+
+      const { upload_url, filename, key } = presignedResult.data!;
 
       // 2. Upload to S3
       updateFileStatus({ status: 'uploading', progress: 20 });
@@ -425,18 +614,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 3. Trigger Analysis (Async)
       updateFileStatus({ status: 'analyzing', progress: 60 });
-      console.log('[DEBUG] processSingleFile triggering queryDocument with:', { filename, original: file.name });
-      await queryDocument(projectId, filename, file.name);
+      const queryResult = await queryDocument(projectId, filename, file.name, linkToken);
 
-      // We rely on sockets for completion in bulk mode too, but for individual file status
-      // we might need to listen to socket events with file correlation?
-      // Since bulk mode uses `processSingleFile` sequentially, we need a way to know when THIS file is done.
-      // Ideally, we'd wait for a promise that resolves when the specific record is created.
-      // For now, let's mark it as 'submitted' or 'processing'.
+      if (!queryResult.success) {
+        throw new Error(queryResult.error);
+      }
+
       updateFileStatus({ status: 'analyzing', progress: 60, result: { message: "Processing in background" } });
-
-      // Note: Full bulk tracking requires more sophisticated socket correlation (e.g. by filename).
-      // But this unblocks the "blocking" issue.
 
     } catch (error) {
       console.error(`Error processing ${fileStatus.file.name}:`, error);
@@ -458,18 +642,24 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   };
 
-  // Add a useEffect to monitor when all files are complete
+  // Monitor when all files are complete
   useEffect(() => {
     if (files.length > 0) {
-      const allComplete = files.every(f => f.status === 'complete');
-      const hasErrors = files.some(f => f.status === 'error');
+      const allDone = files.every(f => f.status === 'complete' || f.status === 'error');
+      const allSuccessful = files.every(f => f.status === 'complete');
 
-      if (allComplete && !isProcessing) {
-        // Close the dropzone after a short delay to allow users to see the completion
-        setTimeout(() => {
-          setIsVisible(false);
-          onMessageChange({ type: messageTypeEnum.NONE, text: '', });
-        }, 1500);
+      if (allDone && !isProcessing) {
+        // ONLY auto-close if EVERYTHING succeeded
+        if (allSuccessful) {
+          console.log('[Bulk Upload] All successful, closing popup...');
+          setTimeout(() => {
+            setFiles([]);
+            setIsVisible(false);
+            onMessageChange({ type: messageTypeEnum.NONE, text: '', });
+          }, 1500);
+        } else {
+          console.log('[Bulk Upload] Completed with errors. Staying open for review.');
+        }
       }
     }
   }, [files, isProcessing, setIsVisible, onMessageChange]);
@@ -535,6 +725,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <button
           type="button"
           onClick={() => setIsBulkMode(false)}
+          data-testid="single-upload-tab"
           className={`px-4 py-2 text-sm font-medium rounded-l-lg ${!isBulkMode
             ? 'bg-blue-600 text-white'
             : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -545,6 +736,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         <button
           type="button"
           onClick={() => setIsBulkMode(true)}
+          data-testid="bulk-upload-tab"
           className={`px-4 py-2 text-sm font-medium rounded-r-lg ${isBulkMode
             ? 'bg-blue-600 text-white'
             : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -563,61 +755,88 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // Render single file upload UI
   const renderSingleUpload = () => (
     <div className="flex flex-col">
-      <div {...getSingleRootProps()} className="flex flex-col">
-        <input {...getSingleInputProps()} />
-        {preview ? (
-          <div className="relative flex justify-center items-center rounded-md">
-            {file?.type === 'application/pdf' ? (
-              <div className="h-[50vh] w-full flex flex-col items-center justify-center border border-gray-200 rounded-md">
-                <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center">
-                  <FileIcon size={48} className="text-blue-500 mb-3" />
-                  <p className="text-gray-800 font-medium text-lg truncate max-w-xs">
-                    {file?.name}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <p className="text-gray-500 text-sm">PDF Document</p>
+      {showCamera ? (
+        <CameraCapture
+          projectId={projectId}
+          onClose={() => setShowCamera(false)}
+          onCapture={(photoFile) => {
+            setShowCamera(false);
+            setFile(photoFile);
+            setPreview(URL.createObjectURL(photoFile));
+            updateStatus('Photo captured! Click "Upload File" to start scanning.', messageTypeEnum.INFO, 'Captured');
+          }}
+        />
+      ) : (
+        <div {...getSingleRootProps()} className="flex flex-col" data-testid="single-dropzone">
+          <input {...getSingleInputProps()} data-testid="file-input" />
+          {preview ? (
+            <div className="relative flex justify-center items-center rounded-md">
+              {file?.type === 'application/pdf' ? (
+                <div className="h-[50vh] w-full flex flex-col items-center justify-center border border-gray-200 rounded-md">
+                  <div className="bg-white p-6 rounded-lg shadow-sm flex flex-col items-center">
+                    <FileIcon size={48} className="text-blue-500 mb-3" />
+                    <p className="text-gray-800 font-medium text-lg truncate max-w-xs">
+                      {file?.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      <p className="text-gray-500 text-sm">PDF Document</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <img
-                src={preview}
-                alt="Selected file preview"
-                className="max-h-[50vh] object-contain rounded-md"
-              />
-            )}
+              ) : (
+                <img
+                  src={preview}
+                  alt="Selected file preview"
+                  className="max-h-[50vh] object-contain rounded-md"
+                />
+              )}
 
-            <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
-              {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex justify-center items-center rounded-md">
+                {isLoading && <div className="absolute w-full h-1 bg-red-500 animate-scanning-line"></div>}
+              </div>
             </div>
-          </div>
-        ) : isSingleDragActive ? (
-          <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
-            <div className="flex flex-col items-center justify-center gap-3">
-              <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
-              <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+          ) : isSingleDragActive ? (
+            <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
+                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
-            <div className="flex flex-col items-center justify-center gap-3">
-              <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
-              <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+          ) : (
+            <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
+                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+
+      {!showCamera && !file && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowCamera(true)}
+            data-testid="camera-scan-button"
+            className="w-full flex items-center justify-center gap-2 border-2 border-blue-500 text-blue-500 font-medium px-4 py-3 rounded-md hover:bg-blue-50 transition-colors"
+          >
+            <Camera className="w-5 h-5" />
+            Take a Photo / Scan
+          </button>
+        </div>
+      )}
+
+      {/* Always show errors, even if file is cleared */}
+      {uploadError && (
+        <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm" data-testid="upload-error">
+          <XCircle className="w-4 h-4" />
+          {uploadError}
+        </div>
+      )}
 
       {file && (
         <div className="mt-4 sticky bottom-0 bg-white py-3">
-          {uploadError && (
-            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2 text-red-600 text-sm">
-              <XCircle className="w-4 h-4" />
-              {uploadError}
-            </div>
-          )}
-
           {isLoading ? (
             <div className='flex flex-col justify-center items-center gap-2'>
               <div className="loader"></div>
@@ -628,6 +847,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           ) : (
             <button
               onClick={handleUpload}
+              data-testid="start-upload-button"
               className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
               Upload File
@@ -641,10 +861,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
   // Render bulk upload UI
   const renderBulkUpload = () => (
     <div className="space-y-6">
-      <div {...getBulkRootProps()} className={`border-2 border-dashed rounded-lg p-8 text-center 
+      <div {...getBulkRootProps()} data-testid="bulk-dropzone" className={`border-2 border-dashed rounded-lg p-8 text-center 
         ${isBulkDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'}
         ${files.length > 0 ? 'h-32' : 'h-64'} transition-colors`}>
-        <input {...getBulkInputProps()} />
+        <input {...getBulkInputProps()} data-testid="bulk-file-input" />
         <div className="flex flex-col items-center justify-center gap-4 h-full">
           <div>
             <p className="font-medium text-gray-900">
@@ -680,10 +900,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       {files.length > 0 && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-medium">{files.length} files selected</h3>
+            <div className="flex flex-col">
+              <h3 className="font-medium">{files.length} files selected</h3>
+              {batchError && <span className="text-red-500 text-sm font-medium">{batchError}</span>}
+            </div>
             <button
               onClick={handleProcessAll}
               disabled={isProcessing}
+              data-testid="bulk-process-button"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : 'Start Processing'}
@@ -692,7 +916,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
           <div className="space-y-2">
             {files.map((fileStatus, index) => (
-              <div key={index} className="border rounded-lg p-4">
+              <div key={index} className="border rounded-lg p-4" data-testid={`file-row-${index}`}>
                 <div className="flex items-center gap-4">
                   {/* Preview Thumbnail */}
                   <div className="flex-shrink-0">
@@ -724,11 +948,11 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
                     </div>
 
                     <div className="flex justify-between mt-2 text-sm">
-                      <span className="text-gray-500">
+                      <span className="text-gray-500" data-testid={`file-status-label-${index}`}>
                         {getStatusLabel(fileStatus.status)}
                       </span>
                       {fileStatus.error && (
-                        <span className="text-red-500 truncate max-w-[200px]">
+                        <span className="text-red-500 truncate max-w-[200px]" data-testid={`file-error-${index}`}>
                           {fileStatus.error}
                         </span>
                       )}
@@ -750,17 +974,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         {isBulkMode ? renderBulkUpload() : renderSingleUpload()}
       </div>
 
-      <UsageLimitModal
-        isOpen={limitModalOpen}
-        onClose={() => {
-          setLimitModalOpen(false);
-          setIsVisible(false); // Close the parent dropzone modal
-          onMessageChange({ type: messageTypeEnum.NONE, text: '' }); // Clear the status message
-          setUploadStatus(''); // Clear local status
-        }}
-        message={limitModalMessage}
-        type={limitModalType}
-      />
+      {/* Modal is now handled globally by GlobalUsageLimitHandler */}
     </>
   );
 }

@@ -1,13 +1,13 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthed } from "@/lib/api-client";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, buildApiUrl } from "@/lib/api-client";
 
 export async function backfillColumn(project_id: string, field_id: string, field_name: string) {
     try {
+        const url = buildApiUrl(`/records/backfill-column?project_id=${project_id}&field_id=${field_id}&field_name=${encodeURIComponent(field_name)}`);
         const response = await fetchAuthed(
-            `${apiUrl}/records/backfill-column?project_id=${project_id}&field_id=${field_id}&field_name=${encodeURIComponent(field_name)}`,
+            url,
             {
                 method: 'POST',
             }
@@ -24,6 +24,32 @@ export async function backfillColumn(project_id: string, field_id: string, field
         return result;
     } catch (error) {
         console.error('[Frontend] backfillColumn error:', error);
+        throw error;
+    }
+}
+
+export async function backfillRecord(projectId: string, recordId: string) {
+    try {
+        const url = buildApiUrl(`/records/backfill-record?project_id=${projectId}&record_id=${recordId}`);
+        const response = await fetchAuthed(
+            url,
+            {
+                method: 'POST',
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('[Frontend] Backfill record failed:', response.status, errorData);
+            throw new Error(`Backfill failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        // Remove revalidatePath to prevent full page re-render, 
+        // we use Socket.IO for live updates.
+        return result;
+    } catch (error) {
+        console.error('[Frontend] backfillRecord error:', error);
         throw error;
     }
 }

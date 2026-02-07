@@ -1,6 +1,7 @@
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
 import { fetchAuthed } from "@/lib/api-client"
+import { buildApiUrl } from "@/lib/api-utils"
 import { getColumns } from "@/actions/column-actions"
 import { get_project_plan, getProjectsById } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
@@ -43,8 +44,25 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     getConversations(id)
   ]);
 
-  // Secondary data that depends on primary data, but can still be parallelized
-  const recordsUrl = `${process.env.NEXT_PUBLIC_API_URL}/records/${id}`
+  const recordsUrl = buildApiUrl(`/records/${id}`);
+
+  // Safety Check: If project is missing (404/Deleted), return clean error UI
+  if (!project || project.detail || !project.id) {
+    console.error(`[ProjectView] Project ${id} not found or inaccessible:`, project);
+    return (
+      <div data-testid="project-not-found" className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
+        <div className="text-xl font-bold font-sans text-gray-800">Project not found</div>
+        <p className="text-gray-500">The project you are looking for might have been deleted or moved.</p>
+        <a
+          href="/projects"
+          className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all font-sans"
+        >
+          Return to Dashboard
+        </a>
+      </div>
+    );
+  }
+
   const [
     recordsResponse,
     plan,
@@ -55,7 +73,17 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     getBillingConfigForUser(project.owner)
   ]);
 
-  const records = await recordsResponse.json()
+  let records: any = [];
+  try {
+    records = await recordsResponse.json();
+    if (!Array.isArray(records)) {
+      console.warn('[ProjectView] Records API returned non-array:', records);
+      records = [];
+    }
+  } catch (err) {
+    console.error('[ProjectView] Failed to parse records JSON:', err);
+    records = [];
+  }
   const is_project_owner = project.is_owner;
   const linkOwner = ""
   const chats = allProjectConversation?.flatMap((conv: Conversation) => conv.messages);
@@ -111,7 +139,10 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
           {/* Header Section */}
           <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <p className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans">
+              <p
+                data-testid="project-details-title"
+                className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans"
+              >
                 Project: {project.name}
               </p>
               <ExpandableDescription description={project.description} />
@@ -131,6 +162,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
                 fields={fields}
                 records={records}
                 plan={plan?.plan_name}
+                subscriptionType={plan?.subscription_type}
                 models={displayedModels}
                 tenantModal={tenantModel.selected_model}
                 chats={chats}
@@ -151,6 +183,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
               fields={fields}
               records={records}
               plan={plan?.plan_name}
+              subscriptionType={plan?.subscription_type}
               models={displayedModels}
               tenantModal={tenantModel.selected_model}
               chats={chats}

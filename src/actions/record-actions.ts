@@ -1,8 +1,7 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export async function revalidate() {
   revalidatePath('/projects');
@@ -10,7 +9,8 @@ export async function revalidate() {
 
 export async function uploadFile(formData: any, projectId: string | undefined) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/records/upload?project_id=${projectId}`, {
+    const fetchUrl = buildApiUrl(`/records/upload?project_id=${projectId}`);
+    const response = await fetchAuthed(fetchUrl, {
       method: 'POST',
       body: formData
     });
@@ -46,50 +46,58 @@ export async function uploadFile(formData: any, projectId: string | undefined) {
   }
 };
 
-export async function getPresignedUrl(filename: string, projectId: string, contentType?: string) {
+export async function getPresignedUrl(filename: string, projectId: string, contentType?: string, linkToken?: string): Promise<{ success: boolean; data?: { upload_url: string; filename: string; key: string }; error?: string }> {
   try {
-    const url = new URL(`${apiUrl}/records/presigned-url`);
-    url.searchParams.append('filename', filename);
-    url.searchParams.append('project_id', projectId);
-    if (contentType) {
-      url.searchParams.append('content_type', contentType);
+    let path = `/records/presigned-url?filename=${encodeURIComponent(filename)}&project_id=${encodeURIComponent(projectId)}${contentType ? `&content_type=${encodeURIComponent(contentType)}` : ''}`;
+    if (linkToken) {
+      path += `&link_token=${encodeURIComponent(linkToken)}`;
     }
+    const fetchUrl = buildApiUrl(path);
 
-    const response = await fetchAuthedJson(url.toString(), {
+    const response = await fetchAuthedJson(fetchUrl, {
       method: 'GET',
       cache: 'no-store'
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Frontend] getPresignedUrl failed:', response.status, errorText);
-      throw new Error(`Failed to get presigned URL: ${response.status}`);
+      let errorDetail = '';
+      try {
+        const errorData = await response.json();
+        errorDetail = errorData?.detail ? (typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)) : JSON.stringify(errorData);
+      } catch (e) {
+        errorDetail = await response.text();
+      }
+      console.error('[Frontend] getPresignedUrl failed:', response.status, errorDetail);
+      return { success: false, error: errorDetail || `Failed with status ${response.status}` };
     }
 
     const data = await response.json();
     console.log('[DEBUG] getPresignedUrl result:', data);
 
     if (!data.filename || data.filename === 'undefined') {
-      console.error('[ERROR] Backend returned invalid filename:', data);
-      throw new Error("Backend returned invalid storage filename");
+      return { success: false, error: "Backend returned invalid storage filename" };
     }
 
-    return data;
-  } catch (error) {
+    return { success: true, data };
+  } catch (error: any) {
     console.error('[Frontend] Error in getPresignedUrl action:', error);
-    throw error;
+    return { success: false, error: error.message || 'Unknown error occurred' };
   }
 }
 
 
 
-export async function queryDocument(projectId: string, filename: string, original_filename?: string) {
+export async function queryDocument(projectId: string, filename: string, original_filename?: string, linkToken?: string): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    let url = `${apiUrl}/records/query-doc?project_id=${projectId}&filename=${filename}`;
+    let path = `/records/query-doc?project_id=${projectId}&filename=${filename}`;
     if (original_filename) {
-      url += `&original_filename=${encodeURIComponent(original_filename)}`;
+      path += `&original_filename=${encodeURIComponent(original_filename)}`;
     }
-    const response = await fetchAuthed(url, {
+    if (linkToken) {
+      path += `&link_token=${encodeURIComponent(linkToken)}`;
+    }
+    const fetchUrl = buildApiUrl(path);
+    const response = await fetchAuthed(fetchUrl, {
       method: 'POST',
     });
 
@@ -102,21 +110,21 @@ export async function queryDocument(projectId: string, filename: string, origina
         errorDetail = await response.text();
       }
       console.error(`[Frontend] queryDocument failed: ${response.status}`, errorDetail);
-      throw new Error(errorDetail || 'Analysis failed. Please try again.');
+      return { success: false, error: errorDetail || 'Analysis failed. Please try again.' };
     }
 
     const data = await response.json();
-    return data;
+    return { success: true, data };
   } catch (error: any) {
     console.error('[Frontend] Error in queryDocument:', error);
-    // Re-throw the actual error message
-    throw error;
+    return { success: false, error: error.message || 'Internal connection error' };
   }
 }
 
 export async function saveRecord(formData: any, user_id: string) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/records/save?user_id=${user_id}`, {
+    const url = buildApiUrl(`/records/save?user_id=${user_id}`);
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify(formData)
     });
@@ -136,7 +144,8 @@ export async function saveRecord(formData: any, user_id: string) {
 
 export async function getRecords(projectId: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/records/${projectId}`, {
+    const url = buildApiUrl(`/records/${projectId}`);
+    const response = await fetchAuthed(url, {
       method: 'GET',
       cache: 'no-store'
     });
@@ -152,7 +161,8 @@ export async function getRecords(projectId: string) {
 
 export async function updateRecord(recordId: string | undefined, formData: any) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
+    const url = buildApiUrl(`/records/${recordId}`);
+    const response = await fetchAuthedJson(url, {
       method: 'PUT',
       body: JSON.stringify(formData),
     });
@@ -166,7 +176,8 @@ export async function updateRecord(recordId: string | undefined, formData: any) 
 
 export async function deleteRecord(recordId: string) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/records/${recordId}`, {
+    const url = buildApiUrl(`/records/${recordId}`);
+    const response = await fetchAuthedJson(url, {
       method: 'DELETE'
     });
 
@@ -182,7 +193,8 @@ export async function checkRecordStatus(projectId: string, filename: string) {
   try {
     // We fetch all records for the project and check if our file exists
     // Ideally we would have a specific endpoint for this, but this works for now
-    const response = await fetchAuthedJson(`${apiUrl}/records/${projectId}`, {
+    const url = buildApiUrl(`/records/${projectId}`);
+    const response = await fetchAuthedJson(url, {
       method: 'GET',
     });
 
@@ -199,5 +211,27 @@ export async function checkRecordStatus(projectId: string, filename: string) {
   } catch (error) {
     console.error('[Frontend] Check Status Failed:', error);
     return null;
+  }
+}
+export async function deleteBatchRecords(recordIds: string[]) {
+  try {
+    const url = buildApiUrl('/records/delete-batch');
+    const response = await fetchAuthedJson(url, {
+      method: "POST",
+      body: JSON.stringify({ record_ids: recordIds }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Backend error:", err);
+      throw new Error(`Batch delete failed: ${response.status} ${err}`);
+    }
+
+    revalidatePath("/projects");
+    return await response.json();
+  } catch (error) {
+    console.error("Batch delete failed", error);
+    throw error;
   }
 }

@@ -15,6 +15,11 @@ type TableHeaderProps = {
   onColumnResize: (id: string, width: number) => void;
   onUpdateColumn: (column: Field, newName: string) => void;
   onBackfillColumn: (column: Field) => void;
+  selectedCount?: number;
+  totalCount?: number;
+  onSelectAll?: (checked: boolean) => void;
+  backfillingFieldId?: string | null;
+  isOnline?: boolean;
 };
 
 export default function TableHeader({
@@ -28,7 +33,12 @@ export default function TableHeader({
   columnWidths,
   onColumnResize,
   onUpdateColumn,
-  onBackfillColumn
+  onBackfillColumn,
+  selectedCount = 0,
+  totalCount = 0,
+  onSelectAll,
+  backfillingFieldId,
+  isOnline = true
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
@@ -44,6 +54,7 @@ export default function TableHeader({
   }, [editingColumnId]);
 
   const startEditing = (column: Field) => {
+    if (!isOnline) return; // Disable editing offline
     setEditingColumnId(column.hidden_id);
     setEditValue(column.name);
   };
@@ -95,9 +106,20 @@ export default function TableHeader({
       <tr>
         {hasRecords && (
           <>
+            {/* Checkbox Column */}
+            <th className="px-3 py-2 border-r border-gray-200 sticky left-0 z-30 bg-gray-50 text-center w-[40px]">
+              <input
+                type="checkbox"
+                checked={totalCount > 0 && selectedCount === totalCount}
+                ref={el => { if (el) el.indeterminate = selectedCount > 0 && selectedCount < totalCount }}
+                onChange={e => onSelectAll && onSelectAll(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+            </th>
+
             <th
               key="actions"
-              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-0 bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
+              className={`px-3 md:px-4 ${hasRecords ? 'py-2 md:py-3 lg:py-4' : 'py-0'} text-left text-sm font-semibold text-gray-700 tracking-wide sticky left-[40px] bg-gray-50 shadow-r md:hidden border-r border-gray-200 z-10 group`}
             >
               Actions
               {/* Resize Handle */}
@@ -126,10 +148,14 @@ export default function TableHeader({
             </th>
           </>
         )}
-        {columns.map((column) => (
+        {columns.map((column, colIndex) => (
           <th
             key={`column-${column.hidden_id}`}
-            className="px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold text-gray-700 tracking-wide relative border-r border-gray-200 bg-gray-50 group hover:bg-gray-100 transition-colors cursor-pointer"
+            data-testid={`column-header-${column.name}`}
+            className={`px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold tracking-wide relative border-r border-gray-200 transition-all cursor-pointer group
+              ${backfillingFieldId === column.hidden_id
+                ? 'bg-purple-50 text-purple-900 border-b-2 border-b-purple-400'
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}
           >
@@ -143,19 +169,21 @@ export default function TableHeader({
                   onBlur={() => saveEditing(column)}
                   onKeyDown={(e) => handleKeyDown(e, column)}
                   onClick={(e) => e.stopPropagation()}
+                  data-testid="column-edit-input"
                   className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
                 <span
-                  className="font-semibold truncate flex-1 min-w-0"
-                  onClick={() => startEditing(column)}
-                  title={column.name}
+                  className={`font-semibold truncate flex-1 min-w-0 ${isOnline ? 'cursor-pointer' : 'cursor-default'}`}
+                  onClick={() => isOnline && startEditing(column)}
+                  title={isOnline ? "Click to rename" : column.name}
+                  data-testid="column-name-text"
                 >
                   {column.name}
                 </span>
               )}
 
-              {editingColumnId !== column.hidden_id && (
+              {editingColumnId !== column.hidden_id && isOnline && (
                 <div className="flex items-center gap-1 flex-shrink-0 opacity-100 transition-opacity">
                   <button
                     onClick={(e) => {
@@ -172,7 +200,9 @@ export default function TableHeader({
                       e.stopPropagation();
                       onDeleteColumn(column);
                     }}
-                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                    data-testid={`delete-column-${column.name}`}
+                    className="p-1 hover:bg-gray-200 rounded transition-colors column-delete-trigger"
+                    title="Delete Column"
                   >
                     <Trash className="w-4 h-4 text-red-600" />
                   </button>
@@ -197,15 +227,16 @@ export default function TableHeader({
           className="px-3 md:px-4 py-2 text-left text-sm font-semibold text-gray-700 tracking-wide sticky right-0 border-l border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors z-30 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]"
           style={{ width: '200px', minWidth: '200px' }}
         >
-          {!showCreateColumn ? (
+          {isOnline && !showCreateColumn ? (
             <button
               onClick={() => setShowCreateColumn(true)}
+              data-testid="add-column-button"
               className="flex items-center gap-2 text-gray-500 hover:text-blue-600 w-full h-full justify-center"
             >
               <PlusCircle className="w-5 h-5" />
               <span className="whitespace-nowrap">Add Column</span>
             </button>
-          ) : (
+          ) : isOnline && showCreateColumn ? (
             <div className="w-full">
               <CreateColumn
                 projectId={projectId}
@@ -213,6 +244,10 @@ export default function TableHeader({
                 onCancel={() => setShowCreateColumn(false)}
                 showToggle={false}
               />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 text-gray-400">
+              <span className="text-xs uppercase font-bold tracking-tighter">Read Only</span>
             </div>
           )}
         </th>

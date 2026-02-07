@@ -76,6 +76,7 @@ export default function SpreadsheetModals({
                     name: e.target.value
                   })
                 }
+                data-testid="column-update-name-input"
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
               />
             </div>
@@ -83,6 +84,7 @@ export default function SpreadsheetModals({
               <button
                 type="button"
                 onClick={onCloseColumnUpdatePopup}
+                data-testid="column-update-cancel-button"
                 className="bg-gray-500 text-white px-4 py-2 rounded-md"
               >
                 Cancel
@@ -91,6 +93,7 @@ export default function SpreadsheetModals({
                 onClick={onUpdateColumnSubmit}
                 disabled={isLoading}
                 type="submit"
+                data-testid="column-update-save-button"
                 className={`min-w-[80px] px-4 py-2 rounded-md text-white ${isLoading
                   ? 'bg-blue-300 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600'

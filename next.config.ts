@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
+import withPWA from 'next-pwa';
 
-const nextConfig: NextConfig = {
+const nextConfig: any = {
   output: 'standalone',
-  eslint: {
-    // TODO: [Tech Debt] Remove this ignore once all lint errors are resolved.
-    ignoreDuringBuilds: true,
-  },
+
   typescript: {
     // TODO: [Tech Debt] Remove this ignore once all type errors are resolved.
     ignoreBuildErrors: true,
@@ -28,4 +26,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// PWA configuration
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development', // Disable in dev to prevent HMR issues
+  buildExcludes: [/middleware-manifest\.json$/],
+  fallbacks: {
+    document: '/offline', // Fallback to /offline page for any document request that fails
+  },
+} as any);
+
+export default pwaConfig(nextConfig);
