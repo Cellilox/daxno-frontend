@@ -39,6 +39,7 @@ export default function CreateProjectForm({ onCreated, onCancel }: CreateProject
                     type="text"
                     id="name"
                     {...register('name', { required: 'Name is required' })}
+                    data-testid="project-name-input"
                     className="flex-1 p-3 mr-3 w-full rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Type your project name"
                 />
@@ -50,6 +51,7 @@ export default function CreateProjectForm({ onCreated, onCancel }: CreateProject
                     </div> :
                     <button
                         className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded shadow transition duration-300"
+                        data-testid="create-project-submit"
                     >
                         Add
                     </button>

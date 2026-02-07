@@ -8,15 +8,15 @@ export const metadata: Metadata = {
   description: 'Submit your documents to Cellilox for processing. Only project owner will receive this submission.'
 };
 
-export default async function Submission({ params }: {params: Promise<{token: string}>}) {
+export default async function Submission({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const project = await getProject(token)
-  const plan = await get_project_plan(project.owner)
   if (!project || !project?.link_is_active) {
-     return <div className="min-h-[80vh] flex flex-col items-center justify-center">
+    return <div className="min-h-[80vh] flex flex-col items-center justify-center">
       <p>Invalid or deleted link</p>
-      </div>
+    </div>
   }
+  const plan = await get_project_plan(project.owner)
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
       <div className="bg-white shadow-md rounded-lg p-6 w-full max-w-lg">
@@ -24,11 +24,12 @@ export default async function Submission({ params }: {params: Promise<{token: st
         <p className="text-gray-600 text-center mb-6">
           Please upload the relevant file for your submission. Supported formats are PDF, JPG, and PNG.
         </p>
-        
+
         <DropzoneWrapper
           projectId={project.id}
-          linkOwner = {project.owner}
-          plan = {plan.plan_name}
+          linkOwner={project.owner}
+          plan={plan.plan_name}
+          linkToken={token}
         />
       </div>
     </div>

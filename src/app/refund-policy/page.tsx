@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: 'Review refund policy to understand your options and rights regarding payments and refunds.'
 };
 
+export const dynamic = "force-dynamic";
 
 export default function RefundPolicyPage() {
   return (
@@ -146,8 +147,8 @@ export default function RefundPolicyPage() {
       <h2>9. Contact Information</h2>
       <p>If you have any questions, concerns, or requests regarding this Refund Policy, please contact us:</p>
       <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
-Support
-Email: hello@support.cellilox.com
+        Support
+        Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

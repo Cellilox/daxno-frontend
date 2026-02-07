@@ -1,16 +1,26 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
-import { currentUser } from "@clerk/nextjs/server"
+import { auth } from "@clerk/nextjs/server"
 import Link from 'next/link'
 import React from 'react'
 import CurrentPlan from './CurrentPlan'
 import { getTransactions } from '@/actions/transaction-actions'
+import { getBillingConfig } from '@/actions/settings-actions'
 import Image from 'next/image'
 import MobileMenu from './MobileMenu'
+import { getSafeUrl } from '@/lib/api-utils'
 
 const Header = async () => {
-  const user = await currentUser()
-  const userId = user?.id
-  const transactions = await getTransactions()
+  let userId = null;
+  try {
+    const authObj = await auth();
+    userId = authObj.userId;
+  } catch (error) {
+    console.error('[Header] Clerk auth() failed:', error);
+  }
+
+  // Fetch these only if we have a user to avoid redundant failing requests
+  const transactions = userId ? await getTransactions() : [];
+  const billingConfig = userId ? await getBillingConfig() : null;
   return (
     <div className='p-4 flex justify-between'>
       <div className='md:flex items-center'>
@@ -33,7 +43,7 @@ const Header = async () => {
         <div className='md:mr-3'>
           <SignedIn>
             <div className='flex justify-between'>
-              <CurrentPlan transactions={transactions} />
+              <CurrentPlan transactions={transactions} billingConfig={billingConfig} />
               <div className="md:hidden -mt-2 ml-3">
                 <MobileMenu userId={userId!} />
               </div>
@@ -42,10 +52,14 @@ const Header = async () => {
         </div>
         <div className='text-right'>
           <SignedOut>
-            <SignInButton mode="modal" />
+            <SignInButton mode="modal">
+              <button data-testid="signin-button" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+                Sign in
+              </button>
+            </SignInButton>
           </SignedOut>
           <SignedIn>
-            <UserButton afterSignOutUrl={`${process.env.NEXT_PUBLIC_ONYX_URL}/auth/logout-bridge?next=${process.env.NEXT_PUBLIC_CLIENT_URL}`} />
+            <UserButton afterSignOutUrl="/auth/logout" />
           </SignedIn>
         </div>
       </div>

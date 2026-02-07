@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: 'Learn how Daxno collects, uses, and protects your personal information. Your privacy matters to us.'
 };
 
+export const dynamic = "force-dynamic";
+
 export default function PrivacyPolicyPage() {
   return (
     <article className="prose lg:prose-lg max-w-3xl mx-auto px-6 py-12">
@@ -259,8 +261,8 @@ export default function PrivacyPolicyPage() {
       <h2>14. Contact Us</h2>
       <p>If you have questions, concerns, or complaints regarding this Privacy Policy or our privacy practices, please contact us:</p>
       <pre className="bg-gray-100 p-4 rounded text-black text-sm overflow-x-auto">
-Support
-Email: hello@support.cellilox.com
+        Support
+        Email: hello@support.cellilox.com
       </pre>
 
       <h2>Acknowledgment</h2>

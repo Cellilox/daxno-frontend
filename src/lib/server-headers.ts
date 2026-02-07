@@ -1,14 +1,20 @@
 import { auth } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 
 export async function getRequestAuthHeaders() {
   const authObj = await auth();
-  const headers = new Headers();
-  headers.append('Authorization', `Bearer ${await authObj.getToken()}`);
-  if (authObj.sessionId) {
-    headers.append('sessionId', authObj.sessionId);
-  }
+  const requestHeaders = await headers();
+  const cookieHeader = requestHeaders.get('cookie');
 
-  return headers;
+  const token = await authObj.getToken();
+  const resultHeaders = new Headers();
+
+  if (token) {
+    resultHeaders.append('Authorization', `Bearer ${token}`);
+  } else {
+    console.log(`[SERVER-HEADERS] No token found. Cookies present: ${!!cookieHeader} (Length: ${cookieHeader?.length || 0})`);
+  }
+  return resultHeaders;
 }
 
 export async function JsonAuthRequestHeaders() {

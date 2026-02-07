@@ -1,16 +1,15 @@
 "use server"
 
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 interface SaveFileUrlError extends Error {
   status?: number;
   details?: string;
 }
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
 export const saveGoogleExportHistory = async (projectId: string, fileLink: string): Promise<void> => {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/google-drive/save-export-history`, {
+    const url = buildApiUrl('/google-drive/save-export-history');
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify({
         file_link: fileLink,
@@ -49,7 +48,8 @@ export const saveGoogleExportHistory = async (projectId: string, fileLink: strin
 
 export const fetchGoogleExportsHistory = async (projectId: string) => {
   try {
-    const response = await fetchAuthed(`${apiUrl}/google-drive/exports-history?project_id=${projectId}`, {
+    const url = buildApiUrl(`/google-drive/exports-history?project_id=${projectId}`);
+    const response = await fetchAuthed(url, {
       method: 'GET',
     });
 
@@ -64,7 +64,8 @@ export const fetchGoogleExportsHistory = async (projectId: string) => {
 
 export async function getGoogleDriveAuthUrl(projectId: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/google-drive/auth?project_id=${projectId}`, {
+    const url = buildApiUrl(`/google-drive/auth?project_id=${projectId}`);
+    const response = await fetchAuthed(url, {
       method: 'GET',
       redirect: 'manual'
     });
@@ -82,14 +83,16 @@ export async function getGoogleDriveAuthUrl(projectId: string) {
 }
 
 export async function checkDriveStatus(): Promise<{ authenticated: boolean }> {
-  const res = await fetchAuthed(`${apiUrl}/google-drive/status`, {
+  const url = buildApiUrl('/google-drive/status');
+  const res = await fetchAuthed(url, {
     method: 'GET',
   });
   return res.json();
 }
 
 export async function directUploadToDrive(projectId: string) {
-  const res = await fetchAuthedJson(`${apiUrl}/google-drive/upload`, {
+  const url = buildApiUrl('/google-drive/upload');
+  const res = await fetchAuthedJson(url, {
     method: "POST",
     body: JSON.stringify({ project_id: projectId }),
   });
@@ -106,7 +109,8 @@ export async function directUploadToDrive(projectId: string) {
 
 export async function DisconnectDrive() {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/google-drive/disconnect`, {
+    const url = buildApiUrl('/google-drive/disconnect');
+    const response = await fetchAuthedJson(url, {
       method: 'DELETE'
     });
 

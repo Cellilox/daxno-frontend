@@ -171,8 +171,9 @@ export default function PricingModal({ transactions }: Transactions) {
                     makePayment={makePayment}
                     loading={loading} clickedPlanName={clickedPlanName}
                     current_plan={transactions[0]?.plan_name}
-                    current_txn_amount={transactions[0]?.amount}
-                    current_txn_end_date={transactions[0]?.end_date}
+                    // Disable proration for one-time plans (GYOK/Topup) to match backend logic
+                    current_txn_amount={['gyok', 'topup'].includes(transactions[0]?.plan_name?.toLowerCase() || '') ? 0 : transactions[0]?.amount}
+                    current_txn_end_date={['gyok', 'topup'].includes(transactions[0]?.plan_name?.toLowerCase() || '') ? '' : transactions[0]?.end_date}
                     current_plan_id={transactions[0]?.plan_id}
                     monthlyPlans={monthlyPlans}
                     yearlyPlans={yearlyPlans}

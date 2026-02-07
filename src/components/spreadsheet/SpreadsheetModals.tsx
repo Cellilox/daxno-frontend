@@ -1,7 +1,7 @@
 import FormModal from '../ui/Popup';
 import AlertDialog from '../ui/AlertDialog';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { Field, Record } from './types';
+import { Field, DocumentRecord } from './types';
 import DocumentReview from './DocumentReview';
 
 type SpreadsheetModalsProps = {
@@ -10,7 +10,7 @@ type SpreadsheetModalsProps = {
   isLoading: boolean;
   isAlertVisible: boolean;
   selectedColumnToDelete: Field | null;
-  selectedRecordToDelete: Record | null;
+  selectedRecordToDelete: DocumentRecord | null;
   projectId: string;
   onCloseColumnUpdatePopup: () => void;
   onUpdateColumnSubmit: (e: React.FormEvent) => void;
@@ -21,7 +21,7 @@ type SpreadsheetModalsProps = {
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   setSelectedColumnToUpdate: (column: Field | null) => void;
-  selectedRecordForReview: Record | null;
+  selectedRecordForReview: DocumentRecord | null;
   handleCloseReviewRecordPopup: () => void;
   columns: Field[]
 };
@@ -76,6 +76,7 @@ export default function SpreadsheetModals({
                     name: e.target.value
                   })
                 }
+                data-testid="column-update-name-input"
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
               />
             </div>
@@ -83,6 +84,7 @@ export default function SpreadsheetModals({
               <button
                 type="button"
                 onClick={onCloseColumnUpdatePopup}
+                data-testid="column-update-cancel-button"
                 className="bg-gray-500 text-white px-4 py-2 rounded-md"
               >
                 Cancel
@@ -91,11 +93,11 @@ export default function SpreadsheetModals({
                 onClick={onUpdateColumnSubmit}
                 disabled={isLoading}
                 type="submit"
-                className={`min-w-[80px] px-4 py-2 rounded-md text-white ${
-                  isLoading 
-                    ? 'bg-blue-300 cursor-not-allowed' 
-                    : 'bg-blue-500 hover:bg-blue-600'
-                }`}
+                data-testid="column-update-save-button"
+                className={`min-w-[80px] px-4 py-2 rounded-md text-white ${isLoading
+                  ? 'bg-blue-300 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
               >
                 {!isLoading && 'Save'}
                 {isLoading && <LoadingSpinner />}
@@ -138,13 +140,19 @@ export default function SpreadsheetModals({
       {isPopupVisible && selectedRecordForReview && (
         <FormModal
           visible={isPopupVisible}
-          title={`Review ${selectedRecordForReview.orginal_file_name}`}
+          title={`Review ${selectedRecordForReview.original_filename}`}
           onCancel={handleCloseReviewRecordPopup}
           size='large'
-          >
-         <div>
-         <DocumentReview selectedRecordForReview={selectedRecordForReview} columns={columns}/>
-         </div>
+          isHeaderHidden={true}
+          fullScreen={true}
+        >
+          <div className="h-full flex flex-col">
+            <DocumentReview
+              selectedRecordForReview={selectedRecordForReview}
+              columns={columns}
+              onClose={handleCloseReviewRecordPopup}
+            />
+          </div>
         </FormModal>
       )}
     </>

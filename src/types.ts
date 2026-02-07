@@ -1,6 +1,7 @@
 export type messageType = {
   type: string;
   text: string;
+  rightText?: string;
 }
 
 export enum messageTypeEnum {

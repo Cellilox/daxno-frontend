@@ -9,9 +9,9 @@ type ExportCSVProps = {
     projectId: string
 }
 
-export default function DownLoadCSV({projectId}: ExportCSVProps) {
-     const [isLoading, setIsLoading] = useState(false)
-     async function downloadCSV () {
+export default function DownLoadCSV({ projectId }: ExportCSVProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    async function downloadCSV() {
         setIsLoading(true)
         try {
             const blob = await download(projectId)
@@ -39,8 +39,8 @@ export default function DownLoadCSV({projectId}: ExportCSVProps) {
                             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
                             onClick={downloadCSV}
                         >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            <span className="text-sm">Export as CSV</span>
+                            <FileSpreadsheet className="w-4 h-4 mr-2" />
+                            <span className="text-sm text-gray-600 font-medium">Export as CSV</span>
                         </button>
                     )}
                 </div>

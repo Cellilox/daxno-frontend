@@ -1,11 +1,10 @@
 'use server';
 
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 export async function getAvailablePlans() {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/payment-plans?status=active`)
+    const url = buildApiUrl('/payments/payment-plans?status=active');
+    const response = await fetchAuthed(url)
     if (!response.ok) {
       throw new Error("Failed to fetch payment plans")
     }
@@ -18,7 +17,7 @@ export async function getAvailablePlans() {
 
 const sanitizePath = (path: string) => {
   // Remove leading slashes and any scheme/host attempts
-  return path.replace(/^\/+/, '').replace(/[^\w\-\/]/g, '');
+  return path.replace(/^\/+/, '').replace(/[^\w\-\/\?\=\&]/g, '');
 };
 
 export async function requestPayment(pathname: string, amount: number, plan_id: number) {
@@ -38,8 +37,9 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
   }
 
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/payments/charge-card-and-mobilerwanda`, {
-      method: 'POST',
+    const url = buildApiUrl('/payments/charge-card-and-mobilerwanda');
+    const response = await fetchAuthedJson(url, {
+      method: "POST",
       body: JSON.stringify(payload),
     })
     if (!response.ok) {
@@ -68,7 +68,8 @@ export async function buyCredits(pathname: string, amount: number) {
   }
 
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/payments/pay-for-credits`, {
+    const url = buildApiUrl('/payments/pay-for-credits');
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -84,7 +85,8 @@ export async function buyCredits(pathname: string, amount: number) {
 
 export async function getUserPlan(planId: number | undefined) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/payment-plans/${planId}`, {
+    const url = buildApiUrl(`/payments/payment-plans/${planId}`);
+    const response = await fetchAuthed(url, {
       method: 'GET',
     });
 
@@ -99,7 +101,8 @@ export async function getUserPlan(planId: number | undefined) {
 
 export async function getUserSubscription(transaction_id: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/subscription?transsaction_id=${transaction_id}`, {
+    const url = buildApiUrl(`/payments/subscription?transsaction_id=${transaction_id}`);
+    const response = await fetchAuthed(url, {
       method: 'GET',
     });
 
@@ -114,7 +117,8 @@ export async function getUserSubscription(transaction_id: string) {
 
 export async function cancelSubscription(sub_id: number) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/payments/cancel-subscription?sub_id=${sub_id}`, {
+    const url = buildApiUrl(`/payments/cancel-subscription?sub_id=${sub_id}`);
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
     });
 
@@ -131,7 +135,8 @@ export async function cancelSubscription(sub_id: number) {
 
 export async function activateSubscription(sub_id: number) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/payments/activate-subscription?sub_id=${sub_id}`, {
+    const url = buildApiUrl(`/payments/activate-subscription?sub_id=${sub_id}`);
+    const response = await fetchAuthedJson(url, {
       method: 'POST',
     });
 
@@ -146,7 +151,8 @@ export async function activateSubscription(sub_id: number) {
 }
 export async function getPaymentHistory(page: number = 1, per_page: number = 10) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/history?page=${page}&per_page=${per_page}`);
+    const url = buildApiUrl(`/payments/history?page=${page}&per_page=${per_page}`);
+    const response = await fetchAuthed(url);
     if (!response.ok) throw new Error("Failed to fetch payment history");
     return response.json();
   } catch (error) {
@@ -157,7 +163,8 @@ export async function getPaymentHistory(page: number = 1, per_page: number = 10)
 
 export async function downloadInvoice(t_id: number) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/invoices/${t_id}`);
+    const url = buildApiUrl(`/payments/invoices/${t_id}`);
+    const response = await fetchAuthed(url);
     if (!response.ok) throw new Error("Failed to download invoice");
     const blob = await response.blob();
     return blob;
@@ -169,7 +176,8 @@ export async function downloadInvoice(t_id: number) {
 
 export async function getProrationDetails(new_plan_id: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/payments/proration-details?new_plan_id=${new_plan_id}`);
+    const url = buildApiUrl(`/payments/proration-details?new_plan_id=${new_plan_id}`);
+    const response = await fetchAuthed(url);
     if (!response.ok) throw new Error("Failed to fetch proration details");
     return response.json();
   } catch (error) {

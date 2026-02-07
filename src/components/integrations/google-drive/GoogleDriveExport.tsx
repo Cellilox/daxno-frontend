@@ -175,7 +175,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
             </>
           ) : (
             <>
-              <GoogleDriveIcon className="w-5 h-5 mr-2" />
+              <GoogleDriveIcon className="w-4 h-4 mr-2" />
               <span>
                 {isAuthenticated
                   ? 'Upload to Google Drive'
@@ -194,7 +194,7 @@ const GoogleDriveExport: React.FC<GoogleDriveExportProps> = ({
               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0F9D58]
             "
           >
-            <GoogleSheetsIcon className="w-5 h-5 mr-2" />
+            <GoogleSheetsIcon className="w-4 h-4 mr-2" />
             <span>Open in Sheets</span>
           </button>
         )}

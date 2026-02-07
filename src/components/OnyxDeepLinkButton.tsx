@@ -13,7 +13,10 @@ interface OnyxDeepLinkButtonProps {
 const isValidOnyxUrl = (urlString: string) => {
     try {
         const url = new URL(urlString);
-        const onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+        let onyxUrl = process.env.NEXT_PUBLIC_ONYX_URL;
+        if (onyxUrl) {
+            onyxUrl = onyxUrl.replace(/\/api\/?$/, "").replace(/\/$/, "");
+        }
         if (!onyxUrl) return false;
 
         const allowedHostname = new URL(onyxUrl).hostname;
@@ -46,8 +49,9 @@ export default function OnyxDeepLinkButton({ projectId }: OnyxDeepLinkButtonProp
                     alert("Security Check: The link provided by the server is not on the allowed list.");
                 }
             } else {
-                console.error("No URL returned", data);
-                alert("Could not connect to AI Insights. Please try again.");
+                console.error("No URL returned. Data:", data);
+                const info = typeof data === 'object' ? JSON.stringify(data) : String(data);
+                alert(`Could not connect to AI Insights. Server response: ${info}`);
             }
         } catch (e) {
             console.error(e);
@@ -61,9 +65,9 @@ export default function OnyxDeepLinkButton({ projectId }: OnyxDeepLinkButtonProp
         <button
             onClick={handleDeepLink}
             disabled={loading}
-            className="text-xs sm:text-sm inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
+            className="text-sm inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-md shadow hover:bg-purple-700 transition-colors"
         >
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
             {loading ? "Connecting..." : "Deep Insights & Chat"}
             {!loading && <ExternalLink className="w-3 h-3 ml-2 opacity-70" />}
         </button>

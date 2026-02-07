@@ -3,18 +3,22 @@ import React, { useState } from 'react';
 import { Pencil, Trash } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import FormModal from './ui/Popup';
+import StandardPopup from './ui/StandardPopup';
 import { deleteProject, updateProject } from '@/actions/project-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
 import ExpandableDescription from './ExpandableDescription';
 import { Project } from '@/types';
 
 type CardProps = {
-  project: Project
+  project: Project;
+  onDeleted?: (id: string) => void;
 };
 
-export default function Card({ project }: CardProps) {
+export default function Card({ project, onDeleted }: CardProps) {
   const router = useRouter()
+  const { user } = useUser()
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [selectedProjectToDelete, setSelectedProjectToDelete] = useState<Project | null>(null)
 
@@ -28,12 +32,34 @@ export default function Card({ project }: CardProps) {
 
   const handleDeleteProject = async (projectId: string) => {
     setIsLoading(true)
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/projects/${projectId}`
     try {
-      await deleteProject(projectId)
+      const { removeProjectFromCache, queueProjectAction } = await import('@/lib/db/indexedDB');
+
+      // 1. Update local cache immediately
+      if (user?.id) {
+        await removeProjectFromCache(user.id, projectId);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue deletion
+        await queueProjectAction(projectId, 'delete');
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await deleteProject(projectId)
+      }
+
       setIsLoading(false)
+      setIsAlertVisible(false)
+      setSelectedProjectToDelete(null)
+
+      // Notify parent to remove from UI list immediately (Optimistic)
+      if (onDeleted) {
+        onDeleted(projectId);
+      }
     } catch (error) {
       alert('Error deleting a project')
+      setIsLoading(false)
     }
   }
 
@@ -51,16 +77,33 @@ export default function Card({ project }: CardProps) {
 
   const handleUpdateProject = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selectedProjectToUpdate) return;
     setIsLoading(true)
     const updateData = {
       ...selectedProjectToUpdate
     };
     try {
-      await updateProject(selectedProjectToUpdate?.id, updateData)
+      const { updateProjectInCache, queueProjectAction } = await import('@/lib/db/indexedDB');
+
+      // 1. Update local cache immediately
+      if (user?.id) {
+        await updateProjectInCache(user.id, updateData);
+      }
+
+      if (!navigator.onLine) {
+        // 2. Offline: Queue update
+        await queueProjectAction(selectedProjectToUpdate.id, 'update', updateData);
+        window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
+      } else {
+        // 3. Online: API call
+        await updateProject(selectedProjectToUpdate.id, updateData)
+      }
+
       setIsLoading(false)
       setIsPopupVisible(false);
     } catch (error) {
       console.error('Error updating project:', error);
+      setIsLoading(false)
     }
   }
 
@@ -77,42 +120,78 @@ export default function Card({ project }: CardProps) {
 
   return (
     <>
-      <div className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg overflow-hidden hover:cursor-pointer" onClick={handleNavigateToProjectPage}>
-        <div className="p-4 hover:cursor-point">
-          <div className='flex justify-between items-center'>
-            <h3 className="text-lg font-bold text-gray-800 truncate">{project.name}</h3>
-            {project.is_shared && (
-              <p className="text-sm text-green-400">
-                Shared: ({project.is_owner ? 'Owner' : 'Invitee'})
-              </p>
-            )}
-            {project.is_owner &&
-              <div>
+      <div
+        className="group relative bg-white border border-gray-200 hover:border-blue-400 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full"
+        onClick={handleNavigateToProjectPage}
+        data-testid={`project-card-${project.id}`}
+      >
+
+
+        <div className="p-5 flex flex-col flex-grow">
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /></svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                {project.name}
+              </h3>
+            </div>
+
+            {/* Actions - Always visible on mobile, subtle on desktop until hover */}
+            {project.is_owner && (
+              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
                 <button
-                  className="text-blue-500 hover:text-blue-700 text-sm"
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                   title="Edit project"
+                  data-testid={`edit-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectUpdateForm(project)
                   }}
                 >
-                  <Pencil size={14} />
+                  <Pencil size={16} />
                 </button>
                 <button
-                  className="ml-3 text-red-500 hover:text-red-700 text-sm"
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                   title="Delete project"
+                  data-testid={`delete-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     handleShowProjectDeleteAlert(project)
                   }}
                 >
-                  <Trash size={14} />
+                  <Trash size={16} />
                 </button>
               </div>
-            }
+            )}
           </div>
-          <div className="mt-2">
-            <ExpandableDescription description={project.description || ''} maxLength={100} />
+
+          <div className="mb-4 flex-grow">
+            <ExpandableDescription description={project.description || 'No description provided.'} maxLength={100} />
+          </div>
+
+          <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs mt-auto">
+            <div className="flex items-center gap-2">
+              {project.is_shared ? (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded font-medium ${project.is_owner
+                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                  : 'bg-green-100 text-green-700 border border-green-200'
+                  }`}>
+                  {project.is_owner ? 'Shared Owner' : 'Shared with you'}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                  Private
+                </span>
+              )}
+            </div>
+
+            {project.created_at && (
+              <span className="text-gray-400">
+                {new Date(project.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -133,16 +212,15 @@ export default function Card({ project }: CardProps) {
 
       {/* --- Project Edit Popup --- */}
       {isPopupVisible && selectedProjectToUpdate && (
-        <FormModal
-          visible={isPopupVisible}
+        <StandardPopup
+          isOpen={isPopupVisible}
           title="Edit Project"
-          onSubmit={handleUpdateProject}
-          onCancel={handleCloseUpdatePopup}
-          position='center'
-          size='small'
+          subtitle="Update your project details"
+          icon={<Pencil size={24} />}
+          onClose={handleCloseUpdatePopup}
         >
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Project Name
             </label>
             <input
@@ -154,11 +232,11 @@ export default function Card({ project }: CardProps) {
                   name: e.target.value,
                 })
               }
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-3 rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Project Description
             </label>
             <textarea
@@ -169,32 +247,32 @@ export default function Card({ project }: CardProps) {
                   description: e.target.value,
                 })
               }
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+              rows={4}
+              className="w-full p-3 rounded-lg text-gray-800 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={handleCloseUpdatePopup}
-              className="bg-gray-500 text-white px-4 py-2 rounded-md"
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
             >
               Cancel
             </button>
             <button
               onClick={handleUpdateProject}
               disabled={isLoading}
-              className={`min-w-[80px] px-4 py-2 rounded-md text-white ${isLoading
-                ? 'bg-blue-300 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
+              className={`px-4 py-2 rounded-lg text-white shadow transition-colors ${isLoading
+                ? 'bg-blue-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
                 }`}
             >
-              {!isLoading && 'Save'}
+              {!isLoading && 'Save Changes'}
               {isLoading && <LoadingSpinner />}
             </button>
           </div>
-        </FormModal>
-      )
-      }
+        </StandardPopup>
+      )}
     </>
   );
 }

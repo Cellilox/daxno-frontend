@@ -10,7 +10,7 @@ type ExpandableDescriptionProps = {
 
 export default function ExpandableDescription({ description, maxLength = 150 }: ExpandableDescriptionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   if (!description) {
     return <p className="text-sm text-gray-600">No description available</p>;
   }

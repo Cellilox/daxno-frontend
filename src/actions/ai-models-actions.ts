@@ -1,21 +1,30 @@
 'use server';
 
-import { fetchAuthed, fetchAuthedJson } from "@/lib/api-client";
+import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+export async function getModels(projectId?: string) {
+  try {
+    const path = `/models/available${projectId ? `?project_id=${projectId}` : ''}`;
+    const url = buildApiUrl(path);
 
-
-export async function getModels() {
-  const response = await fetchAuthed(`${apiUrl}/models/available`, { cache: 'no-store' })
-  if (!response.ok) {
-    throw new Error("Failed to fetch columns")
+    const response = await fetchAuthed(url, { cache: 'no-store' })
+    if (!response.ok) {
+      if (response.status === 401) return [];
+      throw new Error("Failed to fetch models")
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn('[AI_MODELS] Failed to fetch models:', error);
+    return [];
   }
-  return await response.json();
 }
 
-export async function selecte_model(selectedModal: string) {
+export async function selectModel(selectedModel: string, projectId?: string) {
   try {
-    const response = await fetchAuthedJson(`${apiUrl}/models/select?selected_model=${selectedModal}`, {
+    const path = `/models/select?selected_model=${encodeURIComponent(selectedModel)}${projectId ? `&project_id=${projectId}` : ''}`;
+    const url = buildApiUrl(path);
+
+    const response = await fetchAuthedJson(url, {
       method: 'PATCH'
     });
 
@@ -28,14 +37,12 @@ export async function selecte_model(selectedModal: string) {
   }
 }
 
-
-
-export async function getSelectedModel() {
+export async function getSelectedModel(projectId?: string) {
   try {
-    const response = await fetchAuthed(`${apiUrl}/tenants/selected-model`)
-    // if(!response.ok) {
-    //     throw new Error ("Failed to fetch user specific ai model")
-    // }
+    const path = `/tenants/selected-model${projectId ? `?project_id=${projectId}` : ''}`;
+    const url = buildApiUrl(path);
+
+    const response = await fetchAuthed(url, { cache: 'no-store' })
     return await response.json();
   } catch (error) {
     console.log("Error", error)

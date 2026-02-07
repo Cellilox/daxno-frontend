@@ -9,38 +9,41 @@ type DropzoneWrapperProps = {
   projectId: string;
   linkOwner: string;
   plan: string;
+  linkToken?: string;
 };
 
 
-export default function DropzoneWrapper({ projectId, linkOwner, plan }: DropzoneWrapperProps) {
+export default function DropzoneWrapper({ projectId, linkOwner, plan, linkToken }: DropzoneWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [message, setMessage] = useState<messageType>({
-    type: '', text: ''});
+    type: '', text: ''
+  });
 
   return (
     <>
-      <button 
-        onClick={() => setIsVisible(true)} 
+      <button
+        onClick={() => setIsVisible(true)}
         className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
       >
         Upload File
       </button>
 
-      <FormModal 
-        visible={isVisible} 
-        title="Upload Your File" 
+      <FormModal
+        visible={isVisible}
+        title="Upload Your File"
         onCancel={() => setIsVisible(false)}
         position="center"
         size="small"
-        // message={message}
+        message={message}
       >
 
         <MyDropzone
-          projectId={projectId} 
+          projectId={projectId}
           linkOwner={linkOwner}
-          setIsVisible={setIsVisible} 
+          setIsVisible={setIsVisible}
           onMessageChange={setMessage}
           plan={plan}
+          linkToken={linkToken}
         />
 
       </FormModal>
