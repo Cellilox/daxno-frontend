@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, memo } from 'react';
 import { Field, DocumentRecord } from './types';
 
 type TableCellProps = {
@@ -15,7 +15,7 @@ type TableCellProps = {
     isOnline?: boolean;
 };
 
-export default function TableCell({
+const TableCell = memo(({
     column,
     rowIndex,
     isCellEditing,
@@ -27,7 +27,7 @@ export default function TableCell({
     backfillingFieldId,
     isRowBackfilling,
     isOnline = true
-}: TableCellProps) {
+}: TableCellProps) => {
     // Callback ref to auto-resize textarea - now at top level of component
     const textareaRef = useCallback((node: HTMLTextAreaElement | null) => {
         if (node) {
@@ -105,4 +105,16 @@ export default function TableCell({
             )}
         </td>
     );
-}
+}, (prevProps, nextProps) => {
+    // Only re-render if the relevant answer data, editing state, or online status changes
+    return (
+        prevProps.isCellEditing === nextProps.isCellEditing &&
+        prevProps.isOnline === nextProps.isOnline &&
+        prevProps.isRowBackfilling === nextProps.isRowBackfilling &&
+        prevProps.editedRow.answers[prevProps.column.hidden_id]?.text === nextProps.editedRow.answers[nextProps.column.hidden_id]?.text &&
+        prevProps.editedRow.answers?.__status__ === nextProps.editedRow.answers?.__status__ &&
+        prevProps.editedRow.answers?.__error__ === nextProps.editedRow.answers?.__error__
+    );
+});
+
+export default TableCell;

@@ -222,10 +222,9 @@ export default function TableHeader({
           </th>
         ))}
 
-        {/* Add Column Header Cell */}
         <th
-          className="px-3 md:px-4 py-2 text-left text-sm font-semibold text-gray-700 tracking-wide sticky right-0 border-l border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors z-30 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]"
-          style={{ width: '200px', minWidth: '200px' }}
+          className={`px-2 md:px-4 py-2 text-left text-sm font-semibold text-gray-700 tracking-wide sticky right-0 border-l border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors z-30 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)] 
+            ${showCreateColumn ? 'w-[200px] min-w-[200px]' : 'w-[60px] md:w-[200px] min-w-[60px] md:min-w-[200px]'}`}
         >
           {isOnline && !showCreateColumn ? (
             <button
@@ -233,8 +232,8 @@ export default function TableHeader({
               data-testid="add-column-button"
               className="flex items-center gap-2 text-gray-500 hover:text-blue-600 w-full h-full justify-center"
             >
-              <PlusCircle className="w-5 h-5" />
-              <span className="whitespace-nowrap">Add Column</span>
+              <PlusCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="hidden md:inline whitespace-nowrap">Add Column</span>
             </button>
           ) : isOnline && showCreateColumn ? (
             <div className="w-full">
