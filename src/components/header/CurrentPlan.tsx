@@ -1,7 +1,7 @@
 import React from 'react';
-import PricingModal from '../pricing/PricingModal';
 import { Transaction } from '../pricing/types';
 import Link from 'next/link';
+import { Crown } from 'lucide-react';
 
 interface CurrentPlanProps {
   transactions: Transaction[];
@@ -27,7 +27,13 @@ export default function CurrentPlan({ transactions, billingConfig }: CurrentPlan
       <div className="flex-col justify-end">
         {(transactions[0]?.plan_name === 'Professional' || transactions[0]?.plan_name === 'Starter') && <Link href='/billing' className='block md:hidden underline hover:text-blue-500'>Billing</Link>}
         <div className="flex justify-end">
-          <PricingModal transactions={transactions} />
+          <Link
+            href="/billing?tab=configuration&option=byok"
+            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
+          >
+            <Crown className="w-4 h-4" />
+            <span>Upgrade</span>
+          </Link>
         </div>
       </div>
     </div>

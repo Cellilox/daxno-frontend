@@ -280,11 +280,24 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         setModelsFetchError(null);
         // Reset search term for fresh start
         setSearchTerm('');
-        setIsKeyVerified(
+
+        // Determine if the new type matches the saved subscription
+        const isSavedType = type === initialConfig?.subscription_type;
+        const hasSavedKey = !!initialConfig?.byok_api_key;
+
+        // Calculate verification status
+        const newIsVerified =
             type === 'standard' ||
-            (type === 'managed' && initialConfig?.subscription_type === 'managed' && !!initialConfig?.byok_api_key) ||
-            (type === 'byok' && initialConfig?.subscription_type === 'byok' && !!initialConfig?.byok_api_key)
-        );
+            (isSavedType && hasSavedKey);
+
+        setIsKeyVerified(newIsVerified);
+
+        // Update API Key State: Only restore if it matches the saved type
+        if (type !== 'standard' && isSavedType && hasSavedKey) {
+            setApiKey(initialConfig.byok_api_key!);
+        } else {
+            setApiKey('');
+        }
         // Sync to URL for deep linking and auto-scroll behavior
         const params = new URLSearchParams(searchParams.toString());
         params.set('option', type);
@@ -555,20 +568,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             </div>
                         </div>
 
-                        <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Available in your tier</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {Array.from(new Set([
-                                    ...(trustedModels?.free || []),
-                                    ...(trustedModels?.starter || []),
-                                    ...(trustedModels?.professional || [])
-                                ])).map(m => (
-                                    <span key={m} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white text-gray-700 border border-gray-200 shadow-sm">
-                                        {m.split('/').pop()}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+
                     </div>
                 )}
 
