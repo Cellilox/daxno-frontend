@@ -93,7 +93,7 @@ export default function BYOKConfig({
     };
 
     return (
-        <div className="space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+        <div className="space-y-4 border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50/50">
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <KeyIcon className="w-4 h-4 text-gray-500" />
                 Provider Configuration
@@ -128,7 +128,7 @@ export default function BYOKConfig({
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                         API Key for {getProviderLabel(provider)}
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <input
                             type="password"
                             value={apiKey}
@@ -139,7 +139,7 @@ export default function BYOKConfig({
                         <button
                             onClick={handleVerify}
                             disabled={!apiKey || apiKey === '••••••••' || isVerifying || (isVerified && apiKey === '••••••••')}
-                            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2
+                            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto
                                 ${isVerified
                                     ? 'bg-green-100 text-green-700 border border-green-200 cursor-default'
                                     : 'bg-customBlue hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed'
