@@ -77,7 +77,16 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
-    if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
+    if (
+      cleanMsg.includes('Free plan') ||
+      cleanMsg.includes('Daily extraction limit') ||
+      cleanMsg.includes('Monthly page quota') ||
+      cleanMsg.includes('DAILY_LIMIT_REACHED') ||
+      cleanMsg.includes('exceed the limit') ||
+      cleanMsg.includes('exceeds your remaining limit') ||
+      cleanMsg.includes('exhausted your managed credits') ||
+      cleanMsg.includes('BYOK monthly limit')
+    ) {
       // Dispatch to global handler
       window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
         detail: { error: cleanMsg }
@@ -293,8 +302,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       if (plan === 'Free' && subType === 'standard') {
         updateStatus('Checking permissions...', messageTypeEnum.INFO);
         const count = await validatePdfPageCount(file);
-        if (count > 3) {
-          throw new Error(`File has ${count} pages. You exceed the limit of 3 pages per document on the Free plan.`);
+        if (count > 5) {
+          throw new Error(`File has ${count} pages. You exceed the limit of 5 pages per document on the Free plan.`);
         }
       }
     } catch (e: any) {
@@ -528,8 +537,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           }
         }
 
-        if (totalPages > 3) {
-          throw new Error(`Batch total is ${totalPages} pages. You exceed the limit of 3 pages total on the Free plan.`);
+        if (totalPages > 5) {
+          throw new Error(`Batch total is ${totalPages} pages. You exceed the limit of 5 pages total on the Free plan.`);
         }
         updateStatus('', messageTypeEnum.NONE); // Clear status if valid
       }

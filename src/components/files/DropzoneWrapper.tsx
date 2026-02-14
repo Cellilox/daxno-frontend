@@ -10,10 +10,11 @@ type DropzoneWrapperProps = {
   linkOwner: string;
   plan: string;
   linkToken?: string;
+  subscriptionType?: string;
 };
 
 
-export default function DropzoneWrapper({ projectId, linkOwner, plan, linkToken }: DropzoneWrapperProps) {
+export default function DropzoneWrapper({ projectId, linkOwner, plan, linkToken, subscriptionType }: DropzoneWrapperProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [message, setMessage] = useState<messageType>({
     type: '', text: ''
@@ -44,6 +45,7 @@ export default function DropzoneWrapper({ projectId, linkOwner, plan, linkToken 
           onMessageChange={setMessage}
           plan={plan}
           linkToken={linkToken}
+          subscriptionType={subscriptionType}
         />
 
       </FormModal>

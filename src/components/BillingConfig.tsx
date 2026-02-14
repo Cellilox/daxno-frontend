@@ -44,6 +44,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const pathname = usePathname().slice(1);
     const router = useRouter();
     const searchParams = useSearchParams();
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Determine initial billing type based on URL param 'option' (new) or 'tier' (legacy) or config
     // Priority: URL Param > Config > Default
@@ -109,7 +110,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [isSaving, setIsSaving] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [isProvisioning, setIsProvisioning] = useState(false);
-    const [usage, setUsage] = useState<{ usage: number; limit: number; status: string; tokens?: number; requests?: number } | null>(null);
+    const [usage, setUsage] = useState<{
+        usage: number;
+        limit: number;
+        status: string;
+        tokens?: number;
+        requests?: number;
+        ocr_cost?: number;
+        ai_cost?: number;
+        service_fee?: number;
+        gross_payments?: number;
+    } | null>(null);
     const [activity, setActivity] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [isModelsOpen, setIsModelsOpen] = useState(false);
     const [isActivityOpen, setIsActivityOpen] = useState(false); // Default closed for cleaner UI
@@ -173,40 +184,28 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     // Track if we should highlight the CTA button
     const [highlightCTA, setHighlightCTA] = useState(false);
 
-    // Simple scroll to top when coming from modal
+    // Simple scroll to top when coming from modal or on initial load with param
     useEffect(() => {
-        const option = searchParams.get('option');
-        if (!option) return;
+        const option = searchParams.get('option') || searchParams.get('tier');
 
-        // Longer delay to ensure page fully loads
-        const timer = setTimeout(() => {
-            // Find the selected radio button
-            const radioElement = document.querySelector(`input[value="${option}"]`);
-
-            if (radioElement) {
-                // Get the parent container
-                const container = radioElement.closest('div.flex.items-start');
-
-                if (container) {
-                    // Calculate position to bring element to top of viewport
-                    const elementPosition = container.getBoundingClientRect().top + window.pageYOffset;
-                    const offsetPosition = elementPosition - 10; // 10px from top
-
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
+        // If we have a specific option in URL, scroll to container
+        if (option) {
+            // Longer delay to ensure page fully loads and layout stabilizes
+            const timer = setTimeout(() => {
+                if (containerRef.current) {
+                    const y = containerRef.current.getBoundingClientRect().top + window.scrollY;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
                 }
-            }
 
-            // Add highlight for managed option's Buy Credits button
-            if (option === 'managed') {
-                setHighlightCTA(true);
-                setTimeout(() => setHighlightCTA(false), 3000);
-            }
-        }, 800); // Longer delay for full page load
+                // Add highlight for managed option's Buy Credits button
+                if (option === 'managed') {
+                    setHighlightCTA(true);
+                    setTimeout(() => setHighlightCTA(false), 3000);
+                }
+            }, 500); // 500ms delay for stabilization
 
-        return () => clearTimeout(timer);
+            return () => clearTimeout(timer);
+        }
     }, [searchParams]);
 
     // Auto-fetch provider-specific models when provider and API key are configured (for BYOK)
@@ -281,15 +280,34 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         setModelsFetchError(null);
         // Reset search term for fresh start
         setSearchTerm('');
-        setIsKeyVerified(
+
+        // Determine if the new type matches the saved subscription
+        const isSavedType = type === initialConfig?.subscription_type;
+        const hasSavedKey = !!initialConfig?.byok_api_key;
+
+        // Calculate verification status
+        const newIsVerified =
             type === 'standard' ||
-            (type === 'managed' && initialConfig?.subscription_type === 'managed' && !!initialConfig?.byok_api_key) ||
-            (type === 'byok' && initialConfig?.subscription_type === 'byok' && !!initialConfig?.byok_api_key)
-        );
+            (isSavedType && hasSavedKey);
+
+        setIsKeyVerified(newIsVerified);
+
+        // Update API Key State: Only restore if it matches the saved type
+        if (type !== 'standard' && isSavedType && hasSavedKey) {
+            setApiKey(initialConfig.byok_api_key!);
+        } else {
+            setApiKey('');
+        }
         // Sync to URL for deep linking and auto-scroll behavior
         const params = new URLSearchParams(searchParams.toString());
         params.set('option', type);
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
+
+        // Gentle auto-scroll to top of container on tab switch
+        if (containerRef.current) {
+            const y = containerRef.current.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }
     };
 
     const handleProvision = async () => {
@@ -468,84 +486,67 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         });
     }, [allModels, searchTerm, preferredModels, billingType, provider, providerModels, isLoadingModels]);
 
+
+
     return (
-        <div className="max-w-2xl mx-auto mb-8 px-4">
-            <div className="bg-white shadow-md rounded-lg p-6 space-y-6">
+        <div ref={containerRef} className="max-w-2xl mx-auto mb-8 px-0 sm:px-4">
+            <div className="bg-white shadow-none sm:shadow-md rounded-none sm:rounded-lg p-2 sm:p-6 space-y-6">
                 <div>
                     <h2 className="text-xl font-bold mb-2">LLM Configuration</h2>
                     <p className="text-gray-600 text-sm">Choose how you want to pay for AI usage.</p>
                 </div>
 
-                <div className="flex flex-col space-y-4">
-                    {/* Option 1: Standard */}
-                    <div
+                {/* Tab Navigation */}
+                <div className="flex flex-wrap sm:flex-nowrap p-1 gap-1 bg-gray-100 rounded-xl">
+                    <button
                         onClick={() => handleBillingTypeChange('standard')}
-                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'standard' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                        className={`w-full py-2.5 text-xs sm:text-sm font-medium leading-5 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60 whitespace-nowrap
+                            ${billingType === 'standard'
+                                ? 'bg-white text-customBlue shadow'
+                                : 'text-gray-500 hover:bg-white/[0.12] hover:text-customBlue'
+                            }`}
                     >
-                        <input
-                            type="radio"
-                            name="billing_type"
-                            value="standard"
-                            checked={billingType === 'standard'}
-                            onChange={() => handleBillingTypeChange('standard')}
-                            className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
-                        />
-                        <div className="ml-3">
-                            <span className={`block text-sm font-bold ${billingType === 'standard' ? 'text-customBlue' : 'text-gray-900'}`}>Standard Subscription</span>
-                            <span className="block text-sm text-gray-500 mt-1">Simple monthly subscription with managed limits. Best for most users.</span>
-                        </div>
-                    </div>
-
-                    {/* Option 2: GYOMK (Generate Your Own Managed Key) */}
-                    <div
+                        Standard
+                    </button>
+                    <button
                         onClick={() => handleBillingTypeChange('managed')}
-                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'managed' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                        className={`w-full py-2.5 text-xs sm:text-sm font-medium leading-5 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-green-400 ring-white ring-opacity-60 whitespace-nowrap
+                            ${billingType === 'managed'
+                                ? 'bg-white text-green-700 shadow'
+                                : 'text-gray-500 hover:bg-white/[0.12] hover:text-green-700'
+                            }`}
                     >
-                        <input
-                            type="radio"
-                            name="billing_type"
-                            value="managed"
-                            checked={billingType === 'managed'}
-                            onChange={() => handleBillingTypeChange('managed')}
-                            className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
-                        />
-                        <div className="ml-3">
-                            <span className={`block text-sm font-bold ${billingType === 'managed' ? 'text-customBlue' : 'text-gray-900'}`}>Get Your Own Key (GYOK)</span>
-                            <span className="block text-sm text-gray-500 mt-1">Pre-pay for credits. We manage the key and rotation. Ideal for high volume or fluctuating usage.</span>
-                            <div className="flex gap-2 mt-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    No Monthly Fee
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                    Pay as you go
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Option 3: BYOK */}
-                    <div
+                        Managed (GYOK)
+                    </button>
+                    <button
                         onClick={() => handleBillingTypeChange('byok')}
-                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all duration-200 ${billingType === 'byok' ? 'border-customBlue bg-blue-50 ring-1 ring-customBlue' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+                        className={`w-full py-2.5 text-xs sm:text-sm font-medium leading-5 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-yellow-400 ring-white ring-opacity-60 whitespace-nowrap
+                            ${billingType === 'byok'
+                                ? 'bg-white text-yellow-700 shadow'
+                                : 'text-gray-500 hover:bg-white/[0.12] hover:text-yellow-700'
+                            }`}
                     >
-                        <input
-                            type="radio"
-                            name="billing_type"
-                            value="byok"
-                            checked={billingType === 'byok'}
-                            onChange={() => handleBillingTypeChange('byok')}
-                            className="mt-1 h-4 w-4 text-customBlue border-gray-300 focus:ring-customBlue"
-                        />
-                        <div className="ml-3">
-                            <span className={`block text-sm font-bold ${billingType === 'byok' ? 'text-customBlue' : 'text-gray-900'}`}>Bring Your Own Key (BYOK)</span>
-                            <span className="block text-sm text-gray-500 mt-1">Use your own API key from supported providers (OpenAI, Anthropic, OpenRouter, etc.). Direct billing with the provider + small service fee.</span>
-                            <div className="flex gap-2 mt-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    $10/mo Service Fee
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                        BYOK
+                    </button>
+                </div>
+
+                {/* Tab Content Descriptions */}
+                <div className="px-1">
+                    {billingType === 'standard' && (
+                        <p className="text-sm text-center text-gray-500 animate-in fade-in duration-300">
+                            Simple monthly subscription with managed limits. Best for most users.
+                        </p>
+                    )}
+                    {billingType === 'managed' && (
+                        <p className="text-sm text-center text-gray-500 animate-in fade-in duration-300">
+                            Pre-pay for credits. We manage the key & rotation. No monthly fees.
+                        </p>
+                    )}
+                    {billingType === 'byok' && (
+                        <p className="text-sm text-center text-gray-500 animate-in fade-in duration-300">
+                            Use your own API key (OpenAI, Anthropic, etc). Direct billing with provider.
+                        </p>
+                    )}
                 </div>
 
                 {billingType === 'standard' && (
@@ -567,20 +568,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                             </div>
                         </div>
 
-                        <div>
-                            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Available in your tier</h4>
-                            <div className="flex flex-wrap gap-2">
-                                {Array.from(new Set([
-                                    ...(trustedModels?.free || []),
-                                    ...(trustedModels?.starter || []),
-                                    ...(trustedModels?.professional || [])
-                                ])).map(m => (
-                                    <span key={m} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white text-gray-700 border border-gray-200 shadow-sm">
-                                        {m.split('/').pop()}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+
                     </div>
                 )}
 
@@ -624,15 +612,46 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                     {usage ? (
                                         <div className="space-y-4 pt-2">
                                             <div className="space-y-2">
-                                                <div className="flex justify-between text-xs font-medium text-gray-600">
-                                                    <span>Available Balance</span>
-                                                    <span>${usage.usage.toFixed(4)} / ${usage.limit.toFixed(2)}</span>
+                                                <div className="flex justify-between items-center text-xs font-medium text-gray-600">
+                                                    <span>Remaining Balance</span>
+                                                    <span className="text-sm font-bold text-gray-900">${(usage.limit - usage.usage).toFixed(2)}</span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                                     <div
                                                         className="bg-green-500 h-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(100, (usage.usage / usage.limit) * 100)}%` }}
+                                                        style={{ width: `${Math.max(5, Math.min(100, ((usage.limit - usage.usage) / usage.limit) * 100))}%` }}
                                                     />
+                                                </div>
+
+                                                {/* Transparency Breakdown */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">Cloud OCR Processing</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ocr_cost || 0).toFixed(4)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">AI Model Infrastructure</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost || 0).toFixed(4)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">Platform Service Fees</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.service_fee || 0).toFixed(2)}</span>
+                                                    </div>
+
+                                                    <div className="pt-2">
+                                                        <p className="text-[10px] text-gray-400 italic">
+                                                            OCR: $0.01/page • AI: Real-time token market rate + safety margin
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -670,7 +689,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 )}
 
                 {billingType === 'byok' && (
-                    <div className="space-y-6 mt-4 pt-4 border-t border-gray-100">
+                    <div className="space-y-4 mt-4 pt-4 border-t border-gray-100">
                         {/* Unlock Feature Overlay if not subscribed */}
                         {!isByokSubscribed && (
                             <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 sm:p-6 text-center space-y-4">
@@ -718,7 +737,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                         {/* Actual Input - Disabled or Hidden if not subscribed */}
                         {isByokSubscribed && (
                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="p-2 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex flex-col">
                                             <label className="block text-sm font-medium text-gray-700">Provider API Key</label>
@@ -1068,7 +1087,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                                 <tr>
                                                     <th className="px-3 py-2 text-left">Model</th>
                                                     <th className="px-3 py-2 text-right">Tokens</th>
-                                                    <th className="px-3 py-2 text-right">Cost</th>
+                                                    <th className="px-3 py-2 text-right">AI Cost</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-100">
@@ -1079,7 +1098,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                                             {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
                                                         </td>
                                                         <td className="px-3 py-2 text-right text-customBlue font-bold">
-                                                            ${(row.usage || 0).toFixed(6)}
+                                                            ${(row.ai_cost || 0).toFixed(6)}
                                                         </td>
                                                     </tr>
                                                 ))}

@@ -1,138 +1,145 @@
-import Link from "next/link";
-// import Testimonial from "@/components/Testimonial";
-import Demo from "@/components/Demo";
+'use client'
 
-export const dynamic = "force-dynamic";
+import Link from "next/link";
+import Demo from "@/components/Demo";
+import { motion, Variants } from "framer-motion";
+import { Sparkles, Zap, ArrowRight, Brain, Globe, Shield } from "lucide-react";
 
 export default function Home() {
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 text-center">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-          <span className="text-blue-600 block mb-3">Meet Cellilox</span>
-          {/* Your AI Doc Assistant */}
-          Your Company AI platform
-        </h1>
+    <div className="relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+      {/* Dynamic Background Elements - Optimized for PWA/Mobile Fancy */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-5%] left-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-blue-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-5%] right-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-indigo-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
 
-        <div className="prose prose-blue prose-xl mx-auto mb-8">
-          <p>
-            Speed up data entry with AI. Create projects,
-            define key insights, and let Cellilox handle the rest.
-          </p>
-          <p>
-            Powered by NLP and machine learning, Cellilox extracts data from incoming files,
-            manages your findings in spreadsheets, and seamlessly integrates with your favorite cloud and CRM tools (Google, HubSpot, etc.).
-          </p>
-          <p>
-            From scanned forms to email attachments—Cellilox works 24/7 to
-            streamline your workflows even when you're off.
-          </p>
-          <p>
-            Cellilox Connectors and Agents helps gather information from most of the tools you use in your day to day tasks.
-            These includes communication tools, project management tools, cloud storage tools and more.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-2">
-          <Link
-            href="/dashboard"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 md:py-3 px-6 md:px-8 rounded-lg shadow-lg transition-all hover:scale-105 text-sm md:text-base"
+      <main className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-12 sm:pt-24 pb-32">
+        <motion.div
+          className="text-center"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Revolutionary Badge */}
+          <motion.div
+            variants={itemVariants}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 text-blue-700 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] mb-8 shadow-sm"
           >
-            Get Started
-          </Link>
-          <Demo />
-        </div>
-      </div>
+            <Sparkles size={14} className="animate-spin-slow" />
+            AI Revolution
+          </motion.div>
 
-      {/* <div className="max-w-7xl mx-auto px-4 py-16 grid md:grid-cols-3 gap-12">
-        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold mb-3">Smart Document Processing</h3>
-          <p className="text-gray-600">
-            Extract precise data from any format - images, PDFs, scans. Our OCR + NLP engine learns your requirements and auto-fills spreadsheets in real-time.
-          </p>
-        </div>
+          {/* Optimized Heading for PWA/App feel */}
+          <motion.h1
+            variants={itemVariants}
+            className="text-[2rem] leading-[1.15] sm:text-6xl lg:text-8xl font-black tracking-tight text-gray-900 mb-6 shrink-0"
+          >
+            Empower Business with <br className="hidden sm:block" />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-1 leading-[1.3]">
+              Cellilox Intelligence
+            </span>
+          </motion.h1>
 
-        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold mb-3">Live Mobile Integration</h3>
-          <p className="text-gray-600">
-            Scan documents with your phone and watch data appear instantly on your desktop. Project-specific QR codes ensure seamless team collaboration.
-          </p>
-        </div>
+          {/* Balanced Subtext */}
+          <motion.p
+            variants={itemVariants}
+            className="max-w-2xl mx-auto text-base sm:text-xl md:text-2xl text-gray-500 mb-10 leading-relaxed font-medium"
+          >
+            The intuitive AI extraction engine. Turn unorganized documents into structured data,
+            leverage Advanced RAG, and scale 24/7.
+          </motion.p>
 
-        <div className="bg-white p-8 rounded-xl shadow-lg border-t-4 border-blue-600">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg mb-4 flex items-center justify-center">
-            <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold mb-3">Email Automation</h3>
-          <p className="text-gray-600">
-            Auto-process email attachments 24/7. Connect your Gmail, Outlook, etc__ and let Cellilox parse incoming documents while you focus on what matters.
-          </p>
-        </div>
-      </div>
-
-
-      <div className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Processing Pipeline
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Project Setup & Template Design</h4>
-                  <p className="text-gray-600">
-                    Create projects and define key data points like setting spreadsheets. The Agent will take all columns text as a batch of queries during query processing</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">2</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Secure Links and Project Address Domain Generation</h4>
-                  <p className="text-gray-600">Cellilox generates automatically secure links and project address domain to share to your documents senders</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">3</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Automatic Processing</h4>
-                  <p className="text-gray-600">Whenever documents are sent, cellilox process Optical Character Recognition, pass the result to An AI model for data analaysis and extraction even when you are away</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">4</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Review, Share & Export</h4>
-                  <p className="text-gray-600">Push clean data to HubSpot CRM or Google Sheets</p>
-                </div>
-              </div>
+          {/* Tactile CTA Hub */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center px-4 mb-20"
+          >
+            <Link
+              href="/dashboard"
+              className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 bg-blue-600 text-white font-bold py-4 px-10 rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-95 text-base sm:text-lg overflow-hidden"
+            >
+              Get Started Free
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <div className="w-full sm:w-auto">
+              <Demo />
             </div>
-          </div>
-        </div>
-      </div>
-      <Testimonial /> */}
+          </motion.div>
+
+          {/* Grid optimized for App Feel */}
+          <motion.div
+            variants={itemVariants}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left max-w-6xl mx-auto"
+          >
+            <div className="group p-6 sm:p-8 rounded-[1.5rem] bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-300">
+              <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <Zap size={22} className="text-blue-600" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5">Instant Extraction</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-500">From scans to spreadsheets in seconds using cutting-edge NLP.</p>
+            </div>
+
+            <div className="group p-6 sm:p-8 rounded-[1.5rem] bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300">
+              <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <Brain size={22} className="text-indigo-600" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5">Advanced RAG</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-500">Retrieval-Augmented Generation to query your documents with speed.</p>
+            </div>
+
+            <div className="group p-6 sm:p-8 rounded-[1.5rem] bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-purple-100 transition-all duration-300">
+              <div className="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <Shield size={22} className="text-purple-600" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5">Secure AI</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-500">Bank-level encryption ensures your data stays private and secure.</p>
+            </div>
+
+            <div className="group p-6 sm:p-8 rounded-[1.5rem] bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:border-emerald-100 transition-all duration-300">
+              <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <Globe size={22} className="text-emerald-600" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5">Global Intake</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-500">Process documents from email and cloud storage automatically.</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </main>
+
+      <style jsx global>{`
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 12s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

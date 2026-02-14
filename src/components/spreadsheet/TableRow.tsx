@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import TableCell from './TableCell';
 import { Pencil, Trash, MessageCircle, Eye, Sparkles } from 'lucide-react';
 import { Field, DocumentRecord } from './types';
@@ -23,9 +23,10 @@ type TableRowProps = {
   isRowBackfilling?: boolean;
   onBackfillRecord?: () => void;
   isOnline?: boolean;
+  columnWidths: { [key: string]: number };
 };
 
-export default function TableRow({
+const TableRow = memo(({
   row,
   columns,
   rowIndex,
@@ -46,7 +47,7 @@ export default function TableRow({
   isRowBackfilling,
   onBackfillRecord,
   isOnline = true
-}: TableRowProps & { columnWidths: { [key: string]: number } }) {
+}: TableRowProps) => {
   const isRowEditing = editingCell?.rowIndex === rowIndex;
   const editedRow = editedRecords[rowIndex] || row;
 
@@ -186,4 +187,19 @@ export default function TableRow({
       {/* Empty spacer cell removed as per user request to prevent covering data cells */}
     </tr>
   );
-} 
+}, (prevProps, nextProps) => {
+  // Custom Comparison for performance
+  return (
+    prevProps.row.updated_at === nextProps.row.updated_at &&
+    prevProps.rowIndex === nextProps.rowIndex &&
+    prevProps.hoveredRow === nextProps.hoveredRow &&
+    prevProps.editingCell === nextProps.editingCell &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isRowBackfilling === nextProps.isRowBackfilling &&
+    prevProps.isOnline === nextProps.isOnline &&
+    prevProps.columnWidths === nextProps.columnWidths &&
+    prevProps.columns.length === nextProps.columns.length
+  );
+});
+
+export default TableRow; 

@@ -32,8 +32,6 @@ export default function SpreadSheet({
   backfillingRecordId?: string | null,
   onBackfillRecord?: (id: string, filename: string) => void
 }) {
-  const [localColumns, setLocalColumns] = useState<Field[]>([]);
-  const [localRecords, setLocalRecords] = useState<DocumentRecord[]>([]);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
@@ -56,11 +54,6 @@ export default function SpreadSheet({
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const [showBatchDeleteAlert, setShowBatchDeleteAlert] = useState(false);
 
-
-  useEffect(() => {
-    if (columns) setLocalColumns(columns);
-    if (records) setLocalRecords(records);
-  }, [records, columns]);
 
   useEffect(() => {
     setColumnWidths(prev => {
@@ -126,14 +119,13 @@ export default function SpreadSheet({
 
   useEffect(() => {
     // Prevent scroll on initial load
-    if (!hasInitialized.current && localColumns.length > 0) {
+    if (!hasInitialized.current && columns.length > 0) {
       hasInitialized.current = true;
-      prevColumnsLength.current = localColumns.length;
+      prevColumnsLength.current = columns.length;
       return;
     }
 
-    if (localColumns.length > prevColumnsLength.current) {
-      // No change needed to SpreadSheet.tsx for now, verifying Records.tsx interactions
+    if (columns.length > prevColumnsLength.current) {
       if (scrollContainerRef.current) {
         // Scroll to the end (right)
         // Use setTimeout to allow DOM to update with new column
@@ -148,8 +140,8 @@ export default function SpreadSheet({
         }, 100);
       }
     }
-    prevColumnsLength.current = localColumns.length;
-  }, [localColumns.length]);
+    prevColumnsLength.current = columns.length;
+  }, [columns.length]);
 
   const handleShowColumnUpdatePopup = (column: Field) => {
     setSelectedColumnToUpdate(column);
@@ -235,7 +227,7 @@ export default function SpreadSheet({
 
   const handleCellChange = (rowIndex: number, columnId: string, value: string) => {
     setEditedRecords((prev) => {
-      const currentRecord = prev[rowIndex] || localRecords[rowIndex];
+      const currentRecord = prev[rowIndex] || records[rowIndex];
       const currentAnswer = currentRecord.answers[columnId] || {
         text: '',
         geometry: { left: 0, top: 0, width: 0, height: 0 }
@@ -344,7 +336,7 @@ export default function SpreadSheet({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedRecordIds(new Set(localRecords.map(r => r.id)));
+      setSelectedRecordIds(new Set(records.map(r => r.id)));
     } else {
       setSelectedRecordIds(new Set());
     }
@@ -370,9 +362,9 @@ export default function SpreadSheet({
     }
   };
 
-  const hasRecords = localRecords.length > 0;
+  const hasRecords = records.length > 0;
 
-  if (!localRecords) {
+  if (!records) {
     return <div data-testid="loading-records">Loading...</div>;
   }
 
@@ -388,14 +380,14 @@ export default function SpreadSheet({
               <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
             </>
           )}
-          {localColumns.map(col => (
+          {columns.map(col => (
             <col key={`col-${col.hidden_id}`} style={{ width: `${columnWidths[col.hidden_id] || 200}px` }} />
           ))}
-          <col style={{ width: '200px' }} />
+          <col className="w-[60px] md:w-[200px]" />
         </colgroup>
         <TableHeader
-          columns={localColumns}
-          records={localRecords}
+          columns={columns}
+          records={records}
           hoveredColumn={hoveredColumn}
           setHoveredColumn={setHoveredColumn}
           onEditColumn={handleShowColumnUpdatePopup}
@@ -407,17 +399,17 @@ export default function SpreadSheet({
           onBackfillColumn={handleBackfillColumn}
           // Batch Selection Props
           selectedCount={selectedRecordIds.size}
-          totalCount={localRecords.length}
+          totalCount={records.length}
           onSelectAll={handleSelectAll}
           backfillingFieldId={backfillingFieldId}
           isOnline={isOnline}
         />
         <tbody>
-          {localRecords.map((row, rowIndex) => (
+          {records.map((row, rowIndex) => (
             <TableRow
               key={`${row.id}-${rowIndex}`}
               row={row}
-              columns={localColumns}
+              columns={columns}
               rowIndex={rowIndex}
               hoveredRow={hoveredRow}
               setHoveredRow={setHoveredRow}
@@ -440,7 +432,7 @@ export default function SpreadSheet({
           ))}
 
           {/* Ghost Rows to fill screen */}
-          {Array.from({ length: Math.max(0, 20 - localRecords.length) }).map((_, i) => (
+          {Array.from({ length: Math.max(0, 20 - records.length) }).map((_, i) => (
             <tr key={`ghost-${i}`} className="h-12 border-b border-gray-100/50">
               {hasRecords && (
                 <>
@@ -453,7 +445,7 @@ export default function SpreadSheet({
                 </>
               )}
               {/* Columns Ghost */}
-              {localColumns.map(col => (
+              {columns.map(col => (
                 <td key={`ghost-${i}-${col.hidden_id}`} className="border-r border-gray-100"></td>
               ))}
               {/* Spacer Ghost - Removed */}
@@ -481,7 +473,7 @@ export default function SpreadSheet({
         setSelectedColumnToUpdate={setSelectedColumnToUpdate}
         selectedRecordForReview={selectedRecordForReview}
         handleCloseReviewRecordPopup={handleCloseReviewRecordPopup}
-        columns={localColumns}
+        columns={columns}
       />
 
       {/* Batch Delete Alert */}
@@ -523,7 +515,7 @@ export default function SpreadSheet({
         onClose={() => setIsBackfillModalOpen(false)}
         projectId={projectId}
         field={selectedFieldForBackfill}
-        recordCount={localRecords.length}
+        recordCount={records.length}
       />
     </div>
   );
