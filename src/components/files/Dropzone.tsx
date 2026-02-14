@@ -77,7 +77,13 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
-    if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
+    if (
+      cleanMsg.includes('On your Free plan') ||
+      cleanMsg.includes('DAILY_LIMIT_REACHED') ||
+      cleanMsg.includes('exceed the limit') ||
+      cleanMsg.includes('exhausted your managed credits') ||
+      cleanMsg.includes('BYOK monthly limit')
+    ) {
       // Dispatch to global handler
       window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
         detail: { error: cleanMsg }

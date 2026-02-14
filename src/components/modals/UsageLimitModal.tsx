@@ -10,13 +10,16 @@ interface UsageLimitModalProps {
     onClose: () => void
     message: string
     type: 'AI_EXHAUSTED' | 'DAILY_LIMIT'
+    currentTier?: 'standard' | 'byok' | 'managed'
 }
 
-export default function UsageLimitModal({ isOpen, onClose, message, type }: UsageLimitModalProps) {
+export default function UsageLimitModal({ isOpen, onClose, message, type, currentTier = 'standard' }: UsageLimitModalProps) {
     const router = useRouter()
     const icon = type === 'AI_EXHAUSTED' ? <Sparkles size={24} /> : <Lock size={24} />
     const title = "Limit Reached"
-    const subtitle = "Upgrade or connect your own provider to continue"
+    const subtitle = currentTier === 'managed'
+        ? "Recharge your credits to continue processing"
+        : "Upgrade or connect your own provider to continue"
 
     return (
         <StandardPopup
@@ -33,38 +36,44 @@ export default function UsageLimitModal({ isOpen, onClose, message, type }: Usag
             </div>
 
             <div className="space-y-3">
-                <button
-                    onClick={() => {
-                        onClose()
-                        router.push('/billing?tab=configuration&option=byok')
-                    }}
-                    className="w-full flex items-center justify-between p-4 bg-white border-2 border-gray-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                            <Key size={18} />
-                        </div>
-                        <div className="text-left">
-                            <p className="font-semibold text-gray-900">Bring Your Own Key</p>
-                            <p className="text-xs text-gray-500">Use your own OpenAI or OpenRouter key</p>
-                        </div>
-                    </div>
-                </button>
-
+                {/* Managed Credit Option */}
                 <button
                     onClick={() => {
                         onClose()
                         router.push('/billing?tab=configuration&option=managed')
                     }}
-                    className="w-full flex items-center justify-between p-4 bg-white border-2 border-gray-100 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+                    className={`w-full flex items-center justify-between p-4 bg-white border-2 rounded-xl transition-all group ${currentTier === 'managed' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-100 hover:border-indigo-500 hover:bg-indigo-50'
+                        }`}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <div className={`p-2 rounded-lg transition-colors ${currentTier === 'managed' ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'
+                            }`}>
                             <CreditCard size={18} />
                         </div>
                         <div className="text-left">
-                            <p className="font-semibold text-gray-900">Managed Credits</p>
-                            <p className="text-xs text-gray-500">Recharge and process at low platform rates</p>
+                            <p className="font-semibold text-gray-900">{currentTier === 'managed' ? 'Recharge Managed Credits' : 'Managed Credits'}</p>
+                            <p className="text-xs text-gray-500">{currentTier === 'managed' ? 'Add more usage to your platform balance' : 'Recharge and process at platform rates'}</p>
+                        </div>
+                    </div>
+                </button>
+
+                {/* BYOK Option */}
+                <button
+                    onClick={() => {
+                        onClose()
+                        router.push('/billing?tab=configuration&option=byok')
+                    }}
+                    className={`w-full flex items-center justify-between p-4 bg-white border-2 rounded-xl transition-all group ${currentTier === 'byok' ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-blue-500 hover:bg-blue-50'
+                        }`}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg transition-colors ${currentTier === 'byok' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                            }`}>
+                            <Key size={18} />
+                        </div>
+                        <div className="text-left">
+                            <p className="font-semibold text-gray-900">{currentTier === 'byok' ? 'Update BYOK Config' : 'Bring Your Own Key'}</p>
+                            <p className="text-xs text-gray-500">{currentTier === 'byok' ? 'Change or check your provider settings' : 'Connect your OpenAI or OpenRouter key'}</p>
                         </div>
                     </div>
                 </button>
