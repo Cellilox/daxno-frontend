@@ -6,6 +6,7 @@ import { getCachedProjects } from "@/lib/db/indexedDB";
 import { useUser } from "@clerk/nextjs";
 import { WifiOff } from "lucide-react";
 import Link from "next/link";
+import { getDashboardStats } from "@/actions/dashboard-actions";
 
 type DashboardStats = {
     projects: number;
@@ -23,25 +24,9 @@ export default function DashboardClient() {
         async function loadStats() {
             try {
                 if (isOnline) {
-                    // Fetch from server
-                    const res = await fetch('/api/dashboard/stats');
-                    if (res.ok) {
-                        const data = await res.json();
-                        setStats(data);
-                    } else {
-                        // Fallback to manual calculation
-                        const [projectsRes, docsRes] = await Promise.all([
-                            fetch('/api/projects'),
-                            fetch(`/api/docs?userId=${user?.id}`)
-                        ]);
-                        const projects = await projectsRes.json();
-                        const docs = await docsRes.json();
-                        setStats({
-                            projects: projects?.length || 0,
-                            pages: docs?.reduce((sum: number, d: any) => sum + (d.page_number || 0), 0) || 0,
-                            docs: docs?.length || 0
-                        });
-                    }
+                    // Fetch from server using Server Action
+                    const data = await getDashboardStats(user?.id);
+                    setStats(data);
                 } else {
                     // Offline: show cached project count only
                     const cached = await getCachedProjects(user?.id || '');

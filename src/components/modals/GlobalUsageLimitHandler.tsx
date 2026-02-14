@@ -32,9 +32,15 @@ export default function GlobalUsageLimitHandler() {
             setMessage(cleanMsg.replace(/"/g, ''))
             setCurrentTier('byok')
             setIsOpen(true)
-        } else if (cleanMsg.includes('On your Free plan') || cleanMsg.includes('DAILY_LIMIT_REACHED') || cleanMsg.includes('exceed the limit')) {
+        } else if (cleanMsg.includes('Free plan') ||
+            cleanMsg.includes('Daily extraction limit') ||
+            cleanMsg.includes('Monthly page quota') ||
+            cleanMsg.includes('exceed the limit') ||
+            cleanMsg.includes('exceeds your remaining limit')) {
             setType('DAILY_LIMIT')
             setMessage(cleanMsg.replace(/"/g, ''))
+            // If it's a safety check error, we might not know the tier for sure, 
+            // but 'standard' triggers the upgrade options which is appropriate.
             setCurrentTier('standard')
             setIsOpen(true)
         }

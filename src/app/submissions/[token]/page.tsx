@@ -30,6 +30,7 @@ export default async function Submission({ params }: { params: Promise<{ token: 
           linkOwner={project.owner}
           plan={plan.plan_name}
           linkToken={token}
+          subscriptionType={plan.subscription_type}
         />
       </div>
     </div>

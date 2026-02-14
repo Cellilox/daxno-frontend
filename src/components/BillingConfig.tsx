@@ -109,7 +109,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [isSaving, setIsSaving] = useState(false);
     const [isSubscribing, setIsSubscribing] = useState(false);
     const [isProvisioning, setIsProvisioning] = useState(false);
-    const [usage, setUsage] = useState<{ usage: number; limit: number; status: string; tokens?: number; requests?: number } | null>(null);
+    const [usage, setUsage] = useState<{
+        usage: number;
+        limit: number;
+        status: string;
+        tokens?: number;
+        requests?: number;
+        ocr_cost?: number;
+        ai_cost?: number;
+        service_fee?: number;
+        gross_payments?: number;
+    } | null>(null);
     const [activity, setActivity] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [isModelsOpen, setIsModelsOpen] = useState(false);
     const [isActivityOpen, setIsActivityOpen] = useState(false); // Default closed for cleaner UI
@@ -624,15 +634,46 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                     {usage ? (
                                         <div className="space-y-4 pt-2">
                                             <div className="space-y-2">
-                                                <div className="flex justify-between text-xs font-medium text-gray-600">
-                                                    <span>Available Balance</span>
-                                                    <span>${usage.usage.toFixed(4)} / ${usage.limit.toFixed(2)}</span>
+                                                <div className="flex justify-between items-center text-xs font-medium text-gray-600">
+                                                    <span>Remaining Balance</span>
+                                                    <span className="text-sm font-bold text-gray-900">${(usage.limit - usage.usage).toFixed(2)}</span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                                     <div
                                                         className="bg-green-500 h-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(100, (usage.usage / usage.limit) * 100)}%` }}
+                                                        style={{ width: `${Math.max(5, Math.min(100, ((usage.limit - usage.usage) / usage.limit) * 100))}%` }}
                                                     />
+                                                </div>
+
+                                                {/* Transparency Breakdown */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">Cloud OCR Processing</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ocr_cost || 0).toFixed(4)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">AI Model Infrastructure</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost || 0).toFixed(4)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">Platform Service Fees</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.service_fee || 0).toFixed(2)}</span>
+                                                    </div>
+
+                                                    <div className="pt-2">
+                                                        <p className="text-[10px] text-gray-400 italic">
+                                                            OCR: $0.01/page • AI: Real-time token market rate + safety margin
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -1068,7 +1109,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                                 <tr>
                                                     <th className="px-3 py-2 text-left">Model</th>
                                                     <th className="px-3 py-2 text-right">Tokens</th>
-                                                    <th className="px-3 py-2 text-right">Cost</th>
+                                                    <th className="px-3 py-2 text-right">AI Cost</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-100">
@@ -1079,7 +1120,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                                             {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
                                                         </td>
                                                         <td className="px-3 py-2 text-right text-customBlue font-bold">
-                                                            ${(row.usage || 0).toFixed(6)}
+                                                            ${(row.ai_cost || 0).toFixed(6)}
                                                         </td>
                                                     </tr>
                                                 ))}
