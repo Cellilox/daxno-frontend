@@ -29,6 +29,8 @@ export interface BillingConfigProps {
     currentEndDate?: string | Date;
 }
 
+const TRUSTED_OPENROUTER_PREFIXES = ['openai/', 'anthropic/', 'google/', 'deepseek/'];
+
 export default function BillingConfig({ initialConfig, trustedModels, allModels, currentPlan, currentInterval, currentAmount, currentEndDate }: BillingConfigProps) {
     // 3 Modes: 'standard', 'byok' (Own Key), 'managed' (GYOMK)
     // Map initialConfig.subscription_type (standard/byok) to one of these.
@@ -468,8 +470,17 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
         let filtered = sourceList;
 
+        // Apply Trusted Provider Filtering for Managed and BYOK (OpenRouter)
+        // Standard tier remains unfiltered as per requirements
+        if (billingType !== 'standard' && (billingType === 'managed' || (billingType === 'byok' && provider === 'openrouter'))) {
+            // Only show models from trusted prefixes
+            filtered = filtered.filter(m =>
+                TRUSTED_OPENROUTER_PREFIXES.some(prefix => m.id.toLowerCase().startsWith(prefix))
+            );
+        }
+
         if (searchTerm) {
-            filtered = sourceList.filter(m =>
+            filtered = filtered.filter(m =>
                 m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 m.id.toLowerCase().includes(searchTerm.toLowerCase())
