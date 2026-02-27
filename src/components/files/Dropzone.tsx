@@ -195,8 +195,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
           displayMsg = "Permission Error: Access denied to AI resources.";
         }
 
-        // Forward error_code (typed) to global handler — falls back to message string
-        const errorSignal = data.error_code || displayMsg;
+        // Use typed error_code for known custom errors; fall back to the actual message
+        // when the code is the generic 'PROCESSING_FAILED' (set by the broad except block).
+        // This lets rate-limit keywords inside the message still trigger the modal.
+        const errorSignal = (data.error_code && data.error_code !== 'PROCESSING_FAILED')
+          ? data.error_code
+          : displayMsg;
         if (checkLimitError(errorSignal)) return; // modal will handle it
 
         setIsLoading(false);
