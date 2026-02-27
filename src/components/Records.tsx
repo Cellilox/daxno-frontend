@@ -23,6 +23,10 @@ type RecordsProps = {
 
 export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
+    // Abort flag: set to true when a provider error is detected mid-backfill.
+    // Prevents race condition where already-dispatched Celery tasks fire backfill_record_start
+    // AFTER the error, putting cells back into __BACKFILLING__ and extending the spinners.
+    const backfillAbortedRef = useRef(false);
     const { isOnline } = useSyncStatus();
     const [isConnected, setIsConnected] = useState(false);
     const [showConnecting, setShowConnecting] = useState(false);
@@ -422,6 +426,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 setProcessingStatus(`Smart Backfill: Initializing '${data.field_name}'...`);
             }
 
+            // Reset abort flag — this is the start of a fresh column backfill.
+            backfillAbortedRef.current = false;
+
             // Instantly apply __BACKFILLING__ placeholder; save original so it can be
             // restored if the backfill fails (the popup already communicates the error).
             setOnlineRecords(prev => prev.map(rec => {
@@ -446,6 +453,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             console.log('[BACKFILL] Record processing started:', data.record_id);
             // We do NOT set backfillingFieldId here because that's for COLUMN-wide highlights.
             // Instead, we just mark the specific record/cell.
+
+            // If a provider error already aborted this backfill run, ignore subsequent
+            // task starts from in-flight Celery workers — they'll fail too and we've
+            // already cleared the UI.
+            if (backfillAbortedRef.current) return;
+
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
                     const original = rec.answers?.[data.field_id] ?? null;
@@ -486,6 +499,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }));
 
             if (isProviderError) {
+                // Mark the backfill as aborted so any in-flight Celery tasks that
+                // fire backfill_record_start afterwards are ignored by the UI.
+                backfillAbortedRef.current = true;
                 // Provider is exhausted — stop ALL backfilling state immediately so the UI
                 // doesn't keep spinning for records that will never complete.
                 setBackfillingFieldId(null);
