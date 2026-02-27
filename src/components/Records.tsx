@@ -288,7 +288,38 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
         const handleRecordUpdated = (data: any) => {
             setOnlineRecords(prev => {
-                const updated = prev.map(x => x.id === data.record.id ? data.record : x);
+                const updated = prev.map(x => {
+                    if (x.id !== data.record.id) return x;
+
+                    // Smart merge: never overwrite a cell that already has real text
+                    // with an empty/null value from an error or partial update.
+                    // This protects existing good column data from being wiped when
+                    // a backfill fails for one column while others already have values.
+                    const incomingAnswers: Record<string, any> = data.record.answers || {};
+                    const existingAnswers: Record<string, any> = x.answers || {};
+                    const mergedAnswers: Record<string, any> = { ...incomingAnswers };
+
+                    for (const key in existingAnswers) {
+                        const existingVal = existingAnswers[key];
+                        const incomingVal = incomingAnswers[key];
+                        // If existing cell has real text and incoming is empty/null, keep existing.
+                        // Exception: if the incoming value has __backfill_error__ tag, accept it
+                        // (the backend explicitly marked it as the failed field).
+                        const existingHasText = existingVal?.text && existingVal.text !== '__BACKFILLING__' && existingVal.text !== 'Not Found';
+                        const incomingIsEmpty = !incomingVal?.text || incomingVal.text === '';
+                        const incomingIsBackfillError = incomingVal?.__backfill_error__;
+                        if (existingHasText && incomingIsEmpty && !incomingIsBackfillError) {
+                            mergedAnswers[key] = existingVal;
+                        }
+                    }
+
+                    // Preserve _isRowBackfilling state only if the record is still being processed
+                    return {
+                        ...data.record,
+                        answers: mergedAnswers,
+                        _isRowBackfilling: false,
+                    };
+                });
                 updateRecordInCache(projectId, data.record);
                 return updated;
             });
