@@ -111,6 +111,7 @@ const TableCell = memo(({
         prevProps.isCellEditing === nextProps.isCellEditing &&
         prevProps.isOnline === nextProps.isOnline &&
         prevProps.isRowBackfilling === nextProps.isRowBackfilling &&
+        prevProps.backfillingFieldId === nextProps.backfillingFieldId &&
         prevProps.editedRow.answers[prevProps.column.hidden_id]?.text === nextProps.editedRow.answers[nextProps.column.hidden_id]?.text &&
         prevProps.editedRow.answers?.__status__ === nextProps.editedRow.answers?.__status__ &&
         prevProps.editedRow.answers?.__error__ === nextProps.editedRow.answers?.__error__

@@ -389,6 +389,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             if (data.field_name) {
                 setProcessingStatus(`Smart Backfill: Initializing '${data.field_name}'...`);
             }
+
+            // Instantly apply __BACKFILLING__ placeholder to all records locally for progressive reveal
+            setOnlineRecords(prev => prev.map(rec => {
+                return {
+                    ...rec,
+                    answers: {
+                        ...rec.answers,
+                        [data.field_id]: { text: '__BACKFILLING__', page: 0 }
+                    }
+                };
+            }));
         });
         socket.on('backfill_status', (data: { message: string }) => {
             setProcessingStatus(data.message);
@@ -415,7 +426,6 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }));
         });
 
-        // ERROR HANDLER: map error_code → correct UI message
         socket.on('processing_error', (data: {
             message: string;
             error_code?: string;
@@ -436,10 +446,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 detail: { error: errorCode }
             }));
 
-            // Clear analyzing state for the specific row
+            // Clear analyzing state for the specific row and specific BACKFILLING cells
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
-                    return { ...rec, _isRowBackfilling: false };
+                    const newAnswers = { ...rec.answers };
+                    // If a cell was stuck in __BACKFILLING__ waiting for a success that failed
+                    for (const key in newAnswers) {
+                        if (newAnswers[key]?.text === '__BACKFILLING__') {
+                            newAnswers[key] = { text: 'Not Found', page: 0 }; // Revert or graceful fail
+                        }
+                    }
+                    return { ...rec, _isRowBackfilling: false, answers: newAnswers };
                 }
                 return rec;
             }));
@@ -508,9 +525,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     }, [onlineRecords, offlineRecords, cachedRecords]);
 
     // [DISPLAY ONLY] Count of rows currently processing
-    const processingCount = useMemo(() =>
-        rowData.filter(r => r.answers?.__status__ === 'processing' || (r as any)._isRowBackfilling).length
-        , [rowData]);
+    const processingCount = useMemo(() => {
+        return rowData.filter(r => {
+            if (r.answers?.__status__ === 'processing' || (r as any)._isRowBackfilling) return true;
+            if (r.answers) {
+                for (const key in r.answers) {
+                    if (r.answers[key]?.text === '__BACKFILLING__') return true;
+                }
+            }
+            return false;
+        }).length;
+    }, [rowData]);
 
     // [SCALABILITY] Auto-clear processing banners when no items are outstanding.
     // A 1500ms debounce prevents a brief 0-count flash (due to socket event ordering)
