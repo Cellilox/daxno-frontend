@@ -24,10 +24,10 @@ export default function GlobalUsageLimitHandler() {
         const cleanMsg = typeof errorVal === 'string' ? errorVal : JSON.stringify(errorVal)
 
         // ── New typed error_code values from backend ──────────────────────
-        if (cleanMsg === 'PROVIDER_RATE_LIMIT_EXHAUSTED' || cleanMsg.includes('rate limit persisted after')) {
+        if (cleanMsg === 'PROVIDER_RATE_LIMIT_EXHAUSTED' || cleanMsg.includes('rate limit persisted after') || cleanMsg.toLowerCase().includes('provider rate limit')) {
             setType('RATE_LIMIT')
-            setMessage('Your AI provider rate limit was reached and retries were exhausted. Please try again in a few minutes or switch to a different AI model in your project settings.')
-            setCurrentTier('byok')
+            setMessage('The free AI model you selected is currently overloaded or rate-limited by the provider. Please try switching to a different model, or upgrade to BYOK/Managed for dedicated limits.')
+            setCurrentTier('standard')
             setIsOpen(true)
         } else if (cleanMsg === 'QUOTA_DAILY_LIMIT' || cleanMsg.includes('Daily extraction limit')) {
             setType('DAILY_LIMIT')
