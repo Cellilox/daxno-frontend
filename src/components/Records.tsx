@@ -469,38 +469,59 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         }) => {
             console.warn('[SOCKET] Processing error received:', data);
 
-            // Clear global highlight if not a per-record error
-            if (!data.record_id) {
-                setBackfillingFieldId(null);
-                setProcessingStatus(null);
-            }
-
             // Use typed error_code, but fall back to message when code is the generic 'PROCESSING_FAILED'
-            // The backend's broad except block sets error_code='PROCESSING_FAILED' for ALL untyped errors,
-            // including rate limits. We must check the actual message to trigger the correct modal.
             const errorCode = (data.error_code && data.error_code !== 'PROCESSING_FAILED')
                 ? data.error_code
                 : (data.message || '');
+
+            // Detect provider/rate-limit errors — these affect ALL records sharing the same model.
+            // When one hits, the whole column backfill is dead; clear every spinning cell at once.
+            const isProviderError = errorCode.toLowerCase().includes('rate limit')
+                || errorCode.toLowerCase().includes('provider')
+                || errorCode.toLowerCase().includes('credits')
+                || errorCode === 'PROVIDER_RATE_LIMIT_EXHAUSTED';
+
             window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
                 detail: { error: errorCode, subscriptionType: subscriptionType || 'standard' }
             }));
 
-            // Restore the pre-backfill cell value for any cell still stuck in __BACKFILLING__.
-            // The failure popup already communicates the error; the cell should show its original
-            // data so the user doesn't lose context. Empty cells go back to null/empty.
-            setOnlineRecords(prev => prev.map(rec => {
-                if (rec.id === data.record_id) {
+            if (isProviderError) {
+                // Provider is exhausted — stop ALL backfilling state immediately so the UI
+                // doesn't keep spinning for records that will never complete.
+                setBackfillingFieldId(null);
+                setProcessingStatus(null);
+                setOnlineRecords(prev => prev.map(rec => {
                     const newAnswers = { ...rec.answers };
+                    let changed = false;
                     for (const key in newAnswers) {
                         if (newAnswers[key]?.text === '__BACKFILLING__') {
-                            // __original__ is whatever was in the cell before backfill started
                             newAnswers[key] = newAnswers[key].__original__ ?? null;
+                            changed = true;
                         }
                     }
-                    return { ...rec, _isRowBackfilling: false, answers: newAnswers };
+                    return changed
+                        ? { ...rec, _isRowBackfilling: false, answers: newAnswers }
+                        : rec.id === data.record_id ? { ...rec, _isRowBackfilling: false } : rec;
+                }));
+            } else {
+                // Non-provider error (e.g. missing OCR cache) — clear just this record.
+                if (!data.record_id) {
+                    setBackfillingFieldId(null);
+                    setProcessingStatus(null);
                 }
-                return rec;
-            }));
+                setOnlineRecords(prev => prev.map(rec => {
+                    if (rec.id === data.record_id) {
+                        const newAnswers = { ...rec.answers };
+                        for (const key in newAnswers) {
+                            if (newAnswers[key]?.text === '__BACKFILLING__') {
+                                newAnswers[key] = newAnswers[key].__original__ ?? null;
+                            }
+                        }
+                        return { ...rec, _isRowBackfilling: false, answers: newAnswers };
+                    }
+                    return rec;
+                }));
+            }
         });
 
         socket.on('backfill_record_complete', (data: { record_id: string, field_id: string, answer: any }) => {
