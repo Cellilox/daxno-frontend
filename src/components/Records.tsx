@@ -440,8 +440,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 setProcessingStatus(null);
             }
 
-            // Dispatch typed error event for GlobalUsageLimitHandler
-            const errorCode = data.error_code || data.message || '';
+            // Use typed error_code, but fall back to message when code is the generic 'PROCESSING_FAILED'
+            // The backend's broad except block sets error_code='PROCESSING_FAILED' for ALL untyped errors,
+            // including rate limits. We must check the actual message to trigger the correct modal.
+            const errorCode = (data.error_code && data.error_code !== 'PROCESSING_FAILED')
+                ? data.error_code
+                : (data.message || '');
             window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
                 detail: { error: errorCode }
             }));
