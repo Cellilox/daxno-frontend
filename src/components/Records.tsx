@@ -482,14 +482,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 detail: { error: errorCode, subscriptionType: subscriptionType || 'standard' }
             }));
 
-            // Clear analyzing state for the specific row and specific BACKFILLING cells
+            // Clear analyzing state for the specific row and specific BACKFILLING cells.
+            // Always show the real error message — this matches what the DB stores and
+            // what the user sees on page refresh. 'Not Found' was misleading.
+            const errorMsg = data.message || 'Backfill failed';
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
                     const newAnswers = { ...rec.answers };
-                    // If a cell was stuck in __BACKFILLING__ waiting for a success that failed
                     for (const key in newAnswers) {
                         if (newAnswers[key]?.text === '__BACKFILLING__') {
-                            newAnswers[key] = { text: 'Not Found', page: 0 }; // Revert or graceful fail
+                            newAnswers[key] = { text: errorMsg, page: 0 };
                         }
                     }
                     return { ...rec, _isRowBackfilling: false, answers: newAnswers };
