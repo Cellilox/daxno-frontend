@@ -20,6 +20,8 @@ type TableHeaderProps = {
   onSelectAll?: (checked: boolean) => void;
   backfillingFieldId?: string | null;
   isOnline?: boolean;
+  isCreatingColumn: boolean;
+  setIsCreatingColumn: (val: boolean) => void;
 };
 
 export default function TableHeader({
@@ -38,11 +40,12 @@ export default function TableHeader({
   totalCount = 0,
   onSelectAll,
   backfillingFieldId,
-  isOnline = true
+  isOnline = true,
+  isCreatingColumn,
+  setIsCreatingColumn
 }: TableHeaderProps) {
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
-  const [showCreateColumn, setShowCreateColumn] = useState(false);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -224,23 +227,23 @@ export default function TableHeader({
 
         <th
           className={`px-2 md:px-4 py-2 text-left text-sm font-semibold text-gray-700 tracking-wide sticky right-0 border-l border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors z-30 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)] 
-            ${showCreateColumn ? 'w-[200px] min-w-[200px]' : 'w-[60px] md:w-[200px] min-w-[60px] md:min-w-[200px]'}`}
+            ${isCreatingColumn ? 'w-[200px] min-w-[200px]' : 'w-[60px] md:w-[200px] min-w-[60px] md:min-w-[200px]'}`}
         >
-          {isOnline && !showCreateColumn ? (
+          {isOnline && !isCreatingColumn ? (
             <button
-              onClick={() => setShowCreateColumn(true)}
+              onClick={() => setIsCreatingColumn(true)}
               data-testid="add-column-button"
               className="flex items-center gap-2 text-gray-500 hover:text-blue-600 w-full h-full justify-center"
             >
               <PlusCircle className="w-5 h-5 flex-shrink-0" />
               <span className="hidden md:inline whitespace-nowrap">Add Column</span>
             </button>
-          ) : isOnline && showCreateColumn ? (
+          ) : isOnline && isCreatingColumn ? (
             <div className="w-full">
               <CreateColumn
                 projectId={projectId}
-                onSuccess={() => setShowCreateColumn(false)}
-                onCancel={() => setShowCreateColumn(false)}
+                onSuccess={() => setIsCreatingColumn(false)}
+                onCancel={() => setIsCreatingColumn(false)}
                 showToggle={false}
               />
             </div>
