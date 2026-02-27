@@ -422,13 +422,15 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 setProcessingStatus(`Smart Backfill: Initializing '${data.field_name}'...`);
             }
 
-            // Instantly apply __BACKFILLING__ placeholder to all records locally for progressive reveal
+            // Instantly apply __BACKFILLING__ placeholder; save original so it can be
+            // restored if the backfill fails (the popup already communicates the error).
             setOnlineRecords(prev => prev.map(rec => {
+                const original = rec.answers?.[data.field_id] ?? null;
                 return {
                     ...rec,
                     answers: {
                         ...rec.answers,
-                        [data.field_id]: { text: '__BACKFILLING__', page: 0 }
+                        [data.field_id]: { text: '__BACKFILLING__', page: 0, __original__: original }
                     }
                 };
             }));
@@ -446,11 +448,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             // Instead, we just mark the specific record/cell.
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
+                    const original = rec.answers?.[data.field_id] ?? null;
                     return {
                         ...rec,
                         answers: {
                             ...rec.answers,
-                            [data.field_id]: { text: '__BACKFILLING__', page: 0 }
+                            [data.field_id]: { text: '__BACKFILLING__', page: 0, __original__: original }
                         }
                     };
                 }
@@ -482,16 +485,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 detail: { error: errorCode, subscriptionType: subscriptionType || 'standard' }
             }));
 
-            // Clear analyzing state for the specific row and specific BACKFILLING cells.
-            // Always show the real error message — this matches what the DB stores and
-            // what the user sees on page refresh. 'Not Found' was misleading.
-            const errorMsg = data.message || 'Backfill failed';
+            // Restore the pre-backfill cell value for any cell still stuck in __BACKFILLING__.
+            // The failure popup already communicates the error; the cell should show its original
+            // data so the user doesn't lose context. Empty cells go back to null/empty.
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
                     const newAnswers = { ...rec.answers };
                     for (const key in newAnswers) {
                         if (newAnswers[key]?.text === '__BACKFILLING__') {
-                            newAnswers[key] = { text: errorMsg, page: 0 };
+                            // __original__ is whatever was in the cell before backfill started
+                            newAnswers[key] = newAnswers[key].__original__ ?? null;
                         }
                     }
                     return { ...rec, _isRowBackfilling: false, answers: newAnswers };
