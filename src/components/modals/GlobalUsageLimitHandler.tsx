@@ -24,7 +24,7 @@ export default function GlobalUsageLimitHandler() {
         const cleanMsg = typeof errorVal === 'string' ? errorVal : JSON.stringify(errorVal)
 
         // ── New typed error_code values from backend ──────────────────────
-        if (cleanMsg === 'PROVIDER_RATE_LIMIT_EXHAUSTED' || cleanMsg.includes('rate limit persisted after') || cleanMsg.toLowerCase().includes('provider rate limit')) {
+        if (cleanMsg === 'PROVIDER_RATE_LIMIT_EXHAUSTED' || cleanMsg.includes('rate limit persisted after') || cleanMsg.toLowerCase().includes('provider rate limit') || cleanMsg.toLowerCase().includes('rate limit hit')) {
             setType('RATE_LIMIT')
             setMessage('The free AI model you selected is currently overloaded or rate-limited by the provider. Please try switching to a different model, or upgrade to BYOK/Managed for dedicated limits.')
             setCurrentTier('standard')
@@ -51,7 +51,7 @@ export default function GlobalUsageLimitHandler() {
             setMessage('The selected AI model is currently unavailable. Please select another model from your project settings.')
             setCurrentTier('standard')
             setIsOpen(true)
-        } else if (cleanMsg.includes('AI_CREDITS_EXHAUSTED') || cleanMsg.includes('402')) {
+        } else if (cleanMsg.includes('AI_CREDITS_EXHAUSTED') || cleanMsg.includes('402') || cleanMsg.toLowerCase().includes('credits are currently exhausted')) {
             setType('AI_EXHAUSTED')
             setMessage('AI credits exhausted. Please upgrade your plan or top up your credits to continue.')
             setCurrentTier('standard')
