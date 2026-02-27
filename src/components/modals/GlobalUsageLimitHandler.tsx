@@ -99,8 +99,12 @@ export default function GlobalUsageLimitHandler() {
         // Listen for Global Processing Errors — pass error_code preferentially
         const handleError = (data: { message: string; error_code?: string; record_id?: string }) => {
             console.log("[Global Socket] Processing Error:", data);
-            // Prefer error_code (typed) over message string (legacy)
-            const errorSignal = data.error_code || data.message || JSON.stringify(data);
+            // Prefer typed error_code, but fall back to message if error_code is the generic 'PROCESSING_FAILED'
+            // This is critical: the generic except block in Celery emits error_code='PROCESSING_FAILED'
+            // for ALL non-typed errors. We must also check the message string for rate limit keywords.
+            const errorSignal = (data.error_code && data.error_code !== 'PROCESSING_FAILED')
+                ? data.error_code
+                : (data.message || JSON.stringify(data));
             handleLimitReached({ detail: { error: errorSignal } } as any);
         };
 
