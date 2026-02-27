@@ -18,16 +18,23 @@ export default function GlobalUsageLimitHandler() {
     // Socket ref
     const socketRef = useRef<Socket | null>(null)
 
-    const handleLimitReached = useCallback((event: Event | CustomEvent | { detail: { error: string } }) => {
+    const handleLimitReached = useCallback((event: Event | CustomEvent | { detail: { error: string; subscriptionType?: string } }) => {
         const errorDetail = 'detail' in event ? event.detail.error : (event as any).error;
         const errorVal = errorDetail || ('detail' in event ? (event as CustomEvent).detail : event);
         const cleanMsg = typeof errorVal === 'string' ? errorVal : JSON.stringify(errorVal)
+        const subType: string = ('detail' in event ? (event as any).detail?.subscriptionType : null) || 'standard'
 
         // ── New typed error_code values from backend ──────────────────────
         if (cleanMsg === 'PROVIDER_RATE_LIMIT_EXHAUSTED' || cleanMsg.includes('rate limit persisted after') || cleanMsg.toLowerCase().includes('provider rate limit') || cleanMsg.toLowerCase().includes('rate limit hit')) {
             setType('RATE_LIMIT')
-            setMessage('The free AI model you selected is currently overloaded or rate-limited by the provider. Please try switching to a different model, or upgrade to BYOK/Managed for dedicated limits.')
-            setCurrentTier('standard')
+            // Show 'free AI model' only for standard users; BYOK/Managed users may also
+            // hit rate limits (their own API key's limits) so use neutral wording for them.
+            const isStandard = subType === 'standard'
+            setMessage(isStandard
+                ? 'The free AI model you selected is currently overloaded or rate-limited by the provider. Please try switching to a different model, or upgrade to BYOK/Managed for dedicated limits.'
+                : 'The AI model you selected is currently rate-limited by the provider. Please try again in a few minutes, or switch to a different model in your project settings.'
+            )
+            setCurrentTier(isStandard ? 'standard' : subType as 'byok' | 'managed')
             setIsOpen(true)
         } else if (cleanMsg === 'QUOTA_DAILY_LIMIT' || cleanMsg.includes('Daily extraction limit')) {
             setType('DAILY_LIMIT')

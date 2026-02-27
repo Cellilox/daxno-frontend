@@ -18,9 +18,10 @@ type RecordsProps = {
     initialFields: Field[];
     initialRecords: DocumentRecord[];
     project: any;
+    subscriptionType?: string;
 };
 
-export default function Records({ projectId, initialFields, initialRecords, project }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     const { isOnline } = useSyncStatus();
     const [isConnected, setIsConnected] = useState(false);
@@ -447,7 +448,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 ? data.error_code
                 : (data.message || '');
             window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
-                detail: { error: errorCode }
+                detail: { error: errorCode, subscriptionType: subscriptionType || 'standard' }
             }));
 
             // Clear analyzing state for the specific row and specific BACKFILLING cells

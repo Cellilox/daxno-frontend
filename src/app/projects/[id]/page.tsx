@@ -184,6 +184,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
           initialFields={fields}
           initialRecords={records}
           project={project}
+          subscriptionType={plan?.subscription_type}
         />
       </div>
     </div>
