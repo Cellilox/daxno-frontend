@@ -106,7 +106,8 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       cleanMsg.includes('exceed the limit') ||
       cleanMsg.includes('exceeds your remaining limit') ||
       cleanMsg.includes('exhausted your managed credits') ||
-      cleanMsg.includes('BYOK monthly limit')
+      cleanMsg.includes('BYOK monthly limit') ||
+      cleanMsg.toLowerCase().includes('provider rate limit')
     ) {
       // Dispatch to global handler
       window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
