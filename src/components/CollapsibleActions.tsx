@@ -17,6 +17,7 @@ import { Message } from "./chat/types"
 import Integrations from './integrations/Integrations';
 
 
+
 interface CollapsibleActionsProps {
   projectId: string;
   project: Project
@@ -52,6 +53,7 @@ export default function CollapsibleActions({
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState(false);
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState(false);
   const [isShareLinkPopupVisible, setIsShareLinkPopupVisible] = useState(false);
+
 
   return (
     <>
@@ -106,6 +108,8 @@ export default function CollapsibleActions({
                 </div>
                 <span className="text-sm font-medium">Email</span>
               </button>
+
+
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -169,6 +173,8 @@ export default function CollapsibleActions({
           </div>
         </StandardPopup>
       )}
+
+
 
       {isAddressPopupVisible && (
         <FormModal

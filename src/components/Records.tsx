@@ -7,7 +7,7 @@ import SyncBanner from './SyncBanner';
 import { Field, DocumentRecord } from './spreadsheet/types';
 import ColumnReorderPopup from './forms/ColumnReorderPopup';
 import BackfillRecordModal from './forms/BackfillRecordModal';
-import { getOfflineFiles, removeOfflineFile } from '@/lib/db/indexedDB';
+import { getOfflineFiles, removeOfflineFile, updateRecordAnswerInCache, updateRecordInCache, cacheRecords, removeRecordFromCache } from '@/lib/db/indexedDB';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { deleteBatchRecords, deleteRecord, getRecords, updateRecord } from '@/actions/record-actions';
 import { deleteColumn, getColumns, updateColumn } from '@/actions/column-actions';
@@ -78,6 +78,36 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 getColumns(projectId)
             ]);
             if (latestRecords && Array.isArray(latestRecords)) {
+
+                // [SELF-HEALING] Cleanup stale offline files that are actually live and complete
+                try {
+                    const { getOfflineFiles, removeOfflineFile } = await import('@/lib/db/indexedDB');
+                    const offlineFiles = await getOfflineFiles();
+                    const projectOfflineFiles = offlineFiles.filter((f: any) => f.projectId === projectId);
+
+                    let didCleanup = false;
+                    for (const offlineFile of projectOfflineFiles) {
+                        // Find matching record on server
+                        const serverRec = latestRecords.find(r => r.original_filename === offlineFile.metadata?.originalName);
+
+                        // If server has it AND server considers it done (no __status__), 
+                        // then the local "pending/processing" file is stale.
+                        if (serverRec && !serverRec.answers?.__status__) {
+                            console.log('[Records] Self-healing: Removing stale offline file', offlineFile.metadata?.originalName);
+                            await removeOfflineFile(offlineFile.id);
+                            didCleanup = true;
+                        }
+                    }
+
+                    if (didCleanup) {
+                        // Refresh offline list so UI updates immediately
+                        // We don't await this to keep the render fast, but we trigger it.
+                        loadOfflineData();
+                    }
+                } catch (cleanupErr) {
+                    console.warn('[Records] Self-healing failed:', cleanupErr);
+                }
+
                 setOnlineRecords(latestRecords);
                 // Update Cache
                 const { cacheRecords, syncRecordDeletions } = await import('@/lib/db/indexedDB');
@@ -231,49 +261,82 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const handleConnect = async () => {
             setIsConnected(true);
             try {
-                const [latestRecords, latestColumns] = await Promise.all([getRecords(projectId), getColumns(projectId)]);
-                if (latestRecords) setOnlineRecords(latestRecords);
-                if (latestColumns) setColumns(latestColumns);
+                // [UX FIX] Only perform a full refresh if we don't have records in state.
+                // This prevents "blowing away" live backfill progress during a brief reconnect.
+                if (onlineRecords.length === 0) {
+                    const [latestRecords, latestColumns] = await Promise.all([getRecords(projectId), getColumns(projectId)]);
+                    if (latestRecords) {
+                        setOnlineRecords(latestRecords);
+                        cacheRecords(projectId, latestRecords, latestColumns || columns);
+                    }
+                    if (latestColumns) setColumns(latestColumns);
+                }
             } catch (err) { }
         };
         const handleDisconnect = () => setIsConnected(false);
         const handleRecordCreated = (data: any) => {
-            setOnlineRecords(prev => [...prev, data.record]);
-            setColumns(data.fields);
-            if (data.record.answers?.__status__ !== 'processing') setProcessingStatus(null);
+            setOnlineRecords(prev => {
+                const updated = [...prev, data.record];
+                cacheRecords(projectId, updated, data.fields || columns);
+                return updated;
+            });
+            if (Array.isArray(data.fields)) setColumns(data.fields);
+            // [FIX] Do NOT clear processingStatus here — the record may still be processing.
+            // The banner will be cleared by record_updated when __status__ is removed.
             loadOfflineData();
         };
         const handleRecordUpdated = (data: any) => {
-            setOnlineRecords(prev => prev.map(x => x.id === data.record.id ? data.record : x));
-            setColumns(data.fields);
+            setOnlineRecords(prev => {
+                const updated = prev.map(x => x.id === data.record.id ? data.record : x);
+                updateRecordInCache(projectId, data.record);
+                return updated;
+            });
+            if (Array.isArray(data.fields)) setColumns(data.fields);
         };
         const handleRecordDeleted = (data: any) => {
-            setOnlineRecords(prev => prev.filter(x => x.id !== data.id));
-            setColumns(data.fields);
+            setOnlineRecords(prev => {
+                const updated = prev.filter(x => x.id !== data.id);
+                removeRecordFromCache(projectId, data.id);
+                return updated;
+            });
+            if (Array.isArray(data.fields)) setColumns(data.fields);
         };
         const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
             setOnlineRecords(data.records);
-            setColumns(prev => [...prev, data.field]);
+            setColumns(prev => Array.isArray(prev) ? [...prev, data.field] : [data.field]);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
-            setColumns(prev => prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x));
+            setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
         };
         const handleColumnDeleted = (data: { field_id: string }) => {
-            setColumns(prev => prev.filter(x => x.hidden_id !== data.field_id));
+            setColumns(prev => Array.isArray(prev) ? prev.filter(x => x.hidden_id !== data.field_id) : []);
         };
         const handleOcrStart = () => setProcessingStatus('Starting OCR...');
         const handleOcrProgress = (data: any) => {
             const progress = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
             setProcessingStatus(`OCR: Processing page ${data.current} of ${data.total} (${progress}%)`);
         };
-        const handleAiStart = () => setProcessingStatus('AI Analyzing document...');
+        const handleAiStart = () => {
+            // [UX] SILENCE the generic "AI Analyzing" blue banner if any backfill is active.
+            // We only show it for single-file uploads that aren't part of a backfill.
+            setBackfillingFieldId(fieldId => {
+                setBackfillingRecordId(recordId => {
+                    if (!fieldId && !recordId) {
+                        setProcessingStatus('AI Analyzing document...');
+                    }
+                    return recordId;
+                });
+                return fieldId;
+            });
+        };
         const handleBackfillComplete = (data: any) => {
-            console.log('[BACKFILL] Sync complete:', data.field_id);
-            if (data.records) setOnlineRecords(data.records);
-            if (data.fields) setColumns(data.fields);
-            setBackfillingFieldId(null);
-            setProcessingStatus(null);
-            loadOnlineData(); // Final refresh
+            console.log('[BACKFILL] Received backfill_complete (Cleanup):', data.field_id);
+            // This is now purely secondary as we rely on record_updated
+            if (data.records) {
+                setOnlineRecords(data.records);
+                cacheRecords(projectId, data.records, data.fields || columns);
+            }
+            if (data.fields && Array.isArray(data.fields)) setColumns(data.fields);
         };
         const handleRecordBackfillStart = (data: { record_id: string }) => {
             console.log('[BACKFILL] Single record re-analysis started:', data.record_id);
@@ -292,15 +355,21 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
         const handleRecordBackfillComplete = (data: { record: DocumentRecord, fields: Field[] }) => {
             console.log('[BACKFILL] Single record re-analysis complete:', data.record.id);
-            setOnlineRecords(prev => prev.map(rec => {
-                if (rec.id === data.record.id) {
-                    // Update data and clear the manual backfill indicator
-                    return { ...data.record, _isRowBackfilling: false };
-                }
-                return rec;
-            }));
-            setColumns(data.fields);
-            setBackfillingRecordId(null);
+
+            setOnlineRecords(prevRecords => {
+                const updated = prevRecords.map(rec => {
+                    if (rec.id === data.record.id) {
+                        return { ...data.record, _isRowBackfilling: false };
+                    }
+                    return rec;
+                });
+                updateRecordInCache(projectId, data.record);
+                return updated;
+            });
+
+            if (data.fields && Array.isArray(data.fields)) {
+                setColumns(data.fields);
+            }
         };
 
         socket.on('connect', handleConnect);
@@ -314,13 +383,24 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('ocr_start', handleOcrStart);
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
+        socket.on('backfill_column_start', (data: { field_id: string, field_name: string }) => {
+            console.log('[BACKFILL] Column re-analysis started:', data.field_id);
+            setBackfillingFieldId(data.field_id);
+            if (data.field_name) {
+                setProcessingStatus(`Smart Backfill: Initializing '${data.field_name}'...`);
+            }
+        });
+        socket.on('backfill_status', (data: { message: string }) => {
+            setProcessingStatus(data.message);
+        });
         socket.on('backfill_complete', handleBackfillComplete);
         socket.on('backfill_record_all_fields_start', handleRecordBackfillStart);
         socket.on('backfill_record_all_fields_complete', handleRecordBackfillComplete);
 
         socket.on('backfill_record_start', (data: { record_id: string, field_id: string }) => {
             console.log('[BACKFILL] Record processing started:', data.record_id);
-            setBackfillingFieldId(data.field_id);
+            // We do NOT set backfillingFieldId here because that's for COLUMN-wide highlights.
+            // Instead, we just mark the specific record/cell.
             setOnlineRecords(prev => prev.map(rec => {
                 if (rec.id === data.record_id) {
                     return {
@@ -335,29 +415,34 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }));
         });
 
-        // ERROR HANDLER: Catch 402/Quota errors to show Global Popup
-        socket.on('processing_error', (data: { message: string, record_id?: string }) => {
-            // Robust check for exhaustion keywords (recursive/stringified)
-            const rawMsg = JSON.stringify(data);
-            if (rawMsg.includes('AI_CREDITS_EXHAUSTED') || rawMsg.includes('402')) {
-                // Dispatch event expected by GlobalUsageLimitHandler
-                const event = new CustomEvent('daxno:usage-limit-reached', {
-                    detail: { error: 'AI_CREDITS_EXHAUSTED' }
-                });
-                window.dispatchEvent(event);
+        // ERROR HANDLER: map error_code → correct UI message
+        socket.on('processing_error', (data: {
+            message: string;
+            error_code?: string;
+            record_id?: string;
+            project_id?: string
+        }) => {
+            console.warn('[SOCKET] Processing error received:', data);
+
+            // Clear global highlight if not a per-record error
+            if (!data.record_id) {
+                setBackfillingFieldId(null);
+                setProcessingStatus(null);
             }
 
-            // Always clear "Analyzing..." state on error so row isn't stuck
-            // This handles both optimistic state and server-sent state
-            setBackfillingFieldId(null);
-            setBackfillingRecordId(null);
+            // Dispatch typed error event for GlobalUsageLimitHandler
+            const errorCode = data.error_code || data.message || '';
+            window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+                detail: { error: errorCode }
+            }));
+
+            // Clear analyzing state for the specific row
             setOnlineRecords(prev => prev.map(rec => {
-                if (rec._isRowBackfilling || rec.id === data.record_id) {
+                if (rec.id === data.record_id) {
                     return { ...rec, _isRowBackfilling: false };
                 }
                 return rec;
             }));
-            setProcessingStatus(null);
         });
 
         socket.on('backfill_record_complete', (data: { record_id: string, field_id: string, answer: any }) => {
@@ -374,6 +459,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 }
                 return rec;
             }));
+
+            // PERSIST TO INDEXEDDB: Keep the local device storage in sync with live extraction
+            updateRecordAnswerInCache(projectId, data.record_id, data.field_id, data.answer);
         });
 
 
@@ -390,6 +478,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);
             socket.off('backfill_complete', handleBackfillComplete);
+            socket.off('backfill_column_start');
             socket.off('backfill_record_all_fields_start', handleRecordBackfillStart);
             socket.off('backfill_record_all_fields_complete', handleRecordBackfillComplete);
             socket.off('processing_error'); // Remove error listeners
@@ -418,13 +507,24 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         );
     }, [onlineRecords, offlineRecords, cachedRecords]);
 
+    // [DISPLAY ONLY] Count of rows currently processing
     const processingCount = useMemo(() =>
-        rowData.filter(r => r.answers?.__status__ === 'processing').length
+        rowData.filter(r => r.answers?.__status__ === 'processing' || (r as any)._isRowBackfilling).length
         , [rowData]);
 
+    // [SCALABILITY] Auto-clear processing banners when no items are outstanding.
+    // A 1500ms debounce prevents a brief 0-count flash (due to socket event ordering)
+    // from clearing the banner prematurely while the task is still running.
     useEffect(() => {
-        if (processingCount === 0 && processingStatus) setProcessingStatus(null);
-    }, [processingCount, processingStatus]);
+        if (processingCount === 0) {
+            const timer = setTimeout(() => {
+                setBackfillingFieldId(null);
+                setBackfillingRecordId(null);
+                setProcessingStatus(null);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [processingCount]);
 
     return (
         <SmartAuthGuard>
@@ -450,7 +550,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                                 </div>
                             ) : null}
                         </div>
-                        {columns.length >= 2 && (
+                        {columns?.length >= 2 && (
                             <button
                                 onClick={() => setIsReorderPopupVisible(true)}
                                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded transition-colors"

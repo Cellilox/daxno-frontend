@@ -29,9 +29,18 @@ export default function BackfillModal({ isOpen, onClose, projectId, field, recor
             // Trigger the background task - backend returns immediately with "started"
             await backfillColumn(projectId, field.hidden_id, field.name);
             onClose(); // Close immediately to show the "Column Highlight" UX
-        } catch (error) {
+        } catch (error: any) {
             console.error('Backfill failed:', error);
-            alert('Failed to start backfill process');
+
+            // Check for 429 Too Many Requests
+            if (error?.message?.includes('429') || error?.status === 429) {
+                window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+                    detail: { error: 'AI_MODEL_BUSY' }
+                }));
+                onClose();
+            } else {
+                alert('Failed to start backfill process');
+            }
         } finally {
             setIsProcessing(false);
         }

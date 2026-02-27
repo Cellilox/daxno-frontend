@@ -9,17 +9,19 @@ interface UsageLimitModalProps {
     isOpen: boolean
     onClose: () => void
     message: string
-    type: 'AI_EXHAUSTED' | 'DAILY_LIMIT'
+    type: 'AI_EXHAUSTED' | 'DAILY_LIMIT' | 'RATE_LIMIT'
     currentTier?: 'standard' | 'byok' | 'managed'
 }
 
 export default function UsageLimitModal({ isOpen, onClose, message, type, currentTier = 'standard' }: UsageLimitModalProps) {
     const router = useRouter()
-    const icon = type === 'AI_EXHAUSTED' ? <Sparkles size={24} /> : <Lock size={24} />
-    const title = "Limit Reached"
-    const subtitle = currentTier === 'managed'
-        ? "Recharge your credits to continue processing"
-        : "Upgrade or connect your own provider to continue"
+    const icon = (type === 'AI_EXHAUSTED' || type === 'RATE_LIMIT') ? <Sparkles size={24} /> : <Lock size={24} />
+    const title = type === 'RATE_LIMIT' ? "Provider Rate Limit" : "Limit Reached"
+    const subtitle = type === 'RATE_LIMIT'
+        ? "Your AI provider rate limit was reached. Switch models or wait and retry."
+        : currentTier === 'managed'
+            ? "Recharge your credits to continue processing"
+            : "Upgrade or connect your own provider to continue"
 
     return (
         <StandardPopup

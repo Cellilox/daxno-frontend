@@ -154,7 +154,7 @@ export default function TableHeader({
             data-testid={`column-header-${column.name}`}
             className={`px-3 md:px-4 py-2 md:py-3 lg:py-4 text-left text-sm font-semibold tracking-wide relative border-r border-gray-200 transition-all cursor-pointer group
               ${backfillingFieldId === column.hidden_id
-                ? 'bg-purple-50 text-purple-900 border-b-2 border-b-purple-400'
+                ? 'bg-purple-100 text-purple-900 border-b-2 border-b-purple-600'
                 : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
             onMouseEnter={() => setHoveredColumn(column.hidden_id)}
             onMouseLeave={() => setHoveredColumn(null)}

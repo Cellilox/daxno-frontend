@@ -24,9 +24,17 @@ export default function BackfillRecordModal({ isOpen, onClose, projectId, record
         try {
             onClose(); // Close immediately for maximum responsiveness
             await backfillRecord(projectId, recordId);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Record re-analysis failed:', error);
-            alert('Failed to start re-analysis process');
+
+            // Check for 429 Too Many Requests
+            if (error?.message?.includes('429') || error?.status === 429) {
+                window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+                    detail: { error: 'AI_MODEL_BUSY' }
+                }));
+            } else {
+                alert('Failed to start re-analysis process');
+            }
         } finally {
             setIsProcessing(false);
         }

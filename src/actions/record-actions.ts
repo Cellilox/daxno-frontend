@@ -87,7 +87,7 @@ export async function getPresignedUrl(filename: string, projectId: string, conte
 
 
 
-export async function queryDocument(projectId: string, filename: string, original_filename?: string, linkToken?: string): Promise<{ success: boolean; data?: any; error?: string }> {
+export async function queryDocument(projectId: string, filename: string, original_filename?: string, linkToken?: string, isBulk?: boolean): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     let path = `/records/query-doc?project_id=${projectId}&filename=${filename}`;
     if (original_filename) {
@@ -95,6 +95,9 @@ export async function queryDocument(projectId: string, filename: string, origina
     }
     if (linkToken) {
       path += `&link_token=${encodeURIComponent(linkToken)}`;
+    }
+    if (isBulk) {
+      path += `&is_bulk=true`;
     }
     const fetchUrl = buildApiUrl(path);
     const response = await fetchAuthed(fetchUrl, {
