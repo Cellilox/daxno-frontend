@@ -77,6 +77,27 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       onMessageChange({ type: messageTypeEnum.NONE, text: '' });
       return true;
     }
+
+    // [AI GUIDANCE] handle Busy/Unavailable models globally
+    if (cleanMsg.includes('AI_MODEL_BUSY') || cleanMsg.includes('429')) {
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: 'AI_MODEL_BUSY' }
+      }));
+      setIsLoading(false);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+      return true;
+    }
+
+    if (cleanMsg.includes('AI_MODEL_UNAVAILABLE') || cleanMsg.includes('503')) {
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: 'AI_MODEL_UNAVAILABLE' }
+      }));
+      setIsLoading(false);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+      return true;
+    }
     if (
       cleanMsg.includes('Free plan') ||
       cleanMsg.includes('Daily extraction limit') ||
@@ -85,7 +106,10 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       cleanMsg.includes('exceed the limit') ||
       cleanMsg.includes('exceeds your remaining limit') ||
       cleanMsg.includes('exhausted your managed credits') ||
-      cleanMsg.includes('BYOK monthly limit')
+      cleanMsg.includes('BYOK monthly limit') ||
+      cleanMsg.toLowerCase().includes('provider rate limit') ||
+      cleanMsg.toLowerCase().includes('rate limit hit') ||
+      cleanMsg.toLowerCase().includes('credits are currently exhausted')
     ) {
       // Dispatch to global handler
       window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
@@ -161,15 +185,23 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         }, 1500);
       });
 
-      socket.on('processing_error', (data: { message: string }) => {
+      socket.on('processing_error', (data: { message: string; error_code?: string }) => {
         let displayMsg = data.message;
 
-        // Map technical errors to user friendly messages
+        // Map technical errors to user-friendly messages
         if (displayMsg.includes('Could not connect to the endpoint URL') || displayMsg.includes('EndpointConnectionError')) {
           displayMsg = "Network Error: Server could not reach AI provider. Please check your internet connection.";
         } else if (displayMsg.includes('ClientError') || displayMsg.includes('403')) {
           displayMsg = "Permission Error: Access denied to AI resources.";
         }
+
+        // Use typed error_code for known custom errors; fall back to the actual message
+        // when the code is the generic 'PROCESSING_FAILED' (set by the broad except block).
+        // This lets rate-limit keywords inside the message still trigger the modal.
+        const errorSignal = (data.error_code && data.error_code !== 'PROCESSING_FAILED')
+          ? data.error_code
+          : displayMsg;
+        if (checkLimitError(errorSignal)) return; // modal will handle it
 
         setIsLoading(false);
         setUploadError(displayMsg);
@@ -457,7 +489,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       updateStatus('Queuing analysis...', messageTypeEnum.INFO, 'Processing in background...');
 
-      const result = await queryDocument(projectId, filename, original_filename, linkToken);
+      const result = await queryDocument(projectId, filename, original_filename, linkToken, false);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -563,7 +595,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     setFiles(prev => [...prev, ...processedFiles]);
   }, [isBulkUploadAllowed, onMessageChange, plan, subscriptionType]);
 
-  const processSingleFile = async (fileStatus: FileStatus) => {
+  const processSingleFile = async (fileStatus: FileStatus, isBulk: boolean = false) => {
     const updateFileStatus = (update: Partial<FileStatus>) => {
       setFiles(prev => prev.map(f =>
         f.file === fileStatus.file ? { ...f, ...update } : f
@@ -623,7 +655,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
 
       // 3. Trigger Analysis (Async)
       updateFileStatus({ status: 'analyzing', progress: 60 });
-      const queryResult = await queryDocument(projectId, filename, file.name, linkToken);
+      const queryResult = await queryDocument(projectId, filename, file.name, linkToken, isBulk);
 
       if (!queryResult.success) {
         throw new Error(queryResult.error);
@@ -678,7 +710,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     try {
       // Process files sequentially to avoid overloading
       for (const fileStatus of files.filter(f => f.status === 'pending')) {
-        await processSingleFile(fileStatus);
+        await processSingleFile(fileStatus, true);
       }
     } finally {
       setIsProcessing(false);

@@ -260,6 +260,38 @@ export async function updateRecordInCache(projectId: string, updatedRecord: any)
     });
 }
 
+/**
+ * Updates a specific answer for a record in the project cache.
+ */
+export async function updateRecordAnswerInCache(projectId: string, recordId: string, fieldId: string, answer: any) {
+    const db = await getDB();
+    if (!db) return;
+
+    const cached = await db.get('cachedRecords', projectId);
+    if (!cached || !cached.data) return;
+
+    let modified = false;
+    const updatedData = cached.data.map((r: any) => {
+        if (r.id === recordId) {
+            modified = true;
+            return {
+                ...r,
+                answers: { ...(r.answers || {}), [fieldId]: answer }
+            };
+        }
+        return r;
+    });
+
+    if (modified) {
+        await db.put('cachedRecords', {
+            ...cached,
+            data: updatedData,
+            updatedAt: Date.now()
+        });
+        console.log(`[IndexedDB] Persisted partial result: Rec=${recordId}, Field=${fieldId}`);
+    }
+}
+
 export async function removeRecordFromCache(projectId: string, recordId: string) {
     const db = await getDB();
     if (!db) return;

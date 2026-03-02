@@ -1,9 +1,7 @@
 import Records from "@/components/Records"
 import CreateColumn from "@/components/forms/CreateColumn"
-import { fetchAuthed } from "@/lib/api-client"
-import { buildApiUrl } from "@/lib/api-utils"
 import { getColumns } from "@/actions/column-actions"
-import { get_project_plan, getProjectsById } from "@/actions/project-actions"
+import { get_project_plan, getProjectsById, getProjectRecords } from "@/actions/project-actions"
 import ExpandableDescription from "@/components/ExpandableDescription"
 import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
@@ -44,8 +42,6 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     getConversations(id)
   ]);
 
-  const recordsUrl = buildApiUrl(`/records/${id}`);
-
   // Safety Check: If project is missing (404/Deleted), return clean error UI
   if (!project || project.detail || !project.id) {
     console.error(`[ProjectView] Project ${id} not found or inaccessible:`, project);
@@ -64,26 +60,15 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   }
 
   const [
-    recordsResponse,
+    records,
     plan,
     ownerBillingConfig
   ] = await Promise.all([
-    fetchAuthed(recordsUrl),
+    getProjectRecords(id),
     get_project_plan(project.owner),
     getBillingConfigForUser(project.owner)
   ]);
 
-  let records: any = [];
-  try {
-    records = await recordsResponse.json();
-    if (!Array.isArray(records)) {
-      console.warn('[ProjectView] Records API returned non-array:', records);
-      records = [];
-    }
-  } catch (err) {
-    console.error('[ProjectView] Failed to parse records JSON:', err);
-    records = [];
-  }
   const is_project_owner = project.is_owner;
   const linkOwner = ""
   const chats = allProjectConversation?.flatMap((conv: Conversation) => conv.messages);
@@ -199,6 +184,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
           initialFields={fields}
           initialRecords={records}
           project={project}
+          subscriptionType={plan?.subscription_type}
         />
       </div>
     </div>

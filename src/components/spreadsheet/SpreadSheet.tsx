@@ -43,7 +43,7 @@ export default function SpreadSheet({
   const [editedRecords, setEditedRecords] = useState<{ [rowIndex: number]: DocumentRecord }>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRecordForReview, setSelectedRecordForReview] = useState<DocumentRecord | null>(null);
-
+  const [isCreatingColumn, setIsCreatingColumn] = useState<boolean>(false);
 
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: number }>({});
   const [isBackfillModalOpen, setIsBackfillModalOpen] = useState(false);
@@ -383,7 +383,7 @@ export default function SpreadSheet({
           {columns.map(col => (
             <col key={`col-${col.hidden_id}`} style={{ width: `${columnWidths[col.hidden_id] || 200}px` }} />
           ))}
-          <col className="w-[60px] md:w-[200px]" />
+          <col className={isCreatingColumn ? "w-[200px] min-w-[200px]" : "w-[60px] md:w-[200px]"} />
         </colgroup>
         <TableHeader
           columns={columns}
@@ -403,6 +403,8 @@ export default function SpreadSheet({
           onSelectAll={handleSelectAll}
           backfillingFieldId={backfillingFieldId}
           isOnline={isOnline}
+          isCreatingColumn={isCreatingColumn}
+          setIsCreatingColumn={setIsCreatingColumn}
         />
         <tbody>
           {records.map((row, rowIndex) => (

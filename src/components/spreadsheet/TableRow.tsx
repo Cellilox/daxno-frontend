@@ -196,9 +196,11 @@ const TableRow = memo(({
     prevProps.editingCell === nextProps.editingCell &&
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isRowBackfilling === nextProps.isRowBackfilling &&
+    prevProps.backfillingFieldId === nextProps.backfillingFieldId &&
     prevProps.isOnline === nextProps.isOnline &&
     prevProps.columnWidths === nextProps.columnWidths &&
-    prevProps.columns.length === nextProps.columns.length
+    prevProps.columns.length === nextProps.columns.length &&
+    prevProps.editedRecords === nextProps.editedRecords
   );
 });
 

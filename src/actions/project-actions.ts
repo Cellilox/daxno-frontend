@@ -162,7 +162,20 @@ export async function getOnyxDeepLink(projectId: string) {
     }
     return await response.json();
   } catch (error) {
-    console.log("Deep Link Error", error);
     throw error;
+  }
+}
+
+export async function getProjectRecords(projectId: string) {
+  try {
+    const url = buildApiUrl(`/records/${projectId}`);
+    const response = await fetchAuthed(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch project records");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching project records:", error);
+    return [];
   }
 }
