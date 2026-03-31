@@ -7,8 +7,6 @@ import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
 import { getModels, getSelectedModel } from "@/actions/ai-models-actions"
 import { Model } from "@/types"
-import { getConversations } from "@/actions/conversations-actions"
-import { Message } from "@/components/chat/types"
 import { getBillingConfig, getBillingConfigForUser } from "@/actions/settings-actions"
 import LayoutFix from "@/components/LayoutFix"
 
@@ -16,13 +14,6 @@ export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
   description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
 };
-
-type Conversation = {
-  id: string;
-  project_id: string;
-  owner: string;
-  messages: Message[]
-}
 
 export default async function ProjectView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,14 +23,12 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     project,
     fields,
     aiModels,
-    tenantModel,
-    allProjectConversation
+    tenantModel
   ] = await Promise.all([
     getProjectsById(id),
     getColumns(id),
     getModels(id),
-    getSelectedModel(id),
-    getConversations(id)
+    getSelectedModel(id)
   ]);
 
   // Safety Check: If project is missing (404/Deleted), return clean error UI
@@ -71,7 +60,6 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
 
   const is_project_owner = project.is_owner;
   const linkOwner = ""
-  const chats = allProjectConversation?.flatMap((conv: Conversation) => conv.messages);
 
   // Filter models based on preferences or default restrictions
   let displayedModels = aiModels;
@@ -150,7 +138,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
                 subscriptionType={plan?.subscription_type}
                 models={displayedModels}
                 tenantModal={tenantModel.selected_model}
-                chats={chats}
+  
               />
             </div>
           </div>
@@ -171,7 +159,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
               subscriptionType={plan?.subscription_type}
               models={displayedModels}
               tenantModal={tenantModel.selected_model}
-              chats={chats}
+
             />
           </div>
         </div>

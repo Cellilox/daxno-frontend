@@ -5,6 +5,7 @@ import { calculateServiceFee, FeeResult } from "@/lib/fee-calculator"
 
 import LoadingSpinner from "./ui/LoadingSpinner"
 import { ShieldCheck, CreditCard, AlertCircle } from 'lucide-react'
+import { CURRENCY_CODE, CURRENCY_SYMBOL } from '@/lib/currency'
 
 // Mock action for now, replaced by actual prop later
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
@@ -89,9 +90,9 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
             <div className="space-y-6">
                 {/* Amount Input */}
                 <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">Amount to Pay (USD)</label>
+                    <label className="text-sm font-semibold text-gray-700">Amount to Pay ({CURRENCY_CODE})</label>
                     <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">{CURRENCY_SYMBOL}</span>
                         <input
                             type="number"
                             value={amount}
@@ -103,7 +104,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                     {amount < 5 && (
                         <p className="text-xs text-red-500 flex items-center mt-1">
                             <AlertCircle className="w-3 h-3 mr-1" />
-                            Minimum purchase amount is $5.00
+                            Minimum purchase amount is {CURRENCY_SYMBOL}5.00
                         </p>
                     )}
                 </div>
@@ -112,7 +113,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-600">Purchase Amount</span>
-                        <span className="font-semibold text-gray-900">${feeDetails.inputAmount.toFixed(2)}</span>
+                        <span className="font-semibold text-gray-900">{CURRENCY_SYMBOL}{feeDetails.inputAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <div className="flex items-center gap-1.5">
@@ -121,19 +122,19 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                                 <AlertCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                                     Fees decrease as you buy more:
-                                    <br />$5-20: 35%
-                                    <br />$21-50: 30%
-                                    <br />$51-100: 25%
-                                    <br />$100+: 20%
+                                    <br />{CURRENCY_SYMBOL}5-20: 35%
+                                    <br />{CURRENCY_SYMBOL}21-50: 30%
+                                    <br />{CURRENCY_SYMBOL}51-100: 25%
+                                    <br />{CURRENCY_SYMBOL}100+: 20%
                                 </div>
                             </div>
                         </div>
-                        <span className="font-semibold text-red-500">-${feeDetails.serviceFeeAmount.toFixed(2)}</span>
+                        <span className="font-semibold text-red-500">-{CURRENCY_SYMBOL}{feeDetails.serviceFeeAmount.toFixed(2)}</span>
                     </div>
                     <div className="h-px bg-gray-200" />
                     <div className="flex justify-between items-center">
                         <span className="font-bold text-gray-900">Total Credits Received</span>
-                        <span className="font-bold text-xl text-green-600">${feeDetails.credits.toFixed(2)}</span>
+                        <span className="font-bold text-xl text-green-600">{CURRENCY_SYMBOL}{feeDetails.credits.toFixed(2)}</span>
                     </div>
                 </div>
 
@@ -157,7 +158,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                     ) : (
                         <CreditCard className="w-5 h-5 mr-2" />
                     )}
-                    {loading ? 'Processing...' : `Pay $${amount.toFixed(2)}`}
+                    {loading ? 'Processing...' : `Pay ${CURRENCY_SYMBOL}${amount.toFixed(2)}`}
                 </button>
 
                 <p className="text-center text-xs text-gray-400">

@@ -1,16 +1,13 @@
 import { useEffect, useRef, useState, ReactNode } from 'react';
 import { Bot, Plug2 } from 'lucide-react';
-import { UsageData } from '../chat';
-import CreditsToolTip from './CreditToolTip';
 
 export type IntegrationsModalProps = {
     widthClassName?: string;
     children?: ReactNode;
     buttonLabel?: string;
-    creditUsage?: UsageData | undefined
 };
 
-export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, buttonLabel = 'Integrations', creditUsage }: IntegrationsModalProps) {
+export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, buttonLabel = 'Integrations' }: IntegrationsModalProps) {
     const [isOptionVisible, setIsOptionVisible] = useState<boolean>(false)
     const modalRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +48,7 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                             <h2 className="text-lg font-semibold">{buttonLabel}</h2>
                             </div>
                             <div className='flex flex-col items-end'>
-                             <button 
+                             <button
                                 onClick={() => setIsOptionVisible(false)}
                                 className="text-gray-600 hover:text-gray-800 transition-colors"
                             >
@@ -60,14 +57,6 @@ export default function OverlayPopup({ widthClassName = 'lg:w-2/5', children, bu
                                     <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
                             </button>
-                            {buttonLabel == "Insights & Chat" && 
-                            <div className='mt-3'>
-                            <CreditsToolTip 
-                            used={creditUsage?.used_credits} 
-                            remaining={creditUsage?.remaining_credits} 
-                            limit={creditUsage?.credit_limit}/>
-                            </div>
-                            }
                             </div>
                         </div>
 

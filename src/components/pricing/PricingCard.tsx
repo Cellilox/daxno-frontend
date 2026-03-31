@@ -4,6 +4,7 @@ import Link from "next/link"
 import LoadingSpinner from "../ui/LoadingSpinner"
 import { useMemo, useState } from "react"
 import { set } from "react-hook-form"
+import { CURRENCY_SYMBOL } from "@/lib/currency"
 
 interface PricingCardProps {
   title: string
@@ -133,13 +134,13 @@ export function PricingCard({
           <div className="bg-blue-50 p-3 rounded-lg flex items-center space-x-1 cursor-pointer">
             {billingInterval === 'annual' && (
               <p className="text-xs text-gray-700">
-                Upgrade today and pay <strong>$ {(proRatedCharge / 12).toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {(fullCharge / 12).toFixed(2)}</strong>/mo thereafter.
+                Upgrade today and pay <strong>{CURRENCY_SYMBOL}{(proRatedCharge / 12).toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>{CURRENCY_SYMBOL}{(fullCharge / 12).toFixed(2)}</strong>/mo thereafter.
               </p>
             )}
 
             {billingInterval === 'monthly' && (
               <p className="text-xs text-gray-700">
-                Upgrade today and pay <strong>$ {proRatedCharge.toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>$ {fullCharge.toFixed(2)}</strong>/mo thereafter.
+                Upgrade today and pay <strong>{CURRENCY_SYMBOL}{proRatedCharge.toFixed(2)}</strong> now (pro-rated) /mo (billed anually), then <strong>{CURRENCY_SYMBOL}{fullCharge.toFixed(2)}</strong>/mo thereafter.
               </p>
             )}
             <span className="text-gray-500">ⓘ</span>
@@ -150,10 +151,10 @@ export function PricingCard({
               {/* Arrow pointing up */}
               <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 h-3 w-3 bg-white border-b border-r border-gray-200 rotate-45"></div>
               <div>
-                <p className="mb-1">Unused fees from current plan ({remainingDays} days): <strong>$ {creditAmount.toFixed(2)}</strong></p>
-                <p className="mb-1">Plan Fee: <strong>$ {fullCharge.toFixed(2)}</strong></p>
+                <p className="mb-1">Unused fees from current plan ({remainingDays} days): <strong>{CURRENCY_SYMBOL}{creditAmount.toFixed(2)}</strong></p>
+                <p className="mb-1">Plan Fee: <strong>{CURRENCY_SYMBOL}{fullCharge.toFixed(2)}</strong></p>
                 <hr className="my-2" />
-                <p><strong>Net today: $ {proRatedCharge.toFixed(2)}</strong></p>
+                <p><strong>Net today: {CURRENCY_SYMBOL}{proRatedCharge.toFixed(2)}</strong></p>
               </div>
             </div>
           </div>

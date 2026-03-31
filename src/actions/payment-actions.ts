@@ -24,7 +24,7 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
   const safePath = sanitizePath(pathname);
   const payload = {
     "amount": Number(amount),
-    "currency": "RWF",
+    "currency": process.env.NEXT_PUBLIC_PAYMENT_CURRENCY || "USD",
     "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${safePath}`,
     "payment_options": "card",
     "customer": {},
@@ -40,37 +40,6 @@ export async function requestPayment(pathname: string, amount: number, plan_id: 
     const url = buildApiUrl('/payments/charge-card-and-mobilerwanda');
     const response = await fetchAuthedJson(url, {
       method: "POST",
-      body: JSON.stringify(payload),
-    })
-    if (!response.ok) {
-      throw new Error("Failed to fet url")
-    }
-    return response.json();
-  } catch (error) {
-    console.log('Error', error)
-  }
-}
-
-
-export async function buyCredits(pathname: string, amount: number) {
-  const safePath = sanitizePath(pathname);
-  const payload = {
-    "amount": Number(amount),
-    "currency": "RWF",
-    "redirect_url": `${process.env.NEXT_PUBLIC_CLIENT_URL}/${safePath}`,
-    "payment_options": "card",
-    "customer": {},
-    "customization": {
-      "title": "Cellilox AI Doc Assistant Service",
-      "description": "This AI Doc Assistant Service",
-      "logo": "http://logo.png"
-    }
-  }
-
-  try {
-    const url = buildApiUrl('/payments/pay-for-credits');
-    const response = await fetchAuthedJson(url, {
-      method: 'POST',
       body: JSON.stringify(payload),
     })
     if (!response.ok) {

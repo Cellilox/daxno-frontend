@@ -13,7 +13,6 @@ import ShareableLink from './ShareableLink';
 import { Model, Project } from '@/types';
 import ModelSelector from './Models';
 import OnyxDeepLinkButton from './OnyxDeepLinkButton';
-import { Message } from "./chat/types"
 import Integrations from './integrations/Integrations';
 
 
@@ -32,7 +31,6 @@ interface CollapsibleActionsProps {
   records: DocumentRecord[]
   models: Model[]
   tenantModal: string;
-  chats: Message[]
 }
 
 export default function CollapsibleActions({
