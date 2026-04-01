@@ -799,6 +799,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       {showCamera ? (
         <CameraCapture
           projectId={projectId}
+          fullscreen
           onClose={() => setShowCamera(false)}
           onCapture={(photoFile) => {
             setShowCamera(false);
