@@ -19,9 +19,10 @@ type RecordsProps = {
     initialRecords: DocumentRecord[];
     project: any;
     subscriptionType?: string;
+    onSelectionChange?: (count: number, onDelete: () => void, onClear: () => void, isDeleting: boolean) => void;
 };
 
-export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType, onSelectionChange }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     // Abort flag: set to true when a provider error is detected mid-backfill.
     // Prevents race condition where already-dispatched Celery tasks fire backfill_record_start
@@ -705,6 +706,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         onUpdateRecord={handleUpdateRecord}
                         onUpdateColumn={handleUpdateColumn}
                         onDeleteColumn={handleDeleteColumn}
+                        onSelectionChange={onSelectionChange}
                         backfillingFieldId={backfillingFieldId}
                         backfillingRecordId={backfillingRecordId}
                         onBackfillRecord={(id: string, filename: string) => {

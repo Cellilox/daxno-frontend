@@ -1,14 +1,11 @@
-import Records from "@/components/Records"
-import CreateColumn from "@/components/forms/CreateColumn"
 import { getColumns } from "@/actions/column-actions"
 import { get_project_plan, getProjectsById, getProjectRecords } from "@/actions/project-actions"
-import ExpandableDescription from "@/components/ExpandableDescription"
-import CollapsibleActions from "@/components/CollapsibleActions"
 import { Metadata } from "next"
 import { getModels, getSelectedModel } from "@/actions/ai-models-actions"
 import { Model } from "@/types"
-import { getBillingConfig, getBillingConfigForUser } from "@/actions/settings-actions"
+import { getBillingConfigForUser } from "@/actions/settings-actions"
 import LayoutFix from "@/components/LayoutFix"
+import ProjectPageClient from "@/components/ProjectPageClient"
 
 export const metadata: Metadata = {
   title: 'Cellilox | Project Details',
@@ -107,74 +104,18 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden px-4 sm:px-6 lg:px-8 pb-4">
       <LayoutFix />
-      <div className="bg-white p-4 sm:p-6 lg:p-8 shadow-lg rounded-lg flex-shrink-0">
-        <div className="flex flex-col space-y-4 sm:space-y-6">
-          {/* Header Section */}
-          <div className="flex flex-row justify-between items-start gap-2 sm:gap-4 w-full">
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <p
-                data-testid="project-details-title"
-                className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans"
-              >
-                Project: {project.name}
-              </p>
-              <ExpandableDescription description={project.description} />
-            </div>
-
-            {/* Mobile: 3-dot menu next to title */}
-            {/* Desktop: Actions below (rendered by CollapsibleActions) */}
-            <div className="flex-shrink-0 md:hidden">
-              <CollapsibleActions
-                projectId={id}
-                project={project}
-                shareableLink={project.shareable_link}
-                isLinkActive={project.link_is_active}
-                address={project.address_domain}
-                is_project_owner={is_project_owner}
-                linkOwner={linkOwner}
-                fields={fields}
-                records={records}
-                plan={plan?.plan_name}
-                subscriptionType={plan?.subscription_type}
-                models={displayedModels}
-                tenantModal={tenantModel.selected_model}
-  
-              />
-            </div>
-          </div>
-
-          {/* Desktop: Full action buttons row */}
-          <div className="hidden md:block">
-            <CollapsibleActions
-              projectId={id}
-              project={project}
-              shareableLink={project.shareable_link}
-              isLinkActive={project.link_is_active}
-              address={project.address_domain}
-              is_project_owner={is_project_owner}
-              linkOwner={linkOwner}
-              fields={fields}
-              records={records}
-              plan={plan?.plan_name}
-              subscriptionType={plan?.subscription_type}
-              models={displayedModels}
-              tenantModal={tenantModel.selected_model}
-
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Records Section - Outside the white card */}
-      <div className="mt-4 flex-1 min-h-0 overflow-hidden">
-        <Records
-          projectId={id}
-          initialFields={fields}
-          initialRecords={records}
-          project={project}
-          subscriptionType={plan?.subscription_type}
-        />
-      </div>
+      <ProjectPageClient
+        project={project}
+        id={id}
+        fields={fields}
+        records={records}
+        plan={plan?.plan_name ?? ''}
+        subscriptionType={plan?.subscription_type}
+        is_project_owner={is_project_owner}
+        linkOwner={linkOwner}
+        displayedModels={displayedModels}
+        tenantModel={tenantModel.selected_model}
+      />
     </div>
   );
 }
