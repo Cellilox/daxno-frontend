@@ -49,12 +49,12 @@ export default function LogoutBridge() {
                 clearTimeout(timeoutId);
 
                 console.log("[LogoutBridge] Onyx service is reachable. Redirecting to bridge...");
-                setStatus("Redirecting to Onyx...");
+                setStatus("Redirecting to cellilox agents...");
                 window.location.href = onyxLogoutBridge;
 
             } catch (err) {
                 console.warn("[LogoutBridge] Onyx unreachable or timed out. Falling back to Daxno home.", err);
-                setStatus("Finalizing Daxno logout...");
+                setStatus("Finalizing cellilox logout...");
                 router.push("/");
             }
         };

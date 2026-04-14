@@ -47,7 +47,7 @@ export default function SmartAuthGuard({ children }: { children: React.ReactNode
         <div data-testid={testId || "auth-guard-loading"} className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-700">{message}</h2>
-            <p className="text-gray-500 mt-2">Daxno is securing your workspace</p>
+            <p className="text-gray-500 mt-2">Cellilox is securing your workspace</p>
         </div>
     );
 
@@ -62,7 +62,7 @@ export default function SmartAuthGuard({ children }: { children: React.ReactNode
                 <LoadingShell message="Checking authorization..." />
                 {showRetry && (
                     <div className="absolute mt-48 animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-col items-center">
-                        <p className="text-sm text-gray-500 mb-4 text-center px-6 max-w-sm">
+                        <p className="text-sm text-gray-500 mt-4 mb-4 text-center px-6 max-w-sm">
                             This is taking longer than expected. The connection might be unstable.
                         </p>
                         <button
