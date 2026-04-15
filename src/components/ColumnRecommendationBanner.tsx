@@ -1,28 +1,69 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { Sparkles, X, Plus } from 'lucide-react';
+import { Sparkles, X, Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { deleteColumn, createColumn } from '@/actions/column-actions';
 import { backfillAwaitingRecords } from '@/actions/backfill-actions';
+import { deleteRecord } from '@/actions/record-actions';
 import { Field } from './spreadsheet/types';
+
+export interface RecommendationOutlier {
+  record_id: string;
+  filename: string;
+  detected_type: string;
+  reason: string;
+}
 
 interface ColumnRecommendationBannerProps {
   projectId: string;
   /** Controlled: live column list from Records — syncs automatically with spreadsheet changes */
   fields: Field[];
+  /** Majority document type detected by the AI (e.g. "invoice"). Null = no classification available. */
+  documentType?: string | null;
+  /** Total number of documents the recommendation was based on. */
+  totalDocuments?: number;
+  /** Files flagged by the AI as not matching the majority type. */
+  outliers?: RecommendationOutlier[];
   onClose: () => void;
 }
 
 export default function ColumnRecommendationBanner({
   projectId,
   fields,
+  documentType = null,
+  totalDocuments = 0,
+  outliers = [],
   onClose,
 }: ColumnRecommendationBannerProps) {
   const [isAnalyzing, startAnalyze] = useTransition();
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const matchingCount = Math.max(0, totalDocuments - outliers.length);
+
+  const handleRemoveOutlier = async (recordId: string) => {
+    setRemovingIds(prev => {
+      const next = new Set(prev);
+      next.add(recordId);
+      return next;
+    });
+    try {
+      // record_deleted socket event removes the row from Records state.
+      await deleteRecord(recordId);
+    } catch (err) {
+      console.error('[Banner] Failed to remove outlier:', err);
+      setRemovingIds(prev => {
+        const next = new Set(prev);
+        next.delete(recordId);
+        return next;
+      });
+    }
+  };
+
+  const visibleOutliers = outliers.filter(o => !removingIds.has(o.record_id));
 
   useEffect(() => {
     if (showInput) inputRef.current?.focus();
@@ -79,6 +120,61 @@ export default function ColumnRecommendationBanner({
           <X size={16} />
         </button>
       </div>
+
+      {documentType && totalDocuments > 0 && (
+        <p className="text-xs text-indigo-700">
+          AI analyzed <strong>{totalDocuments}</strong>{' '}
+          {totalDocuments === 1 ? 'file' : 'files'} and detected{' '}
+          <strong>{matchingCount} {documentType}{matchingCount === 1 ? '' : 's'}</strong>
+          {visibleOutliers.length > 0 && (
+            <> — {visibleOutliers.length} {visibleOutliers.length === 1 ? 'file looks' : 'files look'} different.</>
+          )}
+        </p>
+      )}
+
+      {visibleOutliers.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex flex-col gap-2">
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle size={14} className="text-amber-600" />
+            <span className="text-xs font-semibold text-amber-800">
+              Possible outlier{visibleOutliers.length === 1 ? '' : 's'} — {visibleOutliers.length === 1 ? 'this file looks' : 'these files look'} different
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {visibleOutliers.map(outlier => {
+              const isRemoving = removingIds.has(outlier.record_id);
+              return (
+                <div
+                  key={outlier.record_id}
+                  className="flex items-start justify-between gap-3 bg-white border border-amber-200 rounded px-2.5 py-1.5"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-amber-900 truncate">
+                      <span className="font-medium">{outlier.filename}</span>
+                      {' — looks like a '}
+                      <strong>{outlier.detected_type}</strong>
+                    </div>
+                    {outlier.reason && (
+                      <div className="text-[11px] text-amber-700/80 mt-0.5 truncate">
+                        {outlier.reason}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleRemoveOutlier(outlier.record_id)}
+                    disabled={isRemoving}
+                    className="flex items-center gap-1 text-[11px] text-amber-700 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                    aria-label={`Remove ${outlier.filename}`}
+                  >
+                    <Trash2 size={12} />
+                    {isRemoving ? 'Removing…' : 'Remove file'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <p className="text-xs text-indigo-600">
         Review these columns, remove any you don&apos;t need, or add missing ones — then click{' '}

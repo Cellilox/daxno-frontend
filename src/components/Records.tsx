@@ -43,6 +43,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
     const [pendingAnalysis, setPendingAnalysis] = useState(false);
+    const [recommendationMeta, setRecommendationMeta] = useState<{
+        documentType: string | null;
+        totalDocuments: number;
+        outliers: Array<{
+            record_id: string;
+            filename: string;
+            detected_type: string;
+            reason: string;
+        }>;
+    } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -255,13 +265,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         return () => window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
     }, [loadOnlineData, loadOfflineData]);
 
-    // Show the recommendation banner on mount if a record is already in awaiting_analysis
-    // state (e.g. after a page refresh that happened while the backend was recommending columns).
+    // Show the recommendation banner on mount only if columns already exist AND a record
+    // is awaiting analysis. Under the wait-for-all-OCR flow, records enter awaiting_analysis
+    // BEFORE column recommendation runs, so awaiting_analysis alone is not a signal that the
+    // banner should appear — we also need columns to be present.
     useEffect(() => {
+        const hasColumns = (initialFields?.length ?? 0) > 0;
         const awaitingRecord = initialRecords.find(
             (r) => r.answers?.__status__ === 'awaiting_analysis'
         );
-        if (awaitingRecord) {
+        if (hasColumns && awaitingRecord) {
             setPendingAnalysis(true);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -306,8 +319,10 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             loadOfflineData();
         };
         const handleRecordUpdated = (data: any) => {
-            // If the backend moved this record to awaiting_analysis, surface the banner
-            if (data.record?.answers?.__status__ === 'awaiting_analysis') {
+            // Only surface the banner if columns already exist. Under the wait-for-all-OCR
+            // flow, awaiting_analysis fires before recommendation completes — the banner
+            // must wait for the columns_recommended event (handled below) in that case.
+            if (data.record?.answers?.__status__ === 'awaiting_analysis' && columns.length > 0) {
                 setPendingAnalysis(true);
             }
             setOnlineRecords(prev => {
@@ -360,8 +375,24 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setOnlineRecords(data.records);
             setColumns(prev => Array.isArray(prev) ? [...prev, data.field] : [data.field]);
         };
-        const handleColumnsRecommended = (_data: { record_id: string; fields: Field[] }) => {
+        const handleColumnsRecommended = (data: {
+            record_id: string;
+            fields: Field[];
+            document_type?: string | null;
+            total_documents?: number;
+            outliers?: Array<{
+                record_id: string;
+                filename: string;
+                detected_type: string;
+                reason: string;
+            }>;
+        }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
+            setRecommendationMeta({
+                documentType: data.document_type ?? null,
+                totalDocuments: data.total_documents ?? 0,
+                outliers: Array.isArray(data.outliers) ? data.outliers : [],
+            });
             setPendingAnalysis(true);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
@@ -725,7 +756,13 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     <ColumnRecommendationBanner
                         projectId={projectId}
                         fields={columns}
-                        onClose={() => setPendingAnalysis(false)}
+                        documentType={recommendationMeta?.documentType ?? null}
+                        totalDocuments={recommendationMeta?.totalDocuments ?? 0}
+                        outliers={recommendationMeta?.outliers ?? []}
+                        onClose={() => {
+                            setPendingAnalysis(false);
+                            setRecommendationMeta(null);
+                        }}
                     />
                 )}
                 <div className="flex-1 min-h-0">
