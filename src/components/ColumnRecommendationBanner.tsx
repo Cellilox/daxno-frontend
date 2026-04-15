@@ -9,17 +9,17 @@ import { Field } from './spreadsheet/types';
 interface ColumnRecommendationBannerProps {
   projectId: string;
   recordId: string;
-  initialFields: Field[];
+  /** Controlled: live column list from Records — syncs automatically with spreadsheet changes */
+  fields: Field[];
   onClose: () => void;
 }
 
 export default function ColumnRecommendationBanner({
   projectId,
   recordId,
-  initialFields,
+  fields,
   onClose,
 }: ColumnRecommendationBannerProps) {
-  const [fields, setFields] = useState<Field[]>(initialFields);
   const [isAnalyzing, startAnalyze] = useTransition();
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -31,8 +31,8 @@ export default function ColumnRecommendationBanner({
   }, [showInput]);
 
   const handleRemoveField = async (fieldId: string) => {
+    // field_deleted socket event will update `columns` in Records → prop updates automatically
     await deleteColumn(fieldId, projectId);
-    setFields(prev => prev.filter(f => f.hidden_id !== fieldId));
   };
 
   const handleAddField = async () => {
@@ -41,10 +41,8 @@ export default function ColumnRecommendationBanner({
     setIsAdding(true);
     try {
       const id = crypto.randomUUID();
-      const newField = await createColumn({ name, id, description: '' }, projectId);
-      if (newField?.hidden_id) {
-        setFields(prev => [...prev, newField as Field]);
-      }
+      // field_created socket event will update `columns` in Records → prop updates automatically
+      await createColumn({ name, id, description: '' }, projectId);
     } catch (err) {
       console.error('[Banner] Failed to add column:', err);
     } finally {

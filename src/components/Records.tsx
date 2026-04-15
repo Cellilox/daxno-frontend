@@ -42,7 +42,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [backfillingRecordId, setBackfillingRecordId] = useState<string | null>(null);
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
-    const [pendingAnalysis, setPendingAnalysis] = useState<{ recordId: string; fields: Field[] } | null>(null);
+    const [pendingAnalysis, setPendingAnalysis] = useState<{ recordId: string } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -261,8 +261,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const awaitingRecord = initialRecords.find(
             (r) => r.answers?.__status__ === 'awaiting_analysis'
         );
-        if (awaitingRecord && initialFields.length > 0) {
-            setPendingAnalysis({ recordId: awaitingRecord.id, fields: initialFields });
+        if (awaitingRecord) {
+            setPendingAnalysis({ recordId: awaitingRecord.id });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally run once on mount only
@@ -307,8 +307,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
         const handleRecordUpdated = (data: any) => {
             // If the backend moved this record to awaiting_analysis, surface the banner
-            if (data.record?.answers?.__status__ === 'awaiting_analysis' && Array.isArray(data.fields) && data.fields.length > 0) {
-                setPendingAnalysis(prev => prev ?? { recordId: data.record.id, fields: data.fields });
+            if (data.record?.answers?.__status__ === 'awaiting_analysis') {
+                setPendingAnalysis(prev => prev ?? { recordId: data.record.id });
             }
             setOnlineRecords(prev => {
                 const updated = prev.map(x => {
@@ -362,7 +362,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         };
         const handleColumnsRecommended = (data: { record_id: string; fields: Field[] }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
-            setPendingAnalysis({ recordId: data.record_id, fields: data.fields });
+            setPendingAnalysis({ recordId: data.record_id });
         };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
@@ -725,7 +725,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     <ColumnRecommendationBanner
                         projectId={projectId}
                         recordId={pendingAnalysis.recordId}
-                        initialFields={pendingAnalysis.fields}
+                        fields={columns}
                         onClose={() => setPendingAnalysis(null)}
                     />
                 )}
