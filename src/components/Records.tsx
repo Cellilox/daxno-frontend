@@ -12,6 +12,7 @@ import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { deleteBatchRecords, deleteRecord, getRecords, updateRecord } from '@/actions/record-actions';
 import { deleteColumn, getColumns, updateColumn } from '@/actions/column-actions';
 import SmartAuthGuard from '@/components/auth/SmartAuthGuard';
+import ColumnRecommendationBanner from '@/components/ColumnRecommendationBanner';
 
 type RecordsProps = {
     projectId: string;
@@ -41,6 +42,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [backfillingRecordId, setBackfillingRecordId] = useState<string | null>(null);
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
+    const [pendingAnalysis, setPendingAnalysis] = useState<{ recordId: string; fields: Field[] } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -253,6 +255,18 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         return () => window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
     }, [loadOnlineData, loadOfflineData]);
 
+    // Show the recommendation banner on mount if a record is already in awaiting_analysis
+    // state (e.g. after a page refresh that happened while the backend was recommending columns).
+    useEffect(() => {
+        const awaitingRecord = initialRecords.find(
+            (r) => r.answers?.__status__ === 'awaiting_analysis'
+        );
+        if (awaitingRecord && initialFields.length > 0) {
+            setPendingAnalysis({ recordId: awaitingRecord.id, fields: initialFields });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally run once on mount only
+
     useEffect(() => {
         if (!socketRef.current) {
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
@@ -292,6 +306,10 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             loadOfflineData();
         };
         const handleRecordUpdated = (data: any) => {
+            // If the backend moved this record to awaiting_analysis, surface the banner
+            if (data.record?.answers?.__status__ === 'awaiting_analysis' && Array.isArray(data.fields) && data.fields.length > 0) {
+                setPendingAnalysis(prev => prev ?? { recordId: data.record.id, fields: data.fields });
+            }
             setOnlineRecords(prev => {
                 const updated = prev.map(x => {
                     if (x.id !== data.record.id) return x;
@@ -341,6 +359,10 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
             setOnlineRecords(data.records);
             setColumns(prev => Array.isArray(prev) ? [...prev, data.field] : [data.field]);
+        };
+        const handleColumnsRecommended = (data: { record_id: string; fields: Field[] }) => {
+            setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
+            setPendingAnalysis({ recordId: data.record_id, fields: data.fields });
         };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
@@ -417,6 +439,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('field_created', handleColumnCreated);
         socket.on('field_updated', handleColumnUpdated);
         socket.on('field_deleted', handleColumnDeleted);
+        socket.on('columns_recommended', handleColumnsRecommended);
         socket.on('ocr_start', handleOcrStart);
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
@@ -570,6 +593,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('field_created', handleColumnCreated);
             socket.off('field_updated', handleColumnUpdated);
             socket.off('field_deleted', handleColumnDeleted);
+            socket.off('columns_recommended', handleColumnsRecommended);
             socket.off('ocr_start', handleOcrStart);
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);
@@ -605,6 +629,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
 
     // [DISPLAY ONLY] Count of rows currently processing
     const processingCount = useMemo(() => {
+        // Flow 1 (no columns yet): suppress the blue processing banner entirely.
+        // The recommendation banner takes over once OCR + column suggestion finishes.
+        if (columns.length === 0) return 0;
         return rowData.filter(r => {
             if (r.answers?.__status__ === 'processing' || (r as any)._isRowBackfilling) return true;
             if (r.answers) {
@@ -614,7 +641,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }
             return false;
         }).length;
-    }, [rowData]);
+    }, [rowData, columns]);
 
     // [SCALABILITY] Auto-clear processing banners when no items are outstanding.
     // A 1500ms debounce prevents a brief 0-count flash (due to socket event ordering)
@@ -694,6 +721,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         </div>
                     )}
                 </div>
+                {pendingAnalysis && (
+                    <ColumnRecommendationBanner
+                        projectId={projectId}
+                        recordId={pendingAnalysis.recordId}
+                        initialFields={pendingAnalysis.fields}
+                        onClose={() => setPendingAnalysis(null)}
+                    />
+                )}
                 <div className="flex-1 min-h-0">
                     <SpreadSheet
                         isOnline={isOnline}
