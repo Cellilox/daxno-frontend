@@ -42,7 +42,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [backfillingRecordId, setBackfillingRecordId] = useState<string | null>(null);
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
-    const [pendingAnalysis, setPendingAnalysis] = useState<{ recordId: string } | null>(null);
+    const [pendingAnalysis, setPendingAnalysis] = useState(false);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -262,7 +262,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             (r) => r.answers?.__status__ === 'awaiting_analysis'
         );
         if (awaitingRecord) {
-            setPendingAnalysis({ recordId: awaitingRecord.id });
+            setPendingAnalysis(true);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally run once on mount only
@@ -308,7 +308,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const handleRecordUpdated = (data: any) => {
             // If the backend moved this record to awaiting_analysis, surface the banner
             if (data.record?.answers?.__status__ === 'awaiting_analysis') {
-                setPendingAnalysis(prev => prev ?? { recordId: data.record.id });
+                setPendingAnalysis(true);
             }
             setOnlineRecords(prev => {
                 const updated = prev.map(x => {
@@ -360,9 +360,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setOnlineRecords(data.records);
             setColumns(prev => Array.isArray(prev) ? [...prev, data.field] : [data.field]);
         };
-        const handleColumnsRecommended = (data: { record_id: string; fields: Field[] }) => {
+        const handleColumnsRecommended = (_data: { record_id: string; fields: Field[] }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
-            setPendingAnalysis({ recordId: data.record_id });
+            setPendingAnalysis(true);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
@@ -724,9 +724,8 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                 {pendingAnalysis && (
                     <ColumnRecommendationBanner
                         projectId={projectId}
-                        recordId={pendingAnalysis.recordId}
                         fields={columns}
-                        onClose={() => setPendingAnalysis(null)}
+                        onClose={() => setPendingAnalysis(false)}
                     />
                 )}
                 <div className="flex-1 min-h-0">

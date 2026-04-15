@@ -28,6 +28,22 @@ export async function backfillColumn(project_id: string, field_id: string, field
     }
 }
 
+export async function backfillAwaitingRecords(projectId: string) {
+    try {
+        const url = buildApiUrl(`/records/backfill-awaiting?project_id=${projectId}`);
+        const response = await fetchAuthed(url, { method: 'POST' });
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('[Frontend] backfillAwaitingRecords failed:', response.status, errorData);
+            throw new Error(`Backfill awaiting failed: ${response.status}`);
+        }
+        return response.json();
+    } catch (error) {
+        console.error('[Frontend] backfillAwaitingRecords error:', error);
+        throw error;
+    }
+}
+
 export async function backfillRecord(projectId: string, recordId: string) {
     try {
         const url = buildApiUrl(`/records/backfill-record?project_id=${projectId}&record_id=${recordId}`);

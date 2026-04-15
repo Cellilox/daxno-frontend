@@ -3,12 +3,11 @@
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { Sparkles, X, Plus } from 'lucide-react';
 import { deleteColumn, createColumn } from '@/actions/column-actions';
-import { backfillRecord } from '@/actions/backfill-actions';
+import { backfillAwaitingRecords } from '@/actions/backfill-actions';
 import { Field } from './spreadsheet/types';
 
 interface ColumnRecommendationBannerProps {
   projectId: string;
-  recordId: string;
   /** Controlled: live column list from Records — syncs automatically with spreadsheet changes */
   fields: Field[];
   onClose: () => void;
@@ -16,7 +15,6 @@ interface ColumnRecommendationBannerProps {
 
 export default function ColumnRecommendationBanner({
   projectId,
-  recordId,
   fields,
   onClose,
 }: ColumnRecommendationBannerProps) {
@@ -59,7 +57,7 @@ export default function ColumnRecommendationBanner({
 
   const handleAnalyze = () => {
     startAnalyze(async () => {
-      await backfillRecord(projectId, recordId);
+      await backfillAwaitingRecords(projectId);
       onClose();
     });
   };
