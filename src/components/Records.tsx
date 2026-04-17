@@ -12,6 +12,7 @@ import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { deleteBatchRecords, deleteRecord, getRecords, updateRecord } from '@/actions/record-actions';
 import { deleteColumn, getColumns, updateColumn } from '@/actions/column-actions';
 import SmartAuthGuard from '@/components/auth/SmartAuthGuard';
+import ColumnRecommendationBanner from '@/components/ColumnRecommendationBanner';
 
 type RecordsProps = {
     projectId: string;
@@ -19,9 +20,10 @@ type RecordsProps = {
     initialRecords: DocumentRecord[];
     project: any;
     subscriptionType?: string;
+    onSelectionChange?: (count: number, onDelete: () => void, onClear: () => void, isDeleting: boolean) => void;
 };
 
-export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType, onSelectionChange }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     // Abort flag: set to true when a provider error is detected mid-backfill.
     // Prevents race condition where already-dispatched Celery tasks fire backfill_record_start
@@ -40,6 +42,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [backfillingRecordId, setBackfillingRecordId] = useState<string | null>(null);
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
+    const [pendingAnalysis, setPendingAnalysis] = useState(false);
+    const [recommendationMeta, setRecommendationMeta] = useState<{
+        documentType: string | null;
+        totalDocuments: number;
+        outliers: Array<{
+            record_id: string;
+            filename: string;
+            detected_type: string;
+            reason: string;
+        }>;
+    } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -252,6 +265,21 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         return () => window.removeEventListener('daxno:offline-files-updated', handleOfflineFilesUpdate);
     }, [loadOnlineData, loadOfflineData]);
 
+    // Show the recommendation banner on mount only if columns already exist AND a record
+    // is awaiting analysis. Under the wait-for-all-OCR flow, records enter awaiting_analysis
+    // BEFORE column recommendation runs, so awaiting_analysis alone is not a signal that the
+    // banner should appear — we also need columns to be present.
+    useEffect(() => {
+        const hasColumns = (initialFields?.length ?? 0) > 0;
+        const awaitingRecord = initialRecords.find(
+            (r) => r.answers?.__status__ === 'awaiting_analysis'
+        );
+        if (hasColumns && awaitingRecord) {
+            setPendingAnalysis(true);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // intentionally run once on mount only
+
     useEffect(() => {
         if (!socketRef.current) {
             socketRef.current = io(`${process.env.NEXT_PUBLIC_API_URL}`, {
@@ -291,6 +319,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             loadOfflineData();
         };
         const handleRecordUpdated = (data: any) => {
+            // Only surface the banner if columns already exist. Under the wait-for-all-OCR
+            // flow, awaiting_analysis fires before recommendation completes — the banner
+            // must wait for the columns_recommended event (handled below) in that case.
+            if (data.record?.answers?.__status__ === 'awaiting_analysis' && columns.length > 0) {
+                setPendingAnalysis(true);
+            }
             setOnlineRecords(prev => {
                 const updated = prev.map(x => {
                     if (x.id !== data.record.id) return x;
@@ -340,6 +374,26 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const handleColumnCreated = (data: { records: DocumentRecord[]; field: Field }) => {
             setOnlineRecords(data.records);
             setColumns(prev => Array.isArray(prev) ? [...prev, data.field] : [data.field]);
+        };
+        const handleColumnsRecommended = (data: {
+            record_id: string;
+            fields: Field[];
+            document_type?: string | null;
+            total_documents?: number;
+            outliers?: Array<{
+                record_id: string;
+                filename: string;
+                detected_type: string;
+                reason: string;
+            }>;
+        }) => {
+            setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
+            setRecommendationMeta({
+                documentType: data.document_type ?? null,
+                totalDocuments: data.total_documents ?? 0,
+                outliers: Array.isArray(data.outliers) ? data.outliers : [],
+            });
+            setPendingAnalysis(true);
         };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
@@ -416,6 +470,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('field_created', handleColumnCreated);
         socket.on('field_updated', handleColumnUpdated);
         socket.on('field_deleted', handleColumnDeleted);
+        socket.on('columns_recommended', handleColumnsRecommended);
         socket.on('ocr_start', handleOcrStart);
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
@@ -569,6 +624,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('field_created', handleColumnCreated);
             socket.off('field_updated', handleColumnUpdated);
             socket.off('field_deleted', handleColumnDeleted);
+            socket.off('columns_recommended', handleColumnsRecommended);
             socket.off('ocr_start', handleOcrStart);
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);
@@ -604,6 +660,9 @@ export default function Records({ projectId, initialFields, initialRecords, proj
 
     // [DISPLAY ONLY] Count of rows currently processing
     const processingCount = useMemo(() => {
+        // Flow 1 (no columns yet): suppress the blue processing banner entirely.
+        // The recommendation banner takes over once OCR + column suggestion finishes.
+        if (columns.length === 0) return 0;
         return rowData.filter(r => {
             if (r.answers?.__status__ === 'processing' || (r as any)._isRowBackfilling) return true;
             if (r.answers) {
@@ -613,7 +672,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }
             return false;
         }).length;
-    }, [rowData]);
+    }, [rowData, columns]);
 
     // [SCALABILITY] Auto-clear processing banners when no items are outstanding.
     // A 1500ms debounce prevents a brief 0-count flash (due to socket event ordering)
@@ -693,6 +752,19 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         </div>
                     )}
                 </div>
+                {pendingAnalysis && (
+                    <ColumnRecommendationBanner
+                        projectId={projectId}
+                        fields={columns}
+                        documentType={recommendationMeta?.documentType ?? null}
+                        totalDocuments={recommendationMeta?.totalDocuments ?? 0}
+                        outliers={recommendationMeta?.outliers ?? []}
+                        onClose={() => {
+                            setPendingAnalysis(false);
+                            setRecommendationMeta(null);
+                        }}
+                    />
+                )}
                 <div className="flex-1 min-h-0">
                     <SpreadSheet
                         isOnline={isOnline}
@@ -705,6 +777,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         onUpdateRecord={handleUpdateRecord}
                         onUpdateColumn={handleUpdateColumn}
                         onDeleteColumn={handleDeleteColumn}
+                        onSelectionChange={onSelectionChange}
                         backfillingFieldId={backfillingFieldId}
                         backfillingRecordId={backfillingRecordId}
                         onBackfillRecord={(id: string, filename: string) => {

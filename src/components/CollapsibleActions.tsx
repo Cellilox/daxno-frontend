@@ -75,16 +75,17 @@ export default function CollapsibleActions({
 
       {/* Desktop: Full button layout */}
       <div className="hidden md:block w-full">
-        <div className={`relative transition-all duration-300 ${fields.length === 0 ? 'blur-sm pointer-events-none select-none opacity-60' : ''}`}>
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between w-full">
-            <div className="flex flex-wrap gap-2 items-center">
-              <ScanFilesModal
-                linkOwner={linkOwner}
-                projectId={projectId}
-                plan={plan}
-                subscriptionType={subscriptionType}
-              />
+        <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between w-full">
+          {/* Left group: Scan Files (always active) + blurred secondary actions */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <ScanFilesModal
+              linkOwner={linkOwner}
+              projectId={projectId}
+              plan={plan}
+              subscriptionType={subscriptionType}
+            />
 
+            <div className={`relative flex items-center gap-2 transition-all duration-300 ${fields.length === 0 ? 'blur-sm pointer-events-none select-none opacity-60' : ''}`}>
               {is_project_owner && (
                 <button
                   onClick={() => setIsShareLinkPopupVisible(true)}
@@ -107,53 +108,47 @@ export default function CollapsibleActions({
                 <span className="text-sm font-medium">Email</span>
               </button>
 
-
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <ModelSelector
-                models={models}
-                tenantModal={tenantModal}
-                plan={plan}
-                disabled={!is_project_owner}
-                projectId={projectId}
-              />
-
-              <div className="flex items-center gap-2">
-                <OnyxDeepLinkButton
-                  projectId={projectId}
-                  projectName={project.name}
-                />
-              </div>
-
-              {is_project_owner && (
-                <button
-                  onClick={() => setIsInvitePopupVisible(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
-                >
-                  <Users size={16} />
-                  <span className="text-sm font-medium">Invite</span>
-                </button>
-              )}
-
-              <div className="flex items-center gap-2">
-                <div className="group relative">
-                  <Integrations
-                    projectId={projectId}
-                    fields={fields}
-                    records={records}
-                  />
-                  {/* Optional: Add a wrapping style if Integrations component doesn't expose one, or assume Integrations needs similar styling update. 
-                      Since Integrations is a component, I'll trust it or might need to update it too if it's just a button wrapper. 
-                      For now, leaving it as is but wrapped. */}
-                </div>
-              </div>
+              {fields.length === 0 && <div className="absolute inset-0 z-10" />}
             </div>
           </div>
 
-          {fields.length === 0 && (
-            <div className="absolute inset-0 z-10"></div>
-          )}
+          {/* Right group: blurred when no columns */}
+          <div className={`relative flex flex-wrap items-center gap-2 sm:gap-3 transition-all duration-300 ${fields.length === 0 ? 'blur-sm pointer-events-none select-none opacity-60' : ''}`}>
+            <ModelSelector
+              models={models}
+              tenantModal={tenantModal}
+              plan={plan}
+              disabled={!is_project_owner}
+              projectId={projectId}
+            />
+
+            <div className="flex items-center gap-2">
+              <OnyxDeepLinkButton
+                projectId={projectId}
+                projectName={project.name}
+              />
+            </div>
+
+            {is_project_owner && (
+              <button
+                onClick={() => setIsInvitePopupVisible(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm hover:shadow transition-all duration-200"
+              >
+                <Users size={16} />
+                <span className="text-sm font-medium">Invite</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Integrations
+                projectId={projectId}
+                fields={fields}
+                records={records}
+              />
+            </div>
+
+            {fields.length === 0 && <div className="absolute inset-0 z-10" />}
+          </div>
         </div>
       </div>
 

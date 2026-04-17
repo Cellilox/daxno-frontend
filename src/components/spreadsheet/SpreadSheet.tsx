@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { deleteColumn, updateColumn, updateColumnWidth } from '@/actions/column-actions';
 import { deleteRecord, updateRecord, deleteBatchRecords } from '@/actions/record-actions';
-import { Trash, X } from 'lucide-react';
 import { updateProjectSettings } from '@/actions/project-actions';
 import { Field, DocumentRecord, SpreadSheetProps } from './types';
 import TableHeader from './TableHeader';
@@ -12,6 +11,7 @@ import SpreadsheetModals from './SpreadsheetModals';
 import { deleteFileUrl } from '@/actions/aws-url-actions';
 import BackfillModal from '../forms/BackfillModal';
 import AlertDialog from '../ui/AlertDialog';
+import SelectionBar from '@/components/SelectionBar';
 
 export default function SpreadSheet({
   columns,
@@ -23,6 +23,7 @@ export default function SpreadSheet({
   onUpdateRecord,
   onUpdateColumn,
   onDeleteColumn,
+  onSelectionChange,
   backfillingFieldId,
   backfillingRecordId,
   onBackfillRecord,
@@ -54,6 +55,16 @@ export default function SpreadSheet({
   const [isBatchDeleting, setIsBatchDeleting] = useState(false);
   const [showBatchDeleteAlert, setShowBatchDeleteAlert] = useState(false);
 
+  // Bubble selection state up so the mobile header bar can show count/actions
+  useEffect(() => {
+    onSelectionChange?.(
+      selectedRecordIds.size,
+      () => setShowBatchDeleteAlert(true),
+      () => setSelectedRecordIds(new Set()),
+      isBatchDeleting
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRecordIds, isBatchDeleting]);
 
   useEffect(() => {
     setColumnWidths(prev => {
@@ -489,27 +500,15 @@ export default function SpreadSheet({
         cancelText="Cancel"
       />
 
-      {/* Floating Bulk Actions Bar */}
+      {/* Floating Bulk Actions Bar — desktop only; mobile uses the header inline bar */}
       {selectedRecordIds.size > 0 && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 shadow-xl rounded-full px-6 py-3 flex items-center gap-4 z-50 animate-in slide-in-from-bottom-4">
-          <span className="text-sm font-medium text-gray-700">
-            {selectedRecordIds.size} selected
-          </span>
-          <div className="h-4 w-px bg-gray-300"></div>
-          <button
-            onClick={handleBatchDelete}
-            disabled={isBatchDeleting}
-            className="flex items-center gap-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-full transition disabled:opacity-50"
-          >
-            {isBatchDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-          <button
-            onClick={() => setSelectedRecordIds(new Set())}
-            className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"
-            title="Clear selection"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        <div className="hidden md:flex absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <SelectionBar
+            count={selectedRecordIds.size}
+            isDeleting={isBatchDeleting}
+            onDelete={handleBatchDelete}
+            onClear={() => setSelectedRecordIds(new Set())}
+          />
         </div>
       )}
       <BackfillModal
