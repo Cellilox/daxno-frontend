@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Search, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, Check, Search, Plus, Lock } from 'lucide-react';
 import { Model } from '@/types';
 import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
@@ -16,18 +16,20 @@ export interface ModelInfo {
 type ModelSelectorProps = {
   models: Model[];
   tenantModal: string;
-  plan: string;
   disabled?: boolean;
   projectId?: string;
+  isFreePlan?: boolean;
 };
 
-export default function ModelSelector({ models, tenantModal, plan, disabled = false, projectId }: ModelSelectorProps): JSX.Element {
+export default function ModelSelector({ models, tenantModal, disabled = false, projectId, isFreePlan = false }: ModelSelectorProps): JSX.Element {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>();
   const [userHasSelected, setUserHasSelected] = useState(false);
   const [filter, setFilter] = useState('');
   const [autoEnabled, setAutoEnabled] = useState(true);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [isLoading, setIsLoading] = useState(false)
   const [pickedModel, setPickedModal] = useState('')
   useEffect(() => {
@@ -46,28 +48,15 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
   const extractLabel = (full: string) => {
     // If it looks like a model ID (contains /), return the part after /
     if (full.includes('/')) {
-      const afterSlash = full.split('/').pop() || full;
-      return afterSlash.replace(':free', '').trim();
+      return (full.split('/').pop() || full).trim();
     }
     // Otherwise assume it's "Vendor: Model Name" format
     const parts = full.split(':');
     if (parts.length > 1) {
-      return parts.slice(1).join(':').replace(/\s*\(free\)/i, '').trim();
+      return parts.slice(1).join(':').trim();
     }
-    return full.replace(/\s*\(free\)/i, '').trim();
+    return full.trim();
   }
-
-  //   useEffect(() => {
-  //     if (models.some((m) => m.id.endsWith(':free'))) {
-  //       const deep = models.find((m) => m.id.includes(`${process.env.NEXT_PUBLIC_DEFAULT_FREE_MODEL}`));
-  //       setSelectedModel(deep?.id || models[0]?.id || '');
-  //     } else {
-  //       const mistral = models.find((m) =>
-  //         extractLabel(m.name).toLowerCase().includes(`${process.env.NEXT_PUBLIC_DEFAULT_PAID_MODEL}`)
-  //       );
-  //       setSelectedModel(mistral?.id || models[0]?.id || '');
-  //     }
-  //   }, [models]);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -85,6 +74,7 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
 
     // Otherwise close everything
     setOpen(false);
+    setShowUpgradeBanner(false);
     if (showTooltip && tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
       setShowTooltip(false);
     }
@@ -107,15 +97,33 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
     setSelectedModel(id);
     setUserHasSelected(true);
     setOpen(false);
+    setShowUpgradeBanner(false);
   };
 
   const handleButtonClick = () => {
     if (disabled) return;
+    setShowUpgradeBanner(false);
     if (autoEnabled && !userHasSelected) {
       setShowTooltip(true);
     } else {
       setOpen(true);
     }
+  };
+
+  const handleAddMoreModelsClick = () => {
+    if (isFreePlan) {
+      setShowUpgradeBanner((prev) => !prev);
+      return;
+    }
+
+    setOpen(false);
+    router.push('/billing?tab=configuration');
+  };
+
+  const handleUpgradeClick = () => {
+    setOpen(false);
+    setShowUpgradeBanner(false);
+    router.push('/billing?tab=configuration&option=managed');
   };
 
 
@@ -200,13 +208,37 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
             </ul>
             {!disabled && (
               <div className="border-t border-gray-100 mt-2 pt-2 px-1">
-                <Link
-                  href="/billing?tab=configuration"
-                  className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2.5 rounded transition-colors w-full"
+                <button
+                  type="button"
+                  onClick={handleAddMoreModelsClick}
+                  className="flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2.5 rounded transition-colors w-full text-left"
                 >
                   <Plus size={16} />
                   Add more models
-                </Link>
+                </button>
+
+                {isFreePlan && showUpgradeBanner && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <div className="flex items-start gap-2">
+                      <Lock size={14} className="mt-0.5 text-amber-700 shrink-0" />
+                      <div>
+                        <p className="text-xs font-semibold text-amber-900">
+                          Upgrade to add more models
+                        </p>
+                        <p className="mt-1 text-xs text-amber-800">
+                          Free standard users stay on the Free Models Router. Upgrade to Managed to unlock additional model choices.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleUpgradeClick}
+                          className="mt-3 inline-flex items-center rounded-md bg-amber-600 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
+                        >
+                          Upgrade in billing
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

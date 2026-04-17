@@ -19,6 +19,7 @@ interface ProjectPageClientProps {
   linkOwner: string;
   displayedModels: Model[];
   tenantModel: string;
+  isFreePlan?: boolean;
 }
 
 export default function ProjectPageClient({
@@ -32,6 +33,7 @@ export default function ProjectPageClient({
   linkOwner,
   displayedModels,
   tenantModel,
+  isFreePlan = false,
 }: ProjectPageClientProps) {
   const [selectedCount, setSelectedCount] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -62,6 +64,7 @@ export default function ProjectPageClient({
     subscriptionType,
     models: displayedModels,
     tenantModal: tenantModel,
+    isFreePlan,
   };
 
   return (

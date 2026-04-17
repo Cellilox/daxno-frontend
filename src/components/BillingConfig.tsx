@@ -31,7 +31,7 @@ export interface BillingConfigProps {
 
 const TRUSTED_OPENROUTER_PREFIXES = ['openai/', 'anthropic/', 'google/', 'deepseek/'];
 
-export default function BillingConfig({ initialConfig, trustedModels, allModels, currentPlan, currentInterval, currentAmount, currentEndDate }: BillingConfigProps) {
+export default function BillingConfig({ initialConfig, allModels, currentPlan, currentInterval, currentAmount, currentEndDate }: BillingConfigProps) {
     // 3 Modes: 'standard', 'byok' (Own Key), 'managed' (GYOMK)
     // Map initialConfig.subscription_type (standard/byok) to one of these.
     // Ideally backend should support 'managed', but for now we might infer or keep 'byok' for both backend-side but separating UI.
@@ -48,6 +48,20 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const searchParams = useSearchParams();
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const currentSubscriptionTier = useMemo<'standard' | 'byok' | 'managed'>(() => {
+        if (initialConfig?.subscription_type === 'managed') return 'managed';
+
+        if (initialConfig?.subscription_type === 'byok') {
+            return initialConfig.byok_api_key?.startsWith('sk-or-daxno') ? 'managed' : 'byok';
+        }
+
+        const normalizedPlan = currentPlan?.toLowerCase();
+        if (normalizedPlan === 'byok') return 'byok';
+        if (normalizedPlan === 'managed' || normalizedPlan === 'gyok' || normalizedPlan === 'topup') return 'managed';
+
+        return 'standard';
+    }, [initialConfig, currentPlan]);
+
     // Determine initial billing type based on URL param 'option' (new) or 'tier' (legacy) or config
     // Priority: URL Param > Config > Default
     const initialBillingType = useMemo(() => {
@@ -62,23 +76,14 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         if (param === 'standard') return 'standard';
 
         // Fallback to config logic
-        if (initialConfig?.subscription_type === 'managed') return 'managed';
-        if (initialConfig?.subscription_type === 'standard') return 'standard';
-        if (initialConfig?.subscription_type === 'byok') {
-            return initialConfig?.byok_api_key?.startsWith('sk-or-daxno') ? 'managed' : 'byok';
-        }
-        return 'standard';
-    }, [searchParams, initialConfig]);
+        return currentSubscriptionTier;
+    }, [searchParams, currentSubscriptionTier]);
 
     const [billingType, setBillingType] = useState<'standard' | 'byok' | 'managed'>(initialBillingType);
     const [apiKey, setApiKey] = useState(initialConfig?.byok_api_key || '');
     const [provider, setProvider] = useState(initialConfig?.byok_provider || 'openrouter');
 
-    // BYOK Subscription State
-    // Check if the actual current plan is 'byok' (case-insensitive)
-    const [isByokSubscribed, setIsByokSubscribed] = useState(
-        currentPlan?.toLowerCase() === 'byok' || initialConfig?.subscription_type === 'byok'
-    );
+    const isByokSubscribed = currentSubscriptionTier === 'byok';
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
 
@@ -135,7 +140,6 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
     const [isLoadingModels, setIsLoadingModels] = useState(false);
     const [providerModels, setProviderModels] = useState<ModelInfo[]>([]);
     const [modelsFetchError, setModelsFetchError] = useState<string | null>(null);
-    const [isConnectingKey, setIsConnectingKey] = useState(false);
     // Unified verification logic: Verified if standard OR matches existing configuration
     const [isKeyVerified, setIsKeyVerified] = useState(() => {
         const initialSub = initialConfig?.subscription_type;
@@ -143,15 +147,11 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
         return initialSub === 'standard' || hasSavedKey;
     });
 
-    // Track the last verified key to know when user is typing a NEW one
-    const lastVerifiedKeyRef = useRef(initialConfig?.byok_api_key || '');
-
     // Auto-verify if user switches back to their currently saved provider
     useEffect(() => {
         if (billingType === 'byok' && provider === initialConfig?.byok_provider && initialConfig?.byok_api_key) {
             setIsKeyVerified(true);
             setApiKey(initialConfig.byok_api_key);
-            lastVerifiedKeyRef.current = initialConfig.byok_api_key;
         }
     }, [provider, billingType, initialConfig]);
 
@@ -185,6 +185,23 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
     // Track if we should highlight the CTA button
     const [highlightCTA, setHighlightCTA] = useState(false);
+
+    const renderCurrentTierMarker = (tier: 'standard' | 'managed' | 'byok') => {
+        if (currentSubscriptionTier !== tier) return null;
+
+        const badgeClasses = {
+            standard: 'border-blue-200 bg-blue-50 text-blue-700',
+            managed: 'border-green-200 bg-green-50 text-green-700',
+            byok: 'border-yellow-200 bg-yellow-50 text-yellow-700',
+        }[tier];
+
+        return (
+            <span className={`ml-2 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none ${badgeClasses}`}>
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Current
+            </span>
+        );
+    };
 
     // Simple scroll to top when coming from modal or on initial load with param
     useEffect(() => {
@@ -517,7 +534,10 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                 : 'text-gray-500 hover:bg-white/[0.12] hover:text-customBlue'
                             }`}
                     >
-                        Standard
+                        <span className="inline-flex items-center justify-center">
+                            Standard
+                            {renderCurrentTierMarker('standard')}
+                        </span>
                     </button>
                     <button
                         onClick={() => handleBillingTypeChange('managed')}
@@ -527,7 +547,10 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                 : 'text-gray-500 hover:bg-white/[0.12] hover:text-green-700'
                             }`}
                     >
-                        Managed (GYOK)
+                        <span className="inline-flex items-center justify-center">
+                            Managed (GYOK)
+                            {renderCurrentTierMarker('managed')}
+                        </span>
                     </button>
                     <button
                         onClick={() => handleBillingTypeChange('byok')}
@@ -537,7 +560,10 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                 : 'text-gray-500 hover:bg-white/[0.12] hover:text-yellow-700'
                             }`}
                     >
-                        BYOK
+                        <span className="inline-flex items-center justify-center">
+                            BYOK
+                            {renderCurrentTierMarker('byok')}
+                        </span>
                     </button>
                 </div>
 
@@ -838,8 +864,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                 )}
 
 
-                {/* Model Selection - Available for ALL types now (Standard, Managed, BYOK) */}
-                {((billingType === 'standard' || (apiKey && (billingType === 'byok' || billingType === 'managed'))) && allModels) && (
+                {/* Model Selection - Only configurable for Managed and BYOK */}
+                {(billingType !== 'standard' && apiKey && (billingType === 'byok' || billingType === 'managed') && allModels) && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-500">
                         {/* Loading State - when fetching provider models */}
 
@@ -903,7 +929,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
 
 
                         {/* Only show Preferred Models section when not loading and no error */}
-                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && (billingType === 'standard' || isKeyVerified) && (
+                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && isKeyVerified && (
                             <button
                                 onClick={async () => {
                                     const isOpening = !isModelsOpen;
@@ -913,9 +939,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                     if (isOpening && providerModels.length === 0) {
                                         let fetchProvider = null;
 
-                                        if (billingType === 'standard') {
-                                            fetchProvider = 'openrouter';
-                                        } else if (billingType === 'managed' && apiKey) {
+                                        if (billingType === 'managed' && apiKey) {
                                             fetchProvider = 'openrouter';
                                         } else if (billingType === 'byok' && apiKey && provider) {
                                             fetchProvider = provider;
@@ -962,9 +986,7 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                         {isModelsOpen && !modelsFetchError && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                 <p className="text-xs text-gray-500 mb-4">
-                                    {billingType === 'standard'
-                                        ? "Select the models you want to use. Upgrade your plan to access PRO models."
-                                        : "Search and select any OpenRouter models you want to use. You must select a Default Model to save changes."}
+                                    Search and select any OpenRouter models you want to use. You must select a Default Model to save changes.
                                 </p>
 
                                 {isLoadingModels && (
@@ -988,25 +1010,8 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                                         <div className="max-h-80 overflow-y-auto pr-2 border border-blue-50 rounded-lg p-2 bg-white">
                                             <div className="grid grid-cols-1 gap-2">
                                                 {sortedAndFilteredModels.map((model: ModelInfo) => {
-                                                    // Determine Tier for Standard Plan
-                                                    let tierTag = null;
-                                                    let isDisabled = false;
-
-                                                    if (billingType === 'standard') {
-                                                        const isPro = trustedModels?.professional?.includes(model.id);
-                                                        const isStarter = trustedModels?.starter?.includes(model.id);
-
-                                                        // Normalize plan name handling (assuming currentPlan comes as 'Professional', 'Starter', 'Free')
-                                                        const userPlan = currentPlan || 'Free';
-
-                                                        if (isPro) {
-                                                            if (userPlan !== 'Professional') isDisabled = true;
-                                                            tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-yellow-100 text-yellow-800 border-yellow-200">PRO</span>;
-                                                        } else if (isStarter) {
-                                                            if (!['Starter', 'Professional'].includes(userPlan)) isDisabled = true;
-                                                            tierTag = <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded font-bold border flex-shrink-0 bg-blue-100 text-blue-800 border-blue-200">STARTER</span>;
-                                                        }
-                                                    }
+                                                    const tierTag = null;
+                                                    const isDisabled = false;
 
                                                     return (
                                                         <div key={model.id} className={`flex items-start p-2 rounded-md border transition-colors ${preferredModels.includes(model.id) ? 'border-customBlue bg-blue-50' : 'border-gray-200'} ${isDisabled ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`}>
@@ -1069,99 +1074,102 @@ export default function BillingConfig({ initialConfig, trustedModels, allModels,
                     </div>
                 )}
 
-                {/* Activity Log Table - Only for Managed or when usage exists */}
-                <div className="mt-8 border-t border-gray-100 pt-6" id="recent-activity">
-                    <button
-                        onClick={() => setIsActivityOpen(!isActivityOpen)}
-                        className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 p-2 rounded transition-colors"
-                    >
-                        <h3 className="text-sm font-medium text-gray-900 flex items-center">
-                            <Activity className={`mr-2 h-4 w-4 text-customBlue ${isLoadingActivity ? 'animate-pulse' : ''}`} />
-                            Recent Activity
-                            {isLoadingActivity && <LoadingSpinner className="ml-2 h-3 w-3 text-customBlue" />}
-                        </h3>
-                        {isActivityOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
-                    </button>
+                {billingType !== 'standard' && (
+                    <>
+                        {/* Activity Log Table - Only for Managed or BYOK */}
+                        <div className="mt-8 border-t border-gray-100 pt-6" id="recent-activity">
+                            <button
+                                onClick={() => setIsActivityOpen(!isActivityOpen)}
+                                className="w-full flex items-center justify-between mb-4 hover:bg-gray-50 p-2 rounded transition-colors"
+                            >
+                                <h3 className="text-sm font-medium text-gray-900 flex items-center">
+                                    <Activity className={`mr-2 h-4 w-4 text-customBlue ${isLoadingActivity ? 'animate-pulse' : ''}`} />
+                                    Recent Activity
+                                    {isLoadingActivity && <LoadingSpinner className="ml-2 h-3 w-3 text-customBlue" />}
+                                </h3>
+                                {isActivityOpen ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                            </button>
 
-                    {isActivityOpen && (
-                        <div className="animate-in fade-in duration-500">
-                            {isLoadingActivity && activity.length === 0 ? (
-                                <div className="flex justify-center items-center py-8">
-                                    <LoadingSpinner className="h-6 w-6 text-customBlue" />
-                                    <span className="ml-2 text-sm text-gray-500">Loading activity...</span>
-                                </div>
-                            ) : activity.length > 0 ? (
-                                <>
-                                    <div className="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
-                                        <table className="min-w-full divide-y divide-gray-200 text-xs text-black">
-                                            <thead className="bg-gray-50 text-gray-500 font-bold uppercase">
-                                                <tr>
-                                                    <th className="px-3 py-2 text-left">Model</th>
-                                                    <th className="px-3 py-2 text-right">Tokens</th>
-                                                    <th className="px-3 py-2 text-right">AI Cost</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-100">
-                                                {activity.map((row, idx) => (
-                                                    <tr key={idx} className="hover:bg-gray-50">
-                                                        <td className="px-3 py-2 text-gray-900 font-medium truncate max-w-[120px]" title={row.model}>{row.model.split('/').pop()}</td>
-                                                        <td className="px-3 py-2 text-right text-gray-600">
-                                                            {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-right text-customBlue font-bold">
-                                                            ${(row.ai_cost || 0).toFixed(6)}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {hasMore && (
-                                        <div className="mt-3 text-center">
-                                            <button
-                                                onClick={handleLoadMore}
-                                                disabled={isLoadingMore}
-                                                className="text-xs text-customBlue hover:text-blue-700 font-medium flex items-center justify-center mx-auto disabled:opacity-50"
-                                            >
-                                                {isLoadingMore ? <LoadingSpinner className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                                                Load More Activity
-                                            </button>
+                            {isActivityOpen && (
+                                <div className="animate-in fade-in duration-500">
+                                    {isLoadingActivity && activity.length === 0 ? (
+                                        <div className="flex justify-center items-center py-8">
+                                            <LoadingSpinner className="h-6 w-6 text-customBlue" />
+                                            <span className="ml-2 text-sm text-gray-500">Loading activity...</span>
                                         </div>
+                                    ) : activity.length > 0 ? (
+                                        <>
+                                            <div className="overflow-x-auto border border-gray-100 rounded-lg shadow-sm">
+                                                <table className="min-w-full divide-y divide-gray-200 text-xs text-black">
+                                                    <thead className="bg-gray-50 text-gray-500 font-bold uppercase">
+                                                        <tr>
+                                                            <th className="px-3 py-2 text-left">Model</th>
+                                                            <th className="px-3 py-2 text-right">Tokens</th>
+                                                            <th className="px-3 py-2 text-right">AI Cost</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-100">
+                                                        {activity.map((row, idx) => (
+                                                            <tr key={idx} className="hover:bg-gray-50">
+                                                                <td className="px-3 py-2 text-gray-900 font-medium truncate max-w-[120px]" title={row.model}>{row.model.split('/').pop()}</td>
+                                                                <td className="px-3 py-2 text-right text-gray-600">
+                                                                    {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
+                                                                </td>
+                                                                <td className="px-3 py-2 text-right text-customBlue font-bold">
+                                                                    ${(row.ai_cost || 0).toFixed(6)}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {hasMore && (
+                                                <div className="mt-3 text-center">
+                                                    <button
+                                                        onClick={handleLoadMore}
+                                                        disabled={isLoadingMore}
+                                                        className="text-xs text-customBlue hover:text-blue-700 font-medium flex items-center justify-center mx-auto disabled:opacity-50"
+                                                    >
+                                                        {isLoadingMore ? <LoadingSpinner className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                                                        Load More Activity
+                                                    </button>
+                                                </div>
+                                            )}
+                                            <p className="text-[10px] text-gray-400 mt-2 text-center italic">
+                                                Showing {activity.length} requests. Data refreshes on interaction.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        !isLoadingActivity && (
+                                            <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                                                <p className="text-sm text-gray-500">No recent activity found.</p>
+                                                <p className="text-[10px] text-gray-400 mt-1">Activity logs appear here after your first few requests.</p>
+                                            </div>
+                                        )
                                     )}
-                                    <p className="text-[10px] text-gray-400 mt-2 text-center italic">
-                                        Showing {activity.length} requests. Data refreshes on interaction.
-                                    </p>
-                                </>
-                            ) : (
-                                !isLoadingActivity && (
-                                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                        <BarChart3 className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500">No recent activity found.</p>
-                                        <p className="text-[10px] text-gray-400 mt-1">Activity logs appear here after your first few requests.</p>
-                                    </div>
-                                )
+                                </div>
                             )}
                         </div>
-                    )}
-                </div>
 
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    {message && (
-                        <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                            {message.text}
-                        </span>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving || (billingType !== 'standard' && !apiKey)}
-                        className="ml-auto bg-customBlue hover:bg-[#1e3470] text-white font-medium py-2 px-4 rounded-lg flex items-center disabled:opacity-50 transition-colors"
-                    >
-                        {isSaving && <LoadingSpinner className="mr-2 h-4 w-4 text-white" />}
-                        Save Changes
-                    </button>
-                </div>
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                            {message && (
+                                <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                                    {message.text}
+                                </span>
+                            )}
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving || !apiKey}
+                                className="ml-auto bg-customBlue hover:bg-[#1e3470] text-white font-medium py-2 px-4 rounded-lg flex items-center disabled:opacity-50 transition-colors"
+                            >
+                                {isSaving && <LoadingSpinner className="mr-2 h-4 w-4 text-white" />}
+                                Save Changes
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
 
             <CreditPurchaseModal
