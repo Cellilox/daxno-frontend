@@ -120,7 +120,6 @@ export default function CollapsibleActions({
             <ModelSelector
               models={models}
               tenantModal={tenantModal}
-              plan={plan}
               disabled={!is_project_owner}
               projectId={projectId}
               isFreePlan={isFreePlan}

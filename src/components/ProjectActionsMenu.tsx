@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, Upload, Share2, Mail, Sparkles, Users, Zap, X, BarChart3 } from 'lucide-react';
+import { MoreVertical, Upload, Share2, Mail, Sparkles, Users, Zap, X } from 'lucide-react';
 import ScanFilesModal from './files/ScanFilesModal';
 import FormModal from './ui/Popup';
 import StandardPopup from './ui/StandardPopup';
@@ -14,7 +14,6 @@ import ModelSelector from './Models';
 import OnyxDeepLinkButton from './OnyxDeepLinkButton';
 import Integrations from './integrations/Integrations';
 import { Field, DocumentRecord } from './spreadsheet/types';
-import UsageModal from './UsageModal';
 
 interface ProjectActionsMenuProps {
     projectId: string;
@@ -52,7 +51,6 @@ export default function ProjectActionsMenu({
     const [isAddressPopupVisible, setIsAddressPopupVisible] = useState(false);
     const [isShareLinkPopupVisible, setIsShareLinkPopupVisible] = useState(false);
     const [isScanModalOpen, setIsScanModalOpen] = useState(false);
-    const [isUsagePopupVisible, setIsUsagePopupVisible] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -199,7 +197,6 @@ export default function ProjectActionsMenu({
                                                 <ModelSelector
                                                     models={models}
                                                     tenantModal={tenantModal}
-                                                    plan={plan}
                                                     disabled={false}
                                                     projectId={projectId}
                                                     isFreePlan={isFreePlan}
