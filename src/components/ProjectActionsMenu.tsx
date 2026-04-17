@@ -29,6 +29,7 @@ interface ProjectActionsMenuProps {
     records: DocumentRecord[];
     models: Model[];
     tenantModal: string;
+    isFreePlan?: boolean;
 }
 
 export default function ProjectActionsMenu({
@@ -44,6 +45,7 @@ export default function ProjectActionsMenu({
     records,
     models,
     tenantModal,
+    isFreePlan = false,
 }: ProjectActionsMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isInvitePopupVisible, setIsInvitePopupVisible] = useState(false);
@@ -200,6 +202,7 @@ export default function ProjectActionsMenu({
                                                     plan={plan}
                                                     disabled={false}
                                                     projectId={projectId}
+                                                    isFreePlan={isFreePlan}
                                                 />
                                             </div>
                                         </div>

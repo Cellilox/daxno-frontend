@@ -31,6 +31,7 @@ interface CollapsibleActionsProps {
   records: DocumentRecord[]
   models: Model[]
   tenantModal: string;
+  isFreePlan?: boolean;
 }
 
 export default function CollapsibleActions({
@@ -46,7 +47,8 @@ export default function CollapsibleActions({
   fields,
   records,
   models,
-  tenantModal
+  tenantModal,
+  isFreePlan = false,
 }: CollapsibleActionsProps) {
   const [isInvitePopupVisible, setIsInvitePopupVisible] = useState(false);
   const [isAddressPopupVisible, setIsAddressPopupVisible] = useState(false);
@@ -70,6 +72,7 @@ export default function CollapsibleActions({
           records={records}
           models={models}
           tenantModal={tenantModal}
+          isFreePlan={isFreePlan}
         />
       </div>
 
@@ -120,6 +123,7 @@ export default function CollapsibleActions({
               plan={plan}
               disabled={!is_project_owner}
               projectId={projectId}
+              isFreePlan={isFreePlan}
             />
 
             <div className="flex items-center gap-2">

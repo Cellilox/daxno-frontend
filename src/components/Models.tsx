@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Search, Plus } from 'lucide-react';
+import { ChevronDown, Check, Search, Plus, Lock } from 'lucide-react';
 import { Model } from '@/types';
 import { selectModel } from '@/actions/ai-models-actions';
 import LoadingSpinner from './ui/LoadingSpinner';
@@ -19,9 +19,10 @@ type ModelSelectorProps = {
   plan: string;
   disabled?: boolean;
   projectId?: string;
+  isFreePlan?: boolean;
 };
 
-export default function ModelSelector({ models, tenantModal, plan, disabled = false, projectId }: ModelSelectorProps): JSX.Element {
+export default function ModelSelector({ models, tenantModal, plan, disabled = false, projectId, isFreePlan = false }: ModelSelectorProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>();
   const [userHasSelected, setUserHasSelected] = useState(false);
@@ -46,28 +47,15 @@ export default function ModelSelector({ models, tenantModal, plan, disabled = fa
   const extractLabel = (full: string) => {
     // If it looks like a model ID (contains /), return the part after /
     if (full.includes('/')) {
-      const afterSlash = full.split('/').pop() || full;
-      return afterSlash.replace(':free', '').trim();
+      return (full.split('/').pop() || full).trim();
     }
     // Otherwise assume it's "Vendor: Model Name" format
     const parts = full.split(':');
     if (parts.length > 1) {
-      return parts.slice(1).join(':').replace(/\s*\(free\)/i, '').trim();
+      return parts.slice(1).join(':').trim();
     }
-    return full.replace(/\s*\(free\)/i, '').trim();
+    return full.trim();
   }
-
-  //   useEffect(() => {
-  //     if (models.some((m) => m.id.endsWith(':free'))) {
-  //       const deep = models.find((m) => m.id.includes(`${process.env.NEXT_PUBLIC_DEFAULT_FREE_MODEL}`));
-  //       setSelectedModel(deep?.id || models[0]?.id || '');
-  //     } else {
-  //       const mistral = models.find((m) =>
-  //         extractLabel(m.name).toLowerCase().includes(`${process.env.NEXT_PUBLIC_DEFAULT_PAID_MODEL}`)
-  //       );
-  //       setSelectedModel(mistral?.id || models[0]?.id || '');
-  //     }
-  //   }, [models]);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);

@@ -58,10 +58,20 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   const is_project_owner = project.is_owner;
   const linkOwner = ""
 
-  // Filter models based on preferences or default restrictions
+  // Free-standard users are pinned to the OpenRouter Free Models Router —
+  // there is nothing to pick, so short-circuit the model list to a single entry
+  // and signal "locked" to downstream components.
+  const userPlan = plan?.plan_name || 'Free';
+  const subType = plan?.subscription_type;
+  const isFreePlan = subType === 'standard' && userPlan === 'Free';
+
   let displayedModels = aiModels;
 
-  if (ownerBillingConfig?.preferred_models && (
+  if (isFreePlan) {
+    displayedModels = [
+      { id: 'openrouter/free', name: 'Free Models Router' } as Model,
+    ];
+  } else if (ownerBillingConfig?.preferred_models && (
     (Array.isArray(ownerBillingConfig.preferred_models) && ownerBillingConfig.preferred_models.length > 0) ||
     (typeof ownerBillingConfig.preferred_models === 'object' && ownerBillingConfig.preferred_models.visible && ownerBillingConfig.preferred_models.visible.length > 0)
   )) {
@@ -86,7 +96,6 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     const trusted = await getTrustedModels();
 
     if (trusted) {
-      const userPlan = plan?.plan_name || 'Free';
       let allowedTierIds: string[] = [...(trusted.free || [])];
 
       if (['Starter', 'Professional'].includes(userPlan)) {
@@ -115,6 +124,7 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
         linkOwner={linkOwner}
         displayedModels={displayedModels}
         tenantModel={tenantModel.selected_model}
+        isFreePlan={isFreePlan}
       />
     </div>
   );
