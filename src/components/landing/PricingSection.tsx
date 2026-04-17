@@ -18,51 +18,52 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    name: "Starter",
-    desc: "For small teams getting started with document automation.",
+    name: "Free",
+    desc: "Kick the tyres on Cellilox — no card, no commitment.",
     price: "Free",
+    period: "forever",
     features: [
-      "500 documents per month",
-      "AI Analysis & Project Agents",
-      "Advanced OCR & Layout Geometry",
-      "Cloud connectors (Google Drive, etc.)",
+      "25 pages every 30 days",
+      "Up to 3 documents per day",
+      "Curated trusted AI models",
+      "AI extraction + natural-language queries",
       "Team collaboration & shared links",
     ],
-    cta: "Get started free",
+    cta: "Start for free",
     href: "/dashboard",
   },
   {
-    name: "Professional",
-    desc: "For growing teams with serious document volumes.",
-    price: "$29",
-    period: "/month",
+    name: "Managed (GYOK)",
+    desc: "Pay-as-you-go credits. We manage the AI key and rotation.",
+    price: "Credits",
+    period: "pay-as-you-go",
     features: [
-      "2,000 documents per month",
-      "Priority AI processing",
-      "Advanced collaboration tools",
-      "Smart notifications (SES/SNS)",
-      "CSV, Excel & PDF export",
-      "Priority email & chat support",
-      "Everything in Starter",
+      "~100 pages per $1 of credits",
+      "No monthly commitment",
+      "Trusted premium models (OpenAI, Anthropic, Google, DeepSeek)",
+      "Transparent per-request usage dashboard",
+      "Automatic key rotation & security",
+      "OCR $0.01/page + real-time AI token rate",
     ],
-    cta: "Start 14-day trial",
-    href: "/dashboard",
+    cta: "Buy credits",
+    href: "/billing?tab=configuration&option=managed",
     featured: true,
   },
   {
     name: "BYOK",
-    desc: "Bring your own key for full control and enterprise-grade scale.",
-    price: "Custom",
+    desc: "Bring your own provider key — you only pay Cellilox's platform fee.",
+    price: "$10",
+    period: "/month · or $100/yr",
     features: [
-      "1,000 documents per month",
-      "Bring Your Own Key (BYOK)",
-      "Generate Managed Keys (GYOMK)",
-      "Full AI agent suite access",
-      "Enterprise-grade connectors",
-      "Dedicated 24/7 support",
+      "1,000 pages every 30 days",
+      "Bring your own OpenAI, Anthropic, DeepSeek or Google key",
+      "Direct AI billing with your provider",
+      "Full control over model selection",
+      "Yearly plan saves $20",
+      "Same extraction, queries & collaboration",
     ],
-    cta: "Contact sales",
-    href: "/contact",
+    cta: "Subscribe to BYOK",
+    href: "/billing?tab=configuration&option=byok",
   },
 ];
 
@@ -82,7 +83,8 @@ export default function PricingSection() {
             Simple, <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">transparent</span> pricing
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
-            Start free. Scale as your document volume grows. All plans include AI queries and automatic extraction.
+            Start free. Top up credits when you need more, or bring your own key.
+            Every tier includes full AI extraction, natural-language queries and team collaboration.
           </p>
         </motion.div>
 

@@ -6,6 +6,8 @@ import { Check, Loader2, Sparkles } from "lucide-react";
 
 type Field = { label: string; value: string };
 
+type BodyRow = { left: string; right: string; accent?: "pos" | "neg" | "bold" };
+
 type DocData = {
   type: string;
   title: string;
@@ -14,6 +16,7 @@ type DocData = {
   badgeLabel: string;
   badgeClass: string;
   fields: Field[];
+  body: BodyRow[];
   query: string;
   answer: string;
 };
@@ -32,6 +35,13 @@ const DOCS: DocData[] = [
       { label: "Due", value: "Apr 28, 2025" },
       { label: "VAT", value: "RWF 234,000" },
     ],
+    body: [
+      { left: "Corporate data plan", right: "890,000" },
+      { left: "5G router rental", right: "180,000" },
+      { left: "International roaming", right: "230,000" },
+      { left: "VAT (18%)", right: "234,000" },
+      { left: "Total due", right: "RWF 1,534,000", accent: "bold" },
+    ],
     query: "Total VAT collected in Q1?",
     answer: "RWF 2.18M across 43 invoices.",
   },
@@ -47,6 +57,13 @@ const DOCS: DocData[] = [
       { label: "Items", value: "6 line items" },
       { label: "Delivery", value: "Apr 30, 2025" },
       { label: "Total", value: "RWF 8.05M" },
+    ],
+    body: [
+      { left: "Solar panel 450W × 12", right: "3,240,000" },
+      { left: "Lithium battery × 4", right: "2,800,000" },
+      { left: "Hybrid inverter × 2", right: "1,200,000" },
+      { left: "Installation & wiring", right: "810,000" },
+      { left: "Grand total", right: "RWF 8,050,000", accent: "bold" },
     ],
     query: "Any duplicate POs this month?",
     answer: "2 flagged — exposure RWF 8.04M.",
@@ -64,6 +81,13 @@ const DOCS: DocData[] = [
       { label: "Debits", value: "RWF 29.0M" },
       { label: "Balance", value: "RWF 84.3M" },
     ],
+    body: [
+      { left: "28/03  Payroll transfer", right: "−12,400,000", accent: "neg" },
+      { left: "26/03  Airtel Money deposit", right: "+3,200,000", accent: "pos" },
+      { left: "24/03  URA tax payment", right: "−6,500,000", accent: "neg" },
+      { left: "22/03  Client invoice", right: "+8,900,000", accent: "pos" },
+      { left: "Closing balance", right: "RWF 84,300,000", accent: "bold" },
+    ],
     query: "Reconcile March transactions.",
     answer: "84 matched, 2 unmatched — CSV ready.",
   },
@@ -79,6 +103,13 @@ const DOCS: DocData[] = [
       { label: "Value", value: "RWF 18M/yr" },
       { label: "Expires", value: "Jun 3, 2025" },
       { label: "Renewal", value: "Auto" },
+    ],
+    body: [
+      { left: "Party A", right: "Cellilox Ltd." },
+      { left: "Party B", right: "Equity Bank Rwanda" },
+      { left: "Service", right: "Digital banking" },
+      { left: "Effective", right: "Jan 15, 2023" },
+      { left: "Auto-renewal", right: "12 months", accent: "bold" },
     ],
     query: "Contracts expiring in 90 days?",
     answer: "4 expiring by Jul 14 — reminders drafted.",
@@ -206,15 +237,30 @@ export default function HeroLiveDemo() {
             <StatusBadge beat={beat} doc={doc} />
           </div>
 
-          {/* Mock doc body */}
-          <div className="mt-5 space-y-2.5">
-            {[88, 72, 95, 62, 80, 55].map((w, i) => (
-              <div
-                key={i}
-                className="h-2 rounded-full bg-gradient-to-r from-gray-100 to-gray-50"
-                style={{ width: `${w}%` }}
-              />
-            ))}
+          {/* Doc body — per-type realistic rows. Fixed height so the card never resizes between docs. */}
+          <div className="mt-4 space-y-1.5 h-[120px]">
+            {doc.body.map((row, i) => {
+              const isLast = i === doc.body.length - 1;
+              const rightClass =
+                row.accent === "pos"
+                  ? "text-emerald-600 font-semibold"
+                  : row.accent === "neg"
+                  ? "text-rose-600 font-semibold"
+                  : row.accent === "bold"
+                  ? "text-gray-900 font-bold"
+                  : "text-gray-700 font-medium";
+              return (
+                <div
+                  key={`${docIdx}-${i}`}
+                  className={`flex items-center justify-between gap-3 text-[11px] leading-5 ${
+                    isLast ? "mt-1 border-t border-gray-100 pt-1.5" : ""
+                  }`}
+                >
+                  <span className="truncate text-gray-500">{row.left}</span>
+                  <span className={`flex-shrink-0 tabular-nums ${rightClass}`}>{row.right}</span>
+                </div>
+              );
+            })}
           </div>
 
           {/* AI parse strip — always rendered, fades in at beat >= 2 so the doc card never resizes */}
