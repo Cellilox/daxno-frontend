@@ -11,24 +11,24 @@ const ITEMS = [
     avatarBg: "bg-gradient-to-br from-blue-500 to-indigo-600",
     quote:
       "We process over 400 supplier invoices a month. Cellilox cut our data entry time by 90% and we caught three duplicate payments in the first week.",
-    name: "Amina Murekatete",
-    role: "CFO · Rwanda Logistics Group",
+    name: "Gilbert Mugabo",
+    role: "CFO · ABF",
   },
   {
     initials: "JN",
     avatarBg: "bg-gradient-to-br from-purple-500 to-pink-500",
     quote:
       "The contract expiry alerts alone saved us from missing two critical renewals. Having all our procurement documents in one searchable place is transformative.",
-    name: "Jean-Pierre Nkurunziza",
-    role: "Head of Procurement · Inyange Industries",
+    name: "Kevin Jambo",
+    role: "Head of Procurement · ....",
   },
   {
     initials: "SK",
     avatarBg: "bg-gradient-to-br from-emerald-500 to-teal-500",
     quote:
       "Our auditors used to spend days gathering bank statements and reconciliations. Now it's one export and 20 minutes. Cellilox understands our documents perfectly.",
-    name: "Solange Kabera",
-    role: "Finance Manager · Equity Bank Rwanda",
+    name: "Jean Pierre Mbanzamihigo",
+    role: "Finance Manager · TheWings",
   },
 ];
 
