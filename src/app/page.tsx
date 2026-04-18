@@ -142,7 +142,7 @@ export default function Home() {
       <DocumentTypesGrid />
       <AIChatShowcase />
       <HowItWorks />
-      <DocumentShowcase />
+      {/* <DocumentShowcase /> */}
       <FeaturesDeepDive />
       <Testimonials />
       <PricingSection />
