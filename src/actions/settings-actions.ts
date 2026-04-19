@@ -106,23 +106,9 @@ export async function updateBillingConfig(subscription_type: string, byok_api_ke
     }
 }
 
-export async function provisionManagedByok(limit: number = 0.02) {
+export async function rotateManagedKey() {
     try {
-        const url = buildApiUrl(`/tenants/provision-byok?limit=${limit}`);
-        const response = await fetchAuthedJson(url, {
-            method: "POST"
-        });
-        if (!response.ok) throw new Error("Failed to provision Managed BYOK key");
-        return response.json();
-    } catch (error) {
-        console.error("Error provisioning managed BYOK:", error);
-        throw error;
-    }
-}
-
-export async function rotateManagedByok() {
-    try {
-        const url = buildApiUrl('/tenants/rotate-byok');
+        const url = buildApiUrl('/tenants/rotate-managed-key');
         const response = await fetchAuthedJson(url, {
             method: "POST"
         });
