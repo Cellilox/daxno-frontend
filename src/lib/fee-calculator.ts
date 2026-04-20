@@ -1,3 +1,5 @@
+import { FEE_TIERS } from "./billing-config";
+
 export type FeeResult = {
     inputAmount: number;
     serviceFeePercentage: number;
@@ -5,23 +7,17 @@ export type FeeResult = {
     credits: number;
 };
 
-export const calculateServiceFee = (amount: number): FeeResult => {
-    let percentage = 0;
-
-    if (amount >= 5 && amount <= 20) {
-        percentage = 0.35;
-    } else if (amount > 20 && amount <= 50) {
-        percentage = 0.30;
-    } else if (amount > 50 && amount <= 100) {
-        percentage = 0.25;
-    } else if (amount > 100) {
-        percentage = 0.20;
-    } else {
-        // Default fallback or error case handling - though logic usually expects valid range
-        // Assuming if < 5, maybe just flat rate or disallowed, but for calc purposes:
-        percentage = 0.35;
+const resolveTierPct = (amount: number): number => {
+    for (const tier of FEE_TIERS) {
+        const inRange = amount >= tier.min && (tier.max === null || amount <= tier.max);
+        if (inRange) return tier.pct / 100;
     }
+    // Fallback: amount below first tier — apply first tier's pct (matches prior behavior).
+    return FEE_TIERS[0] ? FEE_TIERS[0].pct / 100 : 0;
+};
 
+export const calculateServiceFee = (amount: number): FeeResult => {
+    const percentage = resolveTierPct(amount);
     const feeAmount = amount * percentage;
     const netCredits = amount - feeAmount;
 
@@ -29,6 +25,6 @@ export const calculateServiceFee = (amount: number): FeeResult => {
         inputAmount: amount,
         serviceFeePercentage: percentage * 100,
         serviceFeeAmount: feeAmount,
-        credits: netCredits
+        credits: netCredits,
     };
 };
