@@ -6,25 +6,20 @@ import { calculateServiceFee, FeeResult } from "@/lib/fee-calculator"
 import LoadingSpinner from "./ui/LoadingSpinner"
 import { ShieldCheck, CreditCard, AlertCircle } from 'lucide-react'
 import { CURRENCY_CODE, CURRENCY_SYMBOL } from '@/lib/currency'
+import { CREDIT_DEFAULT_AMOUNT, CREDIT_MIN_AMOUNT, FEE_TIERS } from '@/lib/billing-config'
 
-// Mock action for now, replaced by actual prop later
 import { getAvailablePlans, requestPayment } from "@/actions/payment-actions"
 import { usePathname, useRouter } from "next/navigation"
 import StandardPopup from "./ui/StandardPopup"
 
-const mockPurchaseAction = async (_amount: number) => {
-    return new Promise((resolve) => setTimeout(resolve, 2000));
-}
-
 interface CreditPurchaseModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onPurchaseSuccess: (amount: number) => void;
 }
 
-export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess }: CreditPurchaseModalProps) {
-    const [amount, setAmount] = useState<number>(30); // Default to sweet spot
-    const [feeDetails, setFeeDetails] = useState<FeeResult>(calculateServiceFee(30));
+export default function CreditPurchaseModal({ isOpen, onClose }: CreditPurchaseModalProps) {
+    const [amount, setAmount] = useState<number>(CREDIT_DEFAULT_AMOUNT);
+    const [feeDetails, setFeeDetails] = useState<FeeResult>(calculateServiceFee(CREDIT_DEFAULT_AMOUNT));
     const [loading, setLoading] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -44,7 +39,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
     }, [amount]);
 
     const handlePurchase = async () => {
-        if (amount < 5) return;
+        if (amount < CREDIT_MIN_AMOUNT) return;
         setLoading(true);
         try {
             // 1. Fetch Plans
@@ -60,11 +55,9 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
 
             // 3. Initiate Payment with Custom Amount
             // requestPayment(pathname, amount, plan_id)
-            const result = await requestPayment('billing?tab=configuration&tier=managed', amount, gyokPlan.id);
+            const result = await requestPayment('billing/confirming-payment', amount, gyokPlan.id);
 
             if (result?.data?.link) {
-                onPurchaseSuccess(amount);
-                // Redirect
                 router.push(result.data.link);
                 onClose();
             } else {
@@ -98,13 +91,13 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
                             className="w-full pl-8 pr-4 py-3 text-xl font-bold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-customBlue focus:border-customBlue transition-all"
-                            min="5"
+                            min={CREDIT_MIN_AMOUNT}
                         />
                     </div>
-                    {amount < 5 && (
+                    {amount < CREDIT_MIN_AMOUNT && (
                         <p className="text-xs text-red-500 flex items-center mt-1">
                             <AlertCircle className="w-3 h-3 mr-1" />
-                            Minimum purchase amount is {CURRENCY_SYMBOL}5.00
+                            Minimum purchase amount is {CURRENCY_SYMBOL}{CREDIT_MIN_AMOUNT.toFixed(2)}
                         </p>
                     )}
                 </div>
@@ -122,10 +115,11 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                                 <AlertCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                                     Fees decrease as you buy more:
-                                    <br />{CURRENCY_SYMBOL}5-20: 35%
-                                    <br />{CURRENCY_SYMBOL}21-50: 30%
-                                    <br />{CURRENCY_SYMBOL}51-100: 25%
-                                    <br />{CURRENCY_SYMBOL}100+: 20%
+                                    {FEE_TIERS.map((tier, idx) => (
+                                        <span key={idx}>
+                                            <br />{CURRENCY_SYMBOL}{tier.min}{tier.max === null ? '+' : `-${tier.max}`}: {tier.pct}%
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -150,7 +144,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, onPurchaseSuccess
                 {/* Action Button */}
                 <button
                     onClick={handlePurchase}
-                    disabled={amount < 5 || loading}
+                    disabled={amount < CREDIT_MIN_AMOUNT || loading}
                     className="w-full py-3.5 px-4 bg-customBlue hover:bg-blue-800 text-white text-base font-semibold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:shadow-none transition-all transform active:scale-[0.98] flex justify-center items-center"
                 >
                     {loading ? (

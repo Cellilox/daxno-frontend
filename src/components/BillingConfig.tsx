@@ -191,29 +191,17 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         }
     }, [billingType, apiKey]);
 
-    // Post-Flutterwave redirect: the backend provisions the managed key via an
-    // async BackgroundTask after the webhook returns, so `initialConfig` on the
-    // first server render often lacks the key. Poll router.refresh() until the
-    // server re-renders with the provisioned key (or give up after ~20s).
-    const isAwaitingProvision =
-        billingType === 'managed' &&
-        !apiKey &&
-        searchParams.get('status') === 'successful' &&
-        !!searchParams.get('tx_ref');
+    // Manual fallback: the backend provisions the managed key via an async
+    // BackgroundTask (OpenRouter POST /keys with retries), so the first server
+    // render after a Flutterwave redirect may lack the key. Users can click
+    // "Check now" to force a fresh server fetch instead of switching tabs.
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
-    useEffect(() => {
-        if (!isAwaitingProvision) return;
-
-        let attempts = 0;
-        const maxAttempts = 10; // ~20s at 2s intervals
-        const interval = setInterval(() => {
-            attempts += 1;
-            router.refresh();
-            if (attempts >= maxAttempts) clearInterval(interval);
-        }, 2000);
-
-        return () => clearInterval(interval);
-    }, [isAwaitingProvision, router]);
+    const handleManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        router.refresh();
+        setTimeout(() => setIsManualRefreshing(false), 1500);
+    };
 
     // Track if we should highlight the CTA button
     const [highlightCTA, setHighlightCTA] = useState(false);
@@ -715,21 +703,27 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                         </div>
                                     )}
                                 </div>
-                            ) : isAwaitingProvision ? (
-                                <div className="text-center py-6 border-2 border-dashed border-green-200 rounded-lg bg-green-50/30">
-                                    <LoadingSpinner className="mx-auto h-5 w-5 text-green-600 mb-3" />
-                                    <p className="text-sm font-medium text-gray-700 mb-1">Provisioning your managed key…</p>
-                                    <p className="text-xs text-gray-500">Payment confirmed. This usually takes a few seconds.</p>
-                                </div>
                             ) : (
-                                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg bg-white">
-                                    <p className="text-sm text-gray-500 mb-3">No active managed key found.</p>
-                                    <button
-                                        onClick={() => setIsCreditModalOpen(true)}
-                                        className="text-customBlue hover:underline font-medium text-sm"
-                                    >
-                                        Purchase credits to generate your key
-                                    </button>
+                                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg bg-white space-y-3">
+                                    <p className="text-sm text-gray-500">No active managed key found.</p>
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                        <button
+                                            onClick={() => setIsCreditModalOpen(true)}
+                                            className="text-customBlue hover:underline font-medium text-sm"
+                                        >
+                                            Purchase credits to generate your key
+                                        </button>
+                                        <span className="text-gray-300 hidden sm:inline">•</span>
+                                        <button
+                                            onClick={handleManualRefresh}
+                                            disabled={isManualRefreshing}
+                                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium disabled:opacity-60"
+                                            title="If you just paid, click to check for your key"
+                                        >
+                                            <RefreshCcw className={`h-3 w-3 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+                                            Already paid? Check now
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
