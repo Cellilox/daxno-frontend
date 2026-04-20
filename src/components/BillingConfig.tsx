@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { updateBillingConfig, provisionManagedByok, rotateManagedByok, getByokUsage, getManagedByokActivity } from '@/actions/settings-actions';
+import { updateBillingConfig, rotateManagedKey, getByokUsage, getManagedByokActivity } from '@/actions/settings-actions';
 import { getAvailablePlans, requestPayment } from '@/actions/payment-actions';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from './ui/LoadingSpinner';
@@ -9,6 +9,14 @@ import CreditPurchaseModal from './CreditPurchaseModal';
 import { RefreshCcw, ShieldCheck, CreditCard, Activity, BarChart3, ChevronDown, ChevronUp, Lock, CheckCircle2 } from 'lucide-react';
 import BYOKConfig from './billing/BYOKConfig';
 import { ModelInfo } from './Models';
+import {
+    BYOK_MONTHLY_PRICE,
+    BYOK_YEARLY_PRICE,
+    BYOK_YEARLY_FULL_PRICE,
+    BYOK_YEARLY_SAVINGS,
+    BYOK_YEARLY_SAVINGS_PCT,
+    BYOK_PRORATION_INTERVAL_DAYS,
+} from '@/lib/billing-config';
 
 export interface BillingConfigProps {
     initialConfig: {
@@ -183,6 +191,18 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         }
     }, [billingType, apiKey]);
 
+    // Manual fallback: the backend provisions the managed key via an async
+    // BackgroundTask (OpenRouter POST /keys with retries), so the first server
+    // render after a Flutterwave redirect may lack the key. Users can click
+    // "Check now" to force a fresh server fetch instead of switching tabs.
+    const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+
+    const handleManualRefresh = async () => {
+        setIsManualRefreshing(true);
+        router.refresh();
+        setTimeout(() => setIsManualRefreshing(false), 1500);
+    };
+
     // Track if we should highlight the CTA button
     const [highlightCTA, setHighlightCTA] = useState(false);
 
@@ -329,25 +349,11 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         }
     };
 
-    const handleProvision = async () => {
-        setIsProvisioning(true);
-        setMessage(null);
-        try {
-            const result = await provisionManagedByok(0.10); // Initial $0.10 test limit
-            setApiKey(result.api_key);
-            setMessage({ type: 'success', text: 'Managed key generated successfully!' });
-        } catch {
-            setMessage({ type: 'error', text: 'Failed to generate managed key.' });
-        } finally {
-            setIsProvisioning(false);
-        }
-    };
-
     const handleRotate = async () => {
         setIsProvisioning(true);
         setMessage(null);
         try {
-            const result = await rotateManagedByok();
+            const result = await rotateManagedKey();
             setApiKey(result.api_key);
             setMessage({ type: 'success', text: 'Key regenerated. Remaining balance preserved.' });
         } catch {
@@ -379,19 +385,6 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
             setMessage({ type: 'error', text: 'Failed to update configuration.' });
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const onPurchaseSuccess = (amount: number) => {
-        // Mock: In real flow, webhook updates DB, we just refetch usage or simulate it
-        setMessage({ type: 'success', text: `Purchase of $${amount} successful! Key generating...` });
-
-        // If no key, generate one
-        if (!apiKey) {
-            handleProvision();
-        } else {
-            // Just refresh usage
-            getByokUsage().then(u => setUsage(u));
         }
     };
 
@@ -437,7 +430,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
             // 3. Initiate Payment
             // Pass redirect path explicitly
-            const result = await requestPayment('billing?tab=configuration&tier=byok', targetCycle === 'yearly' ? 100 : 10, targetPlan.id);
+            const result = await requestPayment('billing?tab=configuration&tier=byok', targetCycle === 'yearly' ? BYOK_YEARLY_PRICE : BYOK_MONTHLY_PRICE, targetPlan.id);
 
             if (result?.data?.link) {
                 // Redirect
@@ -711,14 +704,26 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg bg-white">
-                                    <p className="text-sm text-gray-500 mb-3">No active managed key found.</p>
-                                    <button
-                                        onClick={() => setIsCreditModalOpen(true)}
-                                        className="text-customBlue hover:underline font-medium text-sm"
-                                    >
-                                        Purchase credits to generate your key
-                                    </button>
+                                <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg bg-white space-y-3">
+                                    <p className="text-sm text-gray-500">No active managed key found.</p>
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                        <button
+                                            onClick={() => setIsCreditModalOpen(true)}
+                                            className="text-customBlue hover:underline font-medium text-sm"
+                                        >
+                                            Purchase credits to generate your key
+                                        </button>
+                                        <span className="text-gray-300 hidden sm:inline">•</span>
+                                        <button
+                                            onClick={handleManualRefresh}
+                                            disabled={isManualRefreshing}
+                                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium disabled:opacity-60"
+                                            title="If you just paid, click to check for your key"
+                                        >
+                                            <RefreshCcw className={`h-3 w-3 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+                                            Already paid? Check now
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -745,14 +750,16 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                             onClick={() => setBillingCycle('monthly')}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${billingCycle === 'monthly' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
                                         >
-                                            Monthly ($10)
+                                            Monthly (${BYOK_MONTHLY_PRICE})
                                         </button>
                                         <button
                                             onClick={() => setBillingCycle('yearly')}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${billingCycle === 'yearly' ? 'bg-blue-100 text-blue-700 border border-blue-200 shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'}`}
                                         >
-                                            Yearly ($100)
-                                            <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Save $20</span>
+                                            Yearly (${BYOK_YEARLY_PRICE})
+                                            {BYOK_YEARLY_SAVINGS > 0 && (
+                                                <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Save ${BYOK_YEARLY_SAVINGS}</span>
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -762,12 +769,14 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                         disabled={isSubscribing}
                                         className="px-6 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg shadow-sm w-full sm:max-w-xs transition-transform active:scale-95 disabled:opacity-75 disabled:scale-100"
                                     >
-                                        {isSubscribing ? 'Processing...' : `Subscribe (${billingCycle === 'yearly' ? '$100/yr' : '$10/mo'})`}
+                                        {isSubscribing ? 'Processing...' : `Subscribe (${billingCycle === 'yearly' ? `$${BYOK_YEARLY_PRICE}/yr` : `$${BYOK_MONTHLY_PRICE}/mo`})`}
                                     </button>
                                 </div>
-                                <p className="text-xs text-yellow-600">
-                                    Or save 17% with <a href="#" className="underline">Annual billing ($100/yr)</a>
-                                </p>
+                                {BYOK_YEARLY_SAVINGS > 0 && (
+                                    <p className="text-xs text-yellow-600">
+                                        Or save {BYOK_YEARLY_SAVINGS_PCT}% with <a href="#" className="underline">Annual billing (${BYOK_YEARLY_PRICE}/yr)</a>
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -796,11 +805,10 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                     {currentInterval !== 'yearly' && (
                                         <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between animate-in fade-in zoom-in-95 duration-300">
                                             <div>
-                                                <p className="text-xs font-bold text-blue-800">Switch to Yearly & Save $20</p>
+                                                <p className="text-xs font-bold text-blue-800">Switch to Yearly & Save ${BYOK_YEARLY_SAVINGS}</p>
                                                 {(() => {
-                                                    // Simple Frontend Proration Check
-                                                    const upgradeBasePrice = 100;
-                                                    let displayPrice = 100;
+                                                    const upgradeBasePrice = BYOK_YEARLY_PRICE;
+                                                    let displayPrice = BYOK_YEARLY_PRICE;
                                                     let isProrated = false;
 
                                                     if (currentEndDate && currentAmount) {
@@ -810,13 +818,10 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                                             const diffTime = Math.abs(end.getTime() - now.getTime());
                                                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                                                            // Assume monthly/hourly basis (30 days) to match backend heuristic
-                                                            const intervalDays = 30;
+                                                            const intervalDays = BYOK_PRORATION_INTERVAL_DAYS;
                                                             const dailyRate = currentAmount / intervalDays;
                                                             const credit = dailyRate * diffDays;
 
-                                                            // Cap credit at currentAmount (optional, backend logic handles it too)
-                                                            // and ensure price doesn't go below 0
                                                             displayPrice = Math.max(0, upgradeBasePrice - credit);
                                                             isProrated = true;
                                                         }
@@ -825,9 +830,9 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                                     return (
                                                         <p className="text-[10px] text-blue-600">
                                                             {isProrated ? (
-                                                                <>Pay <span className="font-bold">${displayPrice.toFixed(2)}</span> (Prorated) instead of $100</>
+                                                                <>Pay <span className="font-bold">${displayPrice.toFixed(2)}</span> (Prorated) instead of ${BYOK_YEARLY_PRICE}</>
                                                             ) : (
-                                                                <>Pay $100/year instead of $120</>
+                                                                <>Pay ${BYOK_YEARLY_PRICE}/year instead of ${BYOK_YEARLY_FULL_PRICE}</>
                                                             )}
                                                         </p>
                                                     );
@@ -1175,7 +1180,6 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
             <CreditPurchaseModal
                 isOpen={isCreditModalOpen}
                 onClose={() => setIsCreditModalOpen(false)}
-                onPurchaseSuccess={onPurchaseSuccess}
             />
         </div >
     );
