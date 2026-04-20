@@ -191,6 +191,30 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         }
     }, [billingType, apiKey]);
 
+    // Post-Flutterwave redirect: the backend provisions the managed key via an
+    // async BackgroundTask after the webhook returns, so `initialConfig` on the
+    // first server render often lacks the key. Poll router.refresh() until the
+    // server re-renders with the provisioned key (or give up after ~20s).
+    const isAwaitingProvision =
+        billingType === 'managed' &&
+        !apiKey &&
+        searchParams.get('status') === 'successful' &&
+        !!searchParams.get('tx_ref');
+
+    useEffect(() => {
+        if (!isAwaitingProvision) return;
+
+        let attempts = 0;
+        const maxAttempts = 10; // ~20s at 2s intervals
+        const interval = setInterval(() => {
+            attempts += 1;
+            router.refresh();
+            if (attempts >= maxAttempts) clearInterval(interval);
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [isAwaitingProvision, router]);
+
     // Track if we should highlight the CTA button
     const [highlightCTA, setHighlightCTA] = useState(false);
 
@@ -690,6 +714,12 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                             <LoadingSpinner className="mx-auto h-5 w-5 text-gray-400" />
                                         </div>
                                     )}
+                                </div>
+                            ) : isAwaitingProvision ? (
+                                <div className="text-center py-6 border-2 border-dashed border-green-200 rounded-lg bg-green-50/30">
+                                    <LoadingSpinner className="mx-auto h-5 w-5 text-green-600 mb-3" />
+                                    <p className="text-sm font-medium text-gray-700 mb-1">Provisioning your managed key…</p>
+                                    <p className="text-xs text-gray-500">Payment confirmed. This usually takes a few seconds.</p>
                                 </div>
                             ) : (
                                 <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-lg bg-white">
