@@ -216,13 +216,21 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         }
     }, [projectId, isOnline, loadOnlineData]);
 
-    const handleUpdateColumn = useCallback(async (columnId: string, name: string) => {
+    const handleUpdateColumn = useCallback(async (columnId: string, update: { name: string; description?: string }) => {
         if (!isOnline) return; // Disable offline column update
 
-        setColumns(prev => prev.map(c => c.hidden_id === columnId ? { ...c, name } : c));
+        const { name, description } = update;
+
+        setColumns(prev => prev.map(c => (
+            c.hidden_id === columnId
+                ? { ...c, name, description: description ?? c.description }
+                : c
+        )));
 
         try {
-            await updateColumn(columnId, projectId, { name });
+            const payload: { name: string; description?: string } = { name };
+            if (description !== undefined) payload.description = description;
+            await updateColumn(columnId, projectId, payload);
             loadOnlineData(); // Ensure cache is in sync
         } catch (err) {
             console.error('[Records] Update column failed:', err);

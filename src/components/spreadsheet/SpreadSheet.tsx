@@ -165,16 +165,23 @@ export default function SpreadSheet({
     setSelectedColumnToUpdate(null);
   };
 
-  const handleUpdateColumn = (column: Field, newName: string) => {
-    if (!newName.trim() || newName === column.name) return;
-    // Call parent handler with correct signature
-    onUpdateColumn?.(column.hidden_id, newName);
+  const handleUpdateColumn = (column: Field, update: { name: string; description: string }) => {
+    const name = update.name.trim();
+    const description = update.description.trim();
+    if (!name) return;
+    const nameChanged = name !== column.name;
+    const descriptionChanged = description !== (column.description ?? '');
+    if (!nameChanged && !descriptionChanged) return;
+    onUpdateColumn?.(column.hidden_id, { name, description });
   };
 
   const handleUpdateColumnSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedColumnToUpdate) return;
-    onUpdateColumn?.(selectedColumnToUpdate.hidden_id, selectedColumnToUpdate.name || '');
+    onUpdateColumn?.(selectedColumnToUpdate.hidden_id, {
+      name: selectedColumnToUpdate.name || '',
+      description: selectedColumnToUpdate.description ?? '',
+    });
     setIsPopupVisible(false);
   };
 
