@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { REQUEST_DEMO_EVENT } from "@/components/Demo";
 
 export default function CTABanner() {
   return (
@@ -63,7 +64,11 @@ export default function CTABanner() {
                 Create your free account
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
-              <button className="text-sm text-white/50 transition-colors hover:text-white">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent(REQUEST_DEMO_EVENT))}
+                className="text-sm text-white/50 transition-colors hover:text-white"
+              >
                 Schedule a demo →
               </button>
               <div className="text-xs text-white/30">

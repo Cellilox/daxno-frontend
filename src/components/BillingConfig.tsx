@@ -92,6 +92,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
     const [provider, setProvider] = useState(initialConfig?.byok_provider || 'openrouter');
 
     const isByokSubscribed = currentSubscriptionTier === 'byok';
+    const isViewingCurrentTier = billingType === currentSubscriptionTier;
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
 
@@ -312,9 +313,8 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
     const handleBillingTypeChange = (type: 'standard' | 'byok' | 'managed') => {
         setBillingType(type);
-        // Clear previous model selections when switching types
-        setPreferredModels([]);
-        setDefaultModel('');
+        // Preserve user's preferred-model selections across tab switches;
+        // they only render on the tier they belong to (see isViewingCurrentTier).
         setProviderModels([]);
         setModelsFetchError(null);
         // Reset search term for fresh start
@@ -918,7 +918,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
 
                         {/* Warning when no models selected */}
-                        {(billingType === 'byok' || billingType === 'managed') && isKeyVerified && preferredModels.length === 0 && (
+                        {(billingType === 'byok' || billingType === 'managed') && isKeyVerified && isViewingCurrentTier && preferredModels.length === 0 && (
                             <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg animate-pulse">
                                 <div className="flex items-start gap-3">
                                     <svg className="h-5 w-5 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -934,7 +934,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
 
                         {/* Only show Preferred Models section when not loading and no error */}
-                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && isKeyVerified && (
+                        {(!isLoadingModels || billingType !== 'byok') && !modelsFetchError && isKeyVerified && isViewingCurrentTier && (
                             <button
                                 onClick={async () => {
                                     const isOpening = !isModelsOpen;
@@ -988,7 +988,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                         )}
 
 
-                        {isModelsOpen && !modelsFetchError && (
+                        {isModelsOpen && !modelsFetchError && isViewingCurrentTier && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                 <p className="text-xs text-gray-500 mb-4">
                                     Search and select any OpenRouter models you want to use. You must select a Default Model to save changes.
