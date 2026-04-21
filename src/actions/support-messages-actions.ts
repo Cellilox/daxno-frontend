@@ -1,6 +1,6 @@
 'use server';
 
-import { fetchAuthedJson, fetchAuthed, buildApiUrl } from "@/lib/api-client";
+import { fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 type SupportCreateData = {
   fullname: string;
@@ -12,18 +12,20 @@ type SupportCreateData = {
 
 export async function createSupportMessage(formData: SupportCreateData) {
   try {
-    const url = buildApiUrl('/support');
+    const url = buildApiUrl('/support/');
     const response = await fetchAuthedJson(url, {
       method: 'POST',
       body: JSON.stringify(formData),
     });
 
-    //   if (!response.ok) {
-    //     throw new Error('Support Message not sent');
-    //   }
-    alert('Message successfully sent!')
-    return await response.json();
+    if (!response.ok) {
+      const detail = await response.text();
+      return { ok: false, error: detail || `Request failed (${response.status})` };
+    }
+    const data = await response.json();
+    return { ok: true, data };
   } catch (error) {
-    console.log('Error', error)
+    console.log('Error', error);
+    return { ok: false, error: 'Server Error' };
   }
 }

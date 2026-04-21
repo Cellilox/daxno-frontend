@@ -28,7 +28,7 @@ export default function CurrentPlan({ transactions, billingConfig }: CurrentPlan
         {(transactions[0]?.plan_name === 'Professional' || transactions[0]?.plan_name === 'Starter') && <Link href='/billing' className='block md:hidden underline hover:text-blue-500'>Billing</Link>}
         <div className="flex justify-end">
           <Link
-            href="/billing?tab=configuration&option=byok"
+            href="/billing?tab=configuration"
             className="flex items-center gap-1 text-blue-600 hover:text-blue-700 cursor-pointer"
           >
             <Crown className="w-4 h-4" />

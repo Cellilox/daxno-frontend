@@ -140,18 +140,20 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-2xl font-bold">Billing & Subscription</h1>
-        {isActive ?
-          (
-            <div className="border border-green-600 px-4 py-2 rounded-lg">
-              <h1 className="text-green-600 bold">Active</h1>
-            </div>
-          ) : (
-            <button
-              onClick={() => handleActivateSubscription(sub_id)}
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
-              {isActivating ? 'Reactivating...' : 'Reactivate'}
-            </button>
-          )}
+        {!['gyok', 'topup'].includes(subPlan?.toLowerCase()) && (
+          isActive ?
+            (
+              <div className="border border-green-600 px-4 py-2 rounded-lg">
+                <h1 className="text-green-600 bold">Active</h1>
+              </div>
+            ) : (
+              <button
+                onClick={() => handleActivateSubscription(sub_id)}
+                className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
+                {isActivating ? 'Reactivating...' : 'Reactivate'}
+              </button>
+            )
+        )}
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
@@ -162,10 +164,12 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
           <span className="font-medium">Amount:</span>
           <span className="font-semibold">{subCurrency}{subAmount}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="font-medium">Billing Interval:</span>
-          <span className="capitalize">{subInterval}</span>
-        </div>
+        {!['gyok', 'topup'].includes(subPlan?.toLowerCase()) && (
+          <div className="flex justify-between">
+            <span className="font-medium">Billing Interval:</span>
+            <span className="capitalize">{subInterval}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="font-medium">Next Billing Date:</span>
           <span className="capitalize">
@@ -256,8 +260,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
@@ -266,6 +269,11 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
                 const isExpired = new Date(tx.end_date) < new Date();
                 let status = tx.status || (isExpired ? 'completed' : 'active');
                 if (status === 'active' && isExpired) status = 'completed';
+
+                const isOneTime = ['gyok', 'topup'].includes(tx.plan_name?.toLowerCase());
+                const period = isOneTime
+                  ? 'One-time'
+                  : `${new Date(tx.start_date).toLocaleDateString()} – ${new Date(tx.end_date).toLocaleDateString()}`;
 
                 return (
                   <tr key={tx.id}>
@@ -283,10 +291,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
                       {tx.currency} {parseFloat(tx.amount).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(tx.start_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(tx.end_date).toLocaleDateString()}
+                      {period}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -301,7 +306,7 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
               })}
               {!historyData?.transactions?.length && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">No transactions found</td>
+                  <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">No transactions found</td>
                 </tr>
               )}
             </tbody>

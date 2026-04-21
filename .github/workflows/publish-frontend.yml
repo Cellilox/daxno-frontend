@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'public/**'
-      - 'package.json'
-      - 'Dockerfile'
-      - '.github/workflows/publish-frontend.yml'
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "Dockerfile"
+      - ".github/workflows/publish-frontend.yml"
   workflow_dispatch:
 
 jobs:
@@ -47,8 +47,8 @@ jobs:
             NEXT_PUBLIC_PAYMENT_CURRENCY=${{ vars.NEXT_PUBLIC_PAYMENT_CURRENCY || 'USD' }}
             NEXT_PUBLIC_CREDIT_DEFAULT_AMOUNT=${{ vars.NEXT_PUBLIC_CREDIT_DEFAULT_AMOUNT || '10' }}
             NEXT_PUBLIC_CREDIT_MIN_AMOUNT=${{ vars.NEXT_PUBLIC_CREDIT_MIN_AMOUNT || '1' }}
-            NEXT_PUBLIC_BYOK_MONTHLY_PRICE=${{ vars.NEXT_PUBLIC_BYOK_MONTHLY_PRICE || '10' }}
-            NEXT_PUBLIC_BYOK_YEARLY_PRICE=${{ vars.NEXT_PUBLIC_BYOK_YEARLY_PRICE || '100' }}
+            NEXT_PUBLIC_BYOK_MONTHLY_PRICE=${{ vars.NEXT_PUBLIC_BYOK_MONTHLY_PRICE || '1' }}
+            NEXT_PUBLIC_BYOK_YEARLY_PRICE=${{ vars.NEXT_PUBLIC_BYOK_YEARLY_PRICE || '2' }}
             NEXT_PUBLIC_BYOK_PRORATION_INTERVAL_DAYS=${{ vars.NEXT_PUBLIC_BYOK_PRORATION_INTERVAL_DAYS || '30' }}
             NEXT_PUBLIC_FEE_TIERS=${{ vars.NEXT_PUBLIC_FEE_TIERS || '5-20:35,21-50:30,51-100:25,101+:20' }}
           cache-from: type=gha
