@@ -140,18 +140,20 @@ export default function Billing({ sub_id, t_id, subPlan, subAmount, subInterval,
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-2xl font-bold">Billing & Subscription</h1>
-        {isActive ?
-          (
-            <div className="border border-green-600 px-4 py-2 rounded-lg">
-              <h1 className="text-green-600 bold">Active</h1>
-            </div>
-          ) : (
-            <button
-              onClick={() => handleActivateSubscription(sub_id)}
-              className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
-              {isActivating ? 'Reactivating...' : 'Reactivate'}
-            </button>
-          )}
+        {!['gyok', 'topup'].includes(subPlan?.toLowerCase()) && (
+          isActive ?
+            (
+              <div className="border border-green-600 px-4 py-2 rounded-lg">
+                <h1 className="text-green-600 bold">Active</h1>
+              </div>
+            ) : (
+              <button
+                onClick={() => handleActivateSubscription(sub_id)}
+                className="mt-4 bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2">
+                {isActivating ? 'Reactivating...' : 'Reactivate'}
+              </button>
+            )
+        )}
       </div>
       <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
         <div className="flex justify-between">
