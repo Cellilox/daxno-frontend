@@ -45,7 +45,7 @@ export type SpreadSheetProps = {
   onDeleteRecord?: (id: string) => Promise<void>;
   onDeleteBatch?: (ids: string[]) => Promise<void>;
   onUpdateRecord?: (id: string, data: any) => void;
-  onUpdateColumn?: (id: string, name: string) => void;
+  onUpdateColumn?: (id: string, update: { name: string; description?: string }) => void;
   onDeleteColumn?: (id: string) => void;
   onSelectionChange?: (count: number, onDelete: () => void, onClear: () => void, isDeleting: boolean) => void;
 };

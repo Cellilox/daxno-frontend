@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { Sparkles, X, Plus, AlertTriangle, Trash2 } from 'lucide-react';
+import { Sparkles, X, Plus, AlertTriangle, Trash2, Info } from 'lucide-react';
 import { deleteColumn, createColumn } from '@/actions/column-actions';
 import { backfillAwaitingRecords } from '@/actions/backfill-actions';
 import { deleteRecord } from '@/actions/record-actions';
@@ -180,6 +180,13 @@ export default function ColumnRecommendationBanner({
         Review these columns, remove any you don&apos;t need, or add missing ones — then click{' '}
         <strong>Analyze Now</strong> to extract data from your document.
       </p>
+
+      <div className="flex items-start gap-1.5 bg-white border border-indigo-200 rounded-md px-2.5 py-1.5">
+        <Info size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+        <p className="text-[11px] text-indigo-700 leading-snug">
+          Tip: click a column header to add a <strong>description</strong>. Descriptions help the AI pick the right value when the document has multiple candidates (e.g. &ldquo;the invoice issue date at the top&rdquo;) — they can also invite computed values like &ldquo;sum of all line items&rdquo;.
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-2 items-center">
         {fields.map(field => (

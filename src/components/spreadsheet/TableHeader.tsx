@@ -1,7 +1,8 @@
 import { Trash, PlusCircle, FileText, Check, X, Sparkles } from 'lucide-react';
 import { Field, DocumentRecord } from './types';
 import CreateColumn from '../forms/CreateColumn';
-import { useState, useRef, useEffect } from 'react';
+import ColumnEditor from '../forms/ColumnEditor';
+import { useState } from 'react';
 
 type TableHeaderProps = {
   columns: Field[];
@@ -13,7 +14,7 @@ type TableHeaderProps = {
   projectId: string;
   columnWidths: { [key: string]: number };
   onColumnResize: (id: string, width: number) => void;
-  onUpdateColumn: (column: Field, newName: string) => void;
+  onUpdateColumn: (column: Field, update: { name: string; description: string }) => void;
   onBackfillColumn: (column: Field) => void;
   selectedCount?: number;
   totalCount?: number;
@@ -47,39 +48,25 @@ export default function TableHeader({
   const hasRecords = records && records.length >= 1;
   const hasColumns = columns.length > 0;
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editingColumnId && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [editingColumnId]);
 
   const startEditing = (column: Field) => {
     if (!isOnline) return; // Disable editing offline
     setEditingColumnId(column.hidden_id);
-    setEditValue(column.name);
   };
 
   const cancelEditing = () => {
     setEditingColumnId(null);
-    setEditValue('');
   };
 
-  const saveEditing = (column: Field) => {
-    if (editValue.trim() && editValue !== column.name) {
-      onUpdateColumn(column, editValue);
+  const saveEditing = (column: Field, values: { name: string; description: string }) => {
+    const name = values.name.trim();
+    const description = values.description.trim();
+    const nameChanged = !!name && name !== column.name;
+    const descriptionChanged = description !== (column.description ?? '');
+    if (name && (nameChanged || descriptionChanged)) {
+      onUpdateColumn(column, { name, description });
     }
     setEditingColumnId(null);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent, column: Field) => {
-    if (e.key === 'Enter') {
-      saveEditing(column);
-    } else if (e.key === 'Escape') {
-      cancelEditing();
-    }
   };
 
   // Resize logic
@@ -164,22 +151,19 @@ export default function TableHeader({
           >
             <div className="flex items-center justify-between h-full gap-2 px-1">
               {editingColumnId === column.hidden_id ? (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  onBlur={() => saveEditing(column)}
-                  onKeyDown={(e) => handleKeyDown(e, column)}
-                  onClick={(e) => e.stopPropagation()}
-                  data-testid="column-edit-input"
-                  className="w-full bg-white border border-blue-400 rounded px-2 py-1 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <ColumnEditor
+                  initialName={column.name}
+                  initialDescription={column.description ?? ''}
+                  onSave={(values) => saveEditing(column, values)}
+                  onCancel={cancelEditing}
+                  nameTestId="column-edit-input"
+                  descriptionTestId="column-edit-description"
                 />
               ) : (
                 <span
                   className={`font-semibold truncate flex-1 min-w-0 ${isOnline ? 'cursor-pointer' : 'cursor-default'}`}
                   onClick={() => isOnline && startEditing(column)}
-                  title={isOnline ? "Click to rename" : column.name}
+                  title={isOnline ? (column.description ? `${column.name} — ${column.description}` : 'Click to rename') : column.name}
                   data-testid="column-name-text"
                 >
                   {column.name}
