@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { updateBillingConfig, rotateManagedKey, getByokUsage, getManagedByokActivity } from '@/actions/settings-actions';
+import { updateBillingConfig, rotateManagedKey, getManagedUsage, getManagedActivity } from '@/actions/settings-actions';
 import { getAvailablePlans, requestPayment } from '@/actions/payment-actions';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from './ui/LoadingSpinner';
@@ -134,12 +134,14 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         requests?: number;
         ocr_cost?: number;
         ai_cost?: number;
+        ai_cost_backend?: number;
+        ai_cost_chat?: number;
         service_fee?: number;
         gross_payments?: number;
     } | null>(null);
     const [activity, setActivity] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
     const [isModelsOpen, setIsModelsOpen] = useState(false);
-    const [isActivityOpen, setIsActivityOpen] = useState(false); // Default closed for cleaner UI
+    const [isActivityOpen, setIsActivityOpen] = useState(() => searchParams?.get('activity') === 'open'); // Deep-linkable via ?activity=open (used by the 402/403 "credits exhausted" toast)
     const [isLoadingActivity, setIsLoadingActivity] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -177,20 +179,22 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
 
 
-    // Fetch usage and activity on mount if BYOK/Managed
+    // Managed-only: dollar balance + activity log. Gated on the user's actual
+    // subscription (currentSubscriptionTier), not the tab they're viewing —
+    // a managed user browsing the BYOK/Standard tab still has a live balance
+    // and activity feed; a BYOK user browsing the Managed tab has neither.
     useEffect(() => {
-        if ((billingType === 'byok' || billingType === 'managed') && apiKey) {
-            getByokUsage().then(u => setUsage(u));
+        if (currentSubscriptionTier === 'managed' && apiKey) {
+            getManagedUsage().then(u => setUsage(u));
 
             setIsLoadingActivity(true);
-            // Fetch first page
-            getManagedByokActivity(ACTIVITY_LIMIT, 0).then(a => {
+            getManagedActivity(ACTIVITY_LIMIT, 0).then(a => {
                 setActivity(a);
                 setHasMore(a.length === ACTIVITY_LIMIT);
                 setIsLoadingActivity(false);
             }).catch(() => setIsLoadingActivity(false));
         }
-    }, [billingType, apiKey]);
+    }, [currentSubscriptionTier, apiKey]);
 
     // Manual fallback: the backend provisions the managed key via an async
     // BackgroundTask (OpenRouter POST /keys with retries), so the first server
@@ -301,7 +305,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
         setIsLoadingMore(true);
         const currentOffset = activity.length;
         try {
-            const more = await getManagedByokActivity(ACTIVITY_LIMIT, currentOffset);
+            const more = await getManagedActivity(ACTIVITY_LIMIT, currentOffset);
             setActivity(prev => [...prev, ...more]);
             setHasMore(more.length === ACTIVITY_LIMIT);
         } catch (e) {
@@ -665,9 +669,16 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                                     <div className="flex justify-between items-center group">
                                                         <div className="flex items-center gap-1.5">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                                                            <span className="text-[11px] text-gray-500 font-medium">AI Model Infrastructure</span>
+                                                            <span className="text-[11px] text-gray-500 font-medium">File AI (extraction)</span>
                                                         </div>
-                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost || 0).toFixed(4)}</span>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost_backend ?? usage.ai_cost ?? 0).toFixed(4)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                                                            <span className="text-[11px] text-gray-500 font-medium">Chat AI (Onyx)</span>
+                                                        </div>
+                                                        <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost_chat || 0).toFixed(4)}</span>
                                                     </div>
                                                     <div className="flex justify-between items-center group">
                                                         <div className="flex items-center gap-1.5">
@@ -679,7 +690,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
                                                     <div className="pt-2">
                                                         <p className="text-[10px] text-gray-400 italic">
-                                                            OCR: $0.01/page • AI: Real-time token market rate + safety margin
+                                                            OCR: $0.01/page • AI: real-time OpenRouter rate + 10% buffer (for price drift / provider surcharges) • Paid credits never expire
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1079,9 +1090,31 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                     </div>
                 )}
 
-                {billingType !== 'standard' && (
+                {/* BYOK hint — placed AFTER Preferred Models so the flow is:
+                    provider key → pick models → learn how billing works.
+                    Gated on actual BYOK subscription + BYOK tab. */}
+                {currentSubscriptionTier === 'byok' && billingType === 'byok' && apiKey && isKeyVerified && (
+                    <div className="mt-8 border-t border-gray-100 pt-6">
+                        <h3 className="text-sm font-medium text-gray-900 flex items-center mb-2">
+                            <Activity className="mr-2 h-4 w-4 text-customBlue" />
+                            Usage & Billing
+                        </h3>
+                        <div className="px-3 py-2 bg-gray-50 border border-gray-100 rounded text-[12px] text-gray-700 leading-relaxed">
+                            You're using your own API key — every request is billed directly by your
+                            provider, not by Cellilox. For detailed token usage, spend, and invoices,
+                            open your provider's own dashboard (OpenRouter, OpenAI, Anthropic,
+                            DeepSeek, or Google).
+                        </div>
+                    </div>
+                )}
+
+                {currentSubscriptionTier === 'managed' && billingType === 'managed' && (
                     <>
-                        {/* Activity Log Table - Only for Managed or BYOK */}
+                        {/* Recent Activity + buffer explainer — shown only when
+                            the user's actual subscription is managed AND they're
+                            currently viewing the Managed tab. Switching to the
+                            BYOK/Standard tab hides this to avoid mixing
+                            tier-specific content with tier-browsing. */}
                         <div className="mt-8 border-t border-gray-100 pt-6" id="recent-activity">
                             <button
                                 onClick={() => setIsActivityOpen(!isActivityOpen)}
@@ -1108,27 +1141,42 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                                 <table className="min-w-full divide-y divide-gray-200 text-xs text-black">
                                                     <thead className="bg-gray-50 text-gray-500 font-bold uppercase">
                                                         <tr>
-                                                            <th className="px-3 py-2 text-left">Model</th>
-                                                            <th className="px-3 py-2 text-right">Tokens</th>
-                                                            <th className="px-3 py-2 text-right">AI Cost</th>
+                                                            <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
+                                                            <th className="px-3 py-2 text-left whitespace-nowrap">Source</th>
+                                                            <th className="px-3 py-2 text-left whitespace-nowrap">Model</th>
+                                                            <th className="px-3 py-2 text-right whitespace-nowrap">Tokens</th>
+                                                            <th className="px-3 py-2 text-right whitespace-nowrap">OCR $</th>
+                                                            <th className="px-3 py-2 text-right whitespace-nowrap">Raw AI $</th>
+                                                            <th className="px-3 py-2 text-right whitespace-nowrap">Buffer</th>
+                                                            <th className="px-3 py-2 text-right whitespace-nowrap">Total AI $</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="bg-white divide-y divide-gray-100">
-                                                        {activity.map((row, idx) => (
-                                                            <tr key={idx} className="hover:bg-gray-50">
-                                                                <td className="px-3 py-2 text-gray-900 font-medium truncate max-w-[120px]" title={row.model}>{row.model.split('/').pop()}</td>
-                                                                <td className="px-3 py-2 text-right text-gray-600">
-                                                                    {((row.prompt_tokens || 0) + (row.completion_tokens || 0)).toLocaleString()}
-                                                                </td>
-                                                                <td className="px-3 py-2 text-right text-customBlue font-bold">
-                                                                    ${(row.ai_cost || 0).toFixed(6)}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
+                                                        {activity.map((row, idx) => {
+                                                            const prompt = row.prompt_tokens || 0;
+                                                            const completion = row.completion_tokens || 0;
+                                                            const total = prompt + completion;
+                                                            const dateStr = row.date ? new Date(row.date).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+                                                            const breakdown = `in: ${prompt.toLocaleString()}  out: ${completion.toLocaleString()}`;
+                                                            const bufferPct = typeof row.buffer_pct === 'number' ? Math.round(row.buffer_pct * 100) : 10;
+                                                            const rawAi = typeof row.raw_ai_cost === 'number' ? row.raw_ai_cost : (row.ai_cost || 0);
+                                                            const bufferAmt = typeof row.buffer_amount === 'number' ? row.buffer_amount : 0;
+                                                            return (
+                                                                <tr key={idx} className="hover:bg-gray-50">
+                                                                    <td className="px-3 py-2 text-gray-500 whitespace-nowrap" title={row.date || ''}>{dateStr}</td>
+                                                                    <td className="px-3 py-2 text-gray-500 truncate max-w-[90px]" title={row.provider_name || ''}>{row.provider_name || '—'}</td>
+                                                                    <td className="px-3 py-2 text-gray-900 font-medium truncate max-w-[120px]" title={row.model}>{row.model.split('/').pop()}</td>
+                                                                    <td className="px-3 py-2 text-right text-gray-600" title={breakdown}>{total.toLocaleString()}</td>
+                                                                    <td className="px-3 py-2 text-right text-gray-600">${(row.ocr_cost || 0).toFixed(4)}</td>
+                                                                    <td className="px-3 py-2 text-right text-gray-600" title="Real OpenRouter token cost">${rawAi.toFixed(6)}</td>
+                                                                    <td className="px-3 py-2 text-right text-gray-500" title={`${bufferPct}% platform buffer applied to OpenRouter cost`}>+${bufferAmt.toFixed(6)}</td>
+                                                                    <td className="px-3 py-2 text-right text-customBlue font-bold">${(row.ai_cost || 0).toFixed(6)}</td>
+                                                                </tr>
+                                                            );
+                                                        })}
                                                     </tbody>
                                                 </table>
                                             </div>
-
                                             {hasMore && (
                                                 <div className="mt-3 text-center">
                                                     <button
@@ -1144,6 +1192,16 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                             <p className="text-[10px] text-gray-400 mt-2 text-center italic">
                                                 Showing {activity.length} requests. Data refreshes on interaction.
                                             </p>
+
+                                            <div className="mt-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded text-[11px] text-gray-700 leading-relaxed">
+                                                <p className="font-semibold text-gray-900 mb-1">Why is there a buffer?</p>
+                                                <p>
+                                                    Every AI request is deducted from your balance at the real OpenRouter per-token price plus a small
+                                                    <span className="font-semibold"> 10% buffer</span>. The buffer covers price drift between our pricing cache and the actual billed rate,
+                                                    provider surcharges (tool-use, long context) that aren't in the public pricing endpoint, and token-count
+                                                    rounding on the provider side. It is <span className="font-semibold">not</span> a service fee — your top-up service fee is collected separately, upfront.
+                                                </p>
+                                            </div>
                                         </>
                                     ) : (
                                         !isLoadingActivity && (
@@ -1157,23 +1215,28 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                 </div>
                             )}
                         </div>
-
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                            {message && (
-                                <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                                    {message.text}
-                                </span>
-                            )}
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving || !apiKey}
-                                className="ml-auto bg-customBlue hover:bg-[#1e3470] text-white font-medium py-2 px-4 rounded-lg flex items-center disabled:opacity-50 transition-colors"
-                            >
-                                {isSaving && <LoadingSpinner className="mr-2 h-4 w-4 text-white" />}
-                                Save Changes
-                            </button>
-                        </div>
                     </>
+                )}
+
+                {/* Save Changes footer — shown for any non-standard tab
+                    (BYOK or Managed) regardless of the user's actual
+                    subscription. Standard has nothing to configure here. */}
+                {billingType !== 'standard' && (
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        {message && (
+                            <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                                {message.text}
+                            </span>
+                        )}
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving || !apiKey}
+                            className="ml-auto bg-customBlue hover:bg-[#1e3470] text-white font-medium py-2 px-4 rounded-lg flex items-center disabled:opacity-50 transition-colors"
+                        >
+                            {isSaving && <LoadingSpinner className="mr-2 h-4 w-4 text-white" />}
+                            Save Changes
+                        </button>
+                    </div>
                 )}
             </div>
 
