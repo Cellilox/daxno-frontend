@@ -120,26 +120,29 @@ export async function rotateManagedKey() {
     }
 }
 
-export async function getByokUsage() {
+// Managed-tier only: dollar balance + credit breakdown.
+// Backend returns 403 for non-managed users.
+export async function getManagedUsage() {
     try {
-        const url = buildApiUrl('/tenants/byok-usage');
+        const url = buildApiUrl('/tenants/managed-usage');
         const response = await fetchAuthed(url);
-        if (!response.ok) throw new Error("Failed to fetch BYOK usage");
+        if (!response.ok) throw new Error("Failed to fetch managed usage");
         return response.json();
     } catch (error) {
-        console.error("Error fetching BYOK usage:", error);
+        console.error("Error fetching managed usage:", error);
         return null;
     }
 }
 
-export async function getManagedByokActivity(limit: number = 50, offset: number = 0) {
+// Managed-tier only: per-request activity log.
+export async function getManagedActivity(limit: number = 50, offset: number = 0) {
     try {
-        const url = buildApiUrl(`/tenants/byok-activity?limit=${limit}&offset=${offset}`);
+        const url = buildApiUrl(`/tenants/managed-activity?limit=${limit}&offset=${offset}`);
         const response = await fetchAuthedJson(url);
-        if (!response.ok) throw new Error("Failed to fetch BYOK activity");
+        if (!response.ok) throw new Error("Failed to fetch managed activity");
         return response.json();
     } catch (error) {
-        console.error("Error fetching BYOK activity:", error);
+        console.error("Error fetching managed activity:", error);
         return [];
     }
 }
