@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { getPendingFiles, updateFileStatus, removeOfflineFile, getOfflineFiles, markFileUploaded, getPendingDeletions, removePendingDeletion, getPendingProjectActions, removePendingProjectAction, getPendingColumnActions, removePendingColumnAction, getPendingRecordActions, removePendingRecordAction } from '@/lib/db/indexedDB';
+import { reconcileServerInstance } from '@/lib/sync/manifest-check';
 import { getPresignedUrl, queryDocument, deleteRecord, updateRecord, deleteBatchRecords } from '@/actions/record-actions';
 import { deleteProject, updateProject } from '@/actions/project-actions';
 import { deleteColumn, updateColumn } from '@/actions/column-actions';
@@ -14,6 +16,28 @@ export default function OfflineSyncManager() {
     const { isOnline } = useSyncStatus();
     const [isSyncing, setIsSyncing] = useState(false);
     const syncingIds = useRef<Set<string>>(GLOBAL_SYNCING_IDS);
+    const router = useRouter();
+
+    // Detect backend-DB wipes by comparing instance_id from /sync/manifest
+    // against the value stored alongside our IndexedDB cache. If they differ
+    // (including the first run after this feature ships), wipe the cache so
+    // users stop seeing orphan projects. Runs on mount and whenever we come
+    // back online (in case the first attempt was skipped while offline).
+    useEffect(() => {
+        if (!isOnline) return;
+        let cancelled = false;
+        (async () => {
+            const result = await reconcileServerInstance();
+            if (cancelled) return;
+            if (result === 'wiped') {
+                console.info('[sync] cache wiped; refreshing route to re-render with empty cache');
+                router.refresh();
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [isOnline, router]);
 
     useEffect(() => {
         const cleanupStuckFiles = async () => {
