@@ -90,3 +90,29 @@ export async function getAdminMetrics(): Promise<AdminMetrics | null> {
     return null;
   }
 }
+
+export type DeleteAdminTenantResult =
+  | { ok: true; user_id: string }
+  | { ok: false; error: string };
+
+export async function deleteAdminTenant(
+  userId: string
+): Promise<DeleteAdminTenantResult> {
+  if (!userId) return { ok: false, error: "userId is required" };
+  try {
+    const res = await fetchAuthed(
+      buildApiUrl(`/admin/tenant/${encodeURIComponent(userId)}`),
+      { method: "DELETE" }
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `Delete failed (${res.status}): ${body || res.statusText}`,
+      };
+    }
+    return { ok: true, user_id: userId };
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? "Network error" };
+  }
+}
