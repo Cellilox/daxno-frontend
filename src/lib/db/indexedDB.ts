@@ -71,10 +71,17 @@ interface DaxnoDB extends DBSchema {
             timestamp: number;
         };
     };
+    meta: {
+        key: string; // setting name (e.g. 'instance_id')
+        value: {
+            key: string;
+            value: any;
+        };
+    };
 }
 
 const DB_NAME = 'daxno-offline';
-const DB_VERSION = 5; // Bumped to 5 for new action stores
+const DB_VERSION = 6; // v6: add `meta` store for server-instance reconciliation
 
 let dbPromise: Promise<IDBPDatabase<DaxnoDB>> | null = null;
 
@@ -114,10 +121,52 @@ export async function getDB() {
                         db.createObjectStore('pendingRecordActions', { keyPath: 'id' });
                     }
                 }
+                if (oldVersion < 6) {
+                    if (!db.objectStoreNames.contains('meta')) {
+                        db.createObjectStore('meta', { keyPath: 'key' });
+                    }
+                }
             },
         });
     }
     return dbPromise;
+}
+
+// --- Meta helpers (used by server-instance reconciliation) ---
+
+export async function getMetaValue<T = any>(key: string): Promise<T | null> {
+    const db = await getDB();
+    if (!db) return null;
+    const row = await db.get('meta', key);
+    return row ? (row.value as T) : null;
+}
+
+export async function setMetaValue<T = any>(key: string, value: T): Promise<void> {
+    const db = await getDB();
+    if (!db) return;
+    await db.put('meta', { key, value });
+}
+
+/**
+ * Drop every cached data store. Preserves the `meta` store so the caller can
+ * write the new `instance_id` after wiping. Used when /sync/manifest reports
+ * a different backend instance than the one we cached from.
+ */
+export async function wipeAllCachedData(): Promise<void> {
+    const db = await getDB();
+    if (!db) return;
+    const storesToWipe = [
+        'projects',
+        'cachedRecords',
+        'offlineFiles',
+        'pendingDeletions',
+        'pendingProjectActions',
+        'pendingColumnActions',
+        'pendingRecordActions',
+    ] as const;
+    const tx = db.transaction(storesToWipe, 'readwrite');
+    await Promise.all(storesToWipe.map((name) => tx.objectStore(name).clear()));
+    await tx.done;
 }
 
 // --- Caching Helpers ---

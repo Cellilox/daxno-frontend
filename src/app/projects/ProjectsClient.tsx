@@ -19,8 +19,14 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Local-First: Load from cache on mount
+  // Offline fallback: when the browser is offline AND the server response
+  // came back empty (likely because the SSR fetch couldn't reach the API),
+  // surface the last-known cached projects. We deliberately do NOT fall back
+  // to cache when online + server returned [] — that's the real state after
+  // a backend DB wipe, and trusting the server here is what makes orphan
+  // projects disappear from the UI.
   useEffect(() => {
+    if (isOnline) return;
     const loadCached = async () => {
       if (!user?.id) return;
       const { getCachedProjects } = await import("@/lib/db/indexedDB");
@@ -30,7 +36,7 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
       }
     };
     loadCached();
-  }, [user?.id, projectsList.length]);
+  }, [user?.id, projectsList.length, isOnline]);
 
   // Sync: Update internal state and cache when props change or on manual refresh
   const refreshProjects = useCallback(async () => {
