@@ -14,6 +14,7 @@ import {
   type AdminUserOverview,
   type AdminMetrics,
 } from "@/actions/admin-actions";
+import OrphanRow from "@/components/admin/OrphanRow";
 
 export const metadata: Metadata = {
   title: "Cellilox | Admin",
@@ -418,54 +419,13 @@ export default async function Admin() {
                     {orphanRows.length} orphan tenant row
                     {orphanRows.length === 1 ? "" : "s"} (in DB but no matching
                     Clerk user — likely deleted accounts). These STILL count
-                    toward the KPI numbers above; delete the rows to drop them.
+                    toward the KPI numbers above; click "Delete" on a row to
+                    drop only the tenant record (usage logs and transactions
+                    are preserved).
                   </td>
                 </tr>
                 {orphanRows.map((r) => (
-                  <tr
-                    key={`orphan-${r.user_id}`}
-                    className="bg-amber-50/20 text-amber-900"
-                  >
-                    <td className="p-4 align-top">
-                      <div className="text-xs text-amber-700 font-semibold">
-                        Orphan tenant
-                      </div>
-                      <div className="text-xs text-gray-500 font-mono">
-                        {r.user_id}
-                      </div>
-                    </td>
-                    <td className="p-4 text-gray-400 align-top">—</td>
-                    <td className="p-4 text-gray-400 align-top">—</td>
-                    <td className="p-4 align-top">
-                      <SegmentBadge segment={r.segment} />
-                    </td>
-                    <td className="p-4 text-gray-700 align-top text-sm">
-                      {r.plan_name ?? (r.segment === "free" ? "Free" : "—")}
-                    </td>
-                    <td className="p-4 text-sm font-semibold text-blue-600 align-top">
-                      {r.total_pages}
-                    </td>
-                    <td className="p-4 text-sm align-top">
-                      <div className="font-semibold text-gray-900">
-                        {fmtMoney(r.total_cost_30d)}
-                      </div>
-                      {!!r.total_cost_30d && (
-                        <div className="text-xs text-gray-400">
-                          AI {fmtMoney(r.ai_cost_30d)} · OCR{" "}
-                          {fmtMoney(r.ocr_cost_30d)}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4 text-sm text-gray-700 align-top">
-                      {fmtNumber(r.tokens_30d)}
-                    </td>
-                    <td className="p-4 text-xs text-gray-500 align-top font-mono">
-                      {r.top_model_30d ?? "—"}
-                    </td>
-                    <td className="p-4 text-sm text-gray-500 align-top">
-                      {fmtDate(r.last_activity_at)}
-                    </td>
-                  </tr>
+                  <OrphanRow key={`orphan-${r.user_id}`} row={r} />
                 ))}
               </>
             )}
