@@ -98,7 +98,7 @@ export default function ProjectActionsMenu({
                     ref={buttonRef}
                     onClick={() => setIsOpen(!isOpen)}
                     className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
-                    aria-label="Project actions"
+                    aria-label="Agent actions"
                     aria-expanded={isOpen}
                 >
                     <MoreVertical size={20} className="text-gray-700" />
@@ -128,7 +128,7 @@ export default function ProjectActionsMenu({
                             >
                                 {/* Header with close button - mobile only */}
                                 <div className="flex md:hidden items-center justify-between px-4 py-3 border-b border-gray-100">
-                                    <h3 className="text-base font-semibold text-gray-900">Project Actions</h3>
+                                    <h3 className="text-base font-semibold text-gray-900">Agent Actions</h3>
                                     <button
                                         onClick={() => setIsOpen(false)}
                                         className="p-1 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"

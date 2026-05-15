@@ -60,13 +60,13 @@ export default function CreateAddress({ address, setIsAddressPopupVisible }: Cre
     <div className="space-y-4 mb-6">
       {[
         { icon: '1', bg: 'bg-blue-100', color: 'text-blue-600', text: (
-          <>Forward any emails <strong>with attachments</strong> to your project’s email address: <span className="font-medium">{address}</span>.</>
+          <>Forward any emails <strong>with attachments</strong> to your agent’s email address: <span className="font-medium">{address}</span>.</>
         ) },
         { icon: '2', bg: 'bg-blue-100', color: 'text-blue-600', text: (
           <>Ask your clients or teammates to <strong>CC</strong> this email. Cellilox will automatically process all attachments, even when you're away.</>
         ) },
         { icon: '!', bg: 'bg-red-100', color: 'text-red-600', text: (
-          <>Except for the project owner, no one should send emails directly to <strong>{address}</strong> unless they’ve <strong>CC'd</strong> the owner email.</>
+          <>Except for the agent owner, no one should send emails directly to <strong>{address}</strong> unless they’ve <strong>CC'd</strong> the owner email.</>
         ) }
 
       ].map((step, idx) => (

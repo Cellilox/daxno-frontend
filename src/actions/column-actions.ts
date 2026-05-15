@@ -27,8 +27,8 @@ export async function createColumn(formData: ColumnCreateData, projectId: string
   }
 
   const revalStart = Date.now();
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/agents');
+  revalidatePath(`/agents/${projectId}`);
   const revalEnd = Date.now();
   console.log(`[Perf] Revalidation took ${revalEnd - revalStart}ms`);
   console.log(`[Perf] Total createColumn time: ${revalEnd - start}ms`);
@@ -58,8 +58,8 @@ export async function updateColumn(fieldId: string | undefined, projectId: strin
   if (!response.ok) {
     throw new Error('Failed to update Column');
   }
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/agents');
+  revalidatePath(`/agents/${projectId}`);
 }
 
 export async function deleteColumn(fieldId: string, projectId: string) {
@@ -71,8 +71,8 @@ export async function deleteColumn(fieldId: string, projectId: string) {
   if (!response.ok) {
     throw new Error('Failed to delete a columnt');
   }
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/agents');
+  revalidatePath(`/agents/${projectId}`);
 }
 
 export async function reorderColumns(prevOrder: number | null, nextOrder: number | null, columnHiddenId: string) {
@@ -88,7 +88,7 @@ export async function reorderColumns(prevOrder: number | null, nextOrder: number
   if (!response.ok) {
     throw new Error('Failed to reorder columns');
   }
-  revalidatePath('/projects');
+  revalidatePath('/agents');
 }
 
 export async function updateColumnWidth(fieldId: string | undefined, projectId: string, width: number) {
@@ -101,6 +101,6 @@ export async function updateColumnWidth(fieldId: string | undefined, projectId: 
   if (!response.ok) {
     throw new Error('Failed to update column width');
   }
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/agents');
+  revalidatePath(`/agents/${projectId}`);
 }

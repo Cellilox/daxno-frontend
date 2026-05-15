@@ -22,7 +22,7 @@ export default function AcceptInvitation({token}: AcceptInvitatioProps) {
             const response = await accept_invite(token)
             if (response?.status === "accepted") {
                 setLoading(false)
-                router.push(`/projects/${response.project_id}`)
+                router.push(`/agents/${response.project_id}`)
             } else {
                 setLoading(false)
                 const message = {

@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Card from "@/components/Card";
 import CreateProjectForm from "@/components/forms/CreateProject";
+import DocumentTypePicker from "@/components/forms/DocumentTypePicker";
 import StandardPopup from "@/components/ui/StandardPopup";
-import { FolderPlus, WifiOff } from "lucide-react";
+import { Bot, WifiOff } from "lucide-react";
 import { Project } from "@/types";
-import { getProjects } from "@/actions/project-actions";
+import { getProjects, createProject } from "@/actions/project-actions";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 export default function ProjectsClient({ projects: initialProjects }: { projects: Project[] }) {
@@ -16,6 +17,8 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
   const { user } = useUser();
   const [projectsList, setProjectsList] = useState<Project[]>(initialProjects);
   const [showModal, setShowModal] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"picker" | "custom">("picker");
+  const [creatingType, setCreatingType] = useState<string | null>(null);
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -74,6 +77,7 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
 
   const handleProjectCreated = () => {
     setShowModal(false);
+    setPickerMode("picker");
     setIsRefreshing(true);
     refreshProjects();
     setTimeout(() => setIsRefreshing(false), 2000)
@@ -83,11 +87,34 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     setProjectsList(prev => prev.filter(p => p.id !== deletedId));
   };
 
+  const openCreateModal = () => {
+    setPickerMode("picker");
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setPickerMode("picker");
+  };
+
+  const handlePickType = async (type: string) => {
+    setCreatingType(type);
+    try {
+      await createProject({ name: type });
+      handleProjectCreated();
+    } catch (error) {
+      console.error("[ProjectsClient] Failed to create agent from type:", error);
+      alert("Error creating an agent");
+    } finally {
+      setCreatingType(null);
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Agents</h1>
           {!isOnline && (
             <div
               data-testid="offline-badge"
@@ -104,21 +131,38 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
             ? "bg-blue-600 hover:bg-blue-700 text-white"
             : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
             }`}
-          onClick={() => setShowModal(true)}
+          onClick={openCreateModal}
           data-testid="add-project-button"
         >
-          {isOnline ? "+ Add Project" : "Add Project (Offline)"}
+          {isOnline ? "+ Create Agent" : "Create Agent (Offline)"}
         </button>
       </div>
 
       <StandardPopup
         isOpen={showModal}
-        title="Create New Project"
-        subtitle="Start a new workspace for your documents"
-        icon={<FolderPlus size={24} />}
-        onClose={() => setShowModal(false)}
+        title="Create New Agent"
+        subtitle={
+          pickerMode === "picker"
+            ? "Choose the document type most similar to your use case"
+            : "Start a new workspace for your documents"
+        }
+        icon={<Bot size={24} />}
+        widthClassName={pickerMode === "picker" ? "max-w-lg" : "max-w-md"}
+        onClose={handleCloseModal}
       >
-        <CreateProjectForm onCreated={handleProjectCreated} onCancel={() => setShowModal(false)} />
+        {pickerMode === "picker" ? (
+          <DocumentTypePicker
+            isCreating={creatingType !== null}
+            creatingLabel={creatingType}
+            onPick={handlePickType}
+            onCustom={() => setPickerMode("custom")}
+          />
+        ) : (
+          <CreateProjectForm
+            onCreated={handleProjectCreated}
+            onCancel={() => setPickerMode("picker")}
+          />
+        )}
       </StandardPopup>
 
       <div className="mt-8">
@@ -144,12 +188,12 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
               )}
             </div>
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-              {isOnline ? "No Projects Yet" : "You are Offline"}
+              {isOnline ? "No Agents Yet" : "You are Offline"}
             </h2>
             <p className="text-gray-500 mb-6 text-center max-w-sm px-6">
               {isOnline
-                ? "You haven't created any projects. Click the button above to get started!"
-                : "We couldn't find any cached projects on this device. Please connect to the internet to sync your workspace."}
+                ? "You haven't created any agents. Click the button above to get started!"
+                : "We couldn't find any cached agents on this device. Please connect to the internet to sync your workspace."}
             </p>
             <button
               disabled={!isOnline}
@@ -157,10 +201,10 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                 }`}
-              onClick={() => setShowModal(true)}
+              onClick={openCreateModal}
               data-testid="add-first-project-button"
             >
-              {isOnline ? "+ Add Your First Project" : "Connect to create projects"}
+              {isOnline ? "+ Create Your First Agent" : "Connect to create agents"}
             </button>
           </div>
         )}

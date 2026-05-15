@@ -41,7 +41,7 @@ export const saveFileUrl = async (projectId: string, fileData: { fileLink: strin
     } else if (error.status === 403) {
       throw new Error('You do not have permission to save this file.');
     } else if (error.status === 404) {
-      throw new Error('Project not found.');
+      throw new Error('Agent not found.');
     } else if (error.status === 409) {
       throw new Error('A file with this name already exists.');
     } else if (error.status === 413) {

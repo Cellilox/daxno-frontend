@@ -7,6 +7,7 @@ import CollapsibleActions from '@/components/CollapsibleActions';
 import SelectionBar from '@/components/SelectionBar';
 import { Field, DocumentRecord } from '@/components/spreadsheet/types';
 import { Model, Project } from '@/types';
+import { Bot } from 'lucide-react';
 
 interface ProjectPageClientProps {
   project: Project;
@@ -77,9 +78,10 @@ export default function ProjectPageClient({
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <p
                 data-testid="project-details-title"
-                className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans"
+                className="text-2xl leading-8 font-bold text-gray-800 break-words font-sans flex items-center gap-2"
               >
-                Project: {project.name}
+                <Bot size={26} className="text-blue-600 shrink-0" />
+                {project.name}
               </p>
 
               {/* Mobile: swap description with selection bar when items are selected */}

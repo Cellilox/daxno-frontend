@@ -27,7 +27,7 @@ export default function CreateProjectForm({ onCreated, onCancel }: CreateProject
             resetField('name')
             if (onCreated) onCreated();
         } catch (error) {
-            alert('Error creating a project')
+            alert('Error creating an agent')
             setIsLoading(false)
         }
     }
@@ -41,7 +41,7 @@ export default function CreateProjectForm({ onCreated, onCancel }: CreateProject
                     {...register('name', { required: 'Name is required' })}
                     data-testid="project-name-input"
                     className="flex-1 p-3 mr-3 w-full rounded-lg text-gray-800 border border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Type your project name"
+                    placeholder="Type your agent name"
                 />
                 {isLoading ?
                     <div

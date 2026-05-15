@@ -68,10 +68,10 @@ export default function BackfillRecordModal({ isOpen, onClose, projectId, record
 
                 <div className="mb-6">
                     <p className="text-gray-700 leading-relaxed">
-                        Re-analyze <span className="font-bold text-purple-600 break-all">"{filename}"</span> for all project fields using cached OCR data?
+                        Re-analyze <span className="font-bold text-purple-600 break-all">"{filename}"</span> for all agent fields using cached OCR data?
                     </p>
                     <p className="mt-4 text-xs text-gray-500 bg-purple-50 p-3 rounded-lg border border-purple-100">
-                        ✨ <span className="font-semibold text-purple-700">Non-destructive:</span> This will refresh the data in this row using current project field extraction rules.
+                        ✨ <span className="font-semibold text-purple-700">Non-destructive:</span> This will refresh the data in this row using current agent field extraction rules.
                     </p>
                 </div>
 

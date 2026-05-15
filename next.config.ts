@@ -29,6 +29,12 @@ const nextConfig: any = {
       bodySizeLimit: '500mb',
     },
   },
+  async redirects() {
+    return [
+      { source: '/projects', destination: '/agents', permanent: true },
+      { source: '/projects/:path*', destination: '/agents/:path*', permanent: true },
+    ];
+  },
 };
 
 // PWA configuration

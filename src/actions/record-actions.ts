@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { fetchAuthed, fetchAuthedJson, buildApiUrl } from "@/lib/api-client";
 
 export async function revalidate() {
-  revalidatePath('/projects');
+  revalidatePath('/agents');
 }
 
 export async function uploadFile(formData: any, projectId: string | undefined) {
@@ -231,7 +231,7 @@ export async function deleteBatchRecords(recordIds: string[]) {
       throw new Error(`Batch delete failed: ${response.status} ${err}`);
     }
 
-    revalidatePath("/projects");
+    revalidatePath("/agents");
     return await response.json();
   } catch (error) {
     console.error("Batch delete failed", error);
