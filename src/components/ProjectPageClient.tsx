@@ -124,7 +124,10 @@ export default function ProjectPageClient({
           initialFields={fields}
           initialRecords={records}
           project={project}
+          plan={plan}
           subscriptionType={subscriptionType}
+          is_project_owner={is_project_owner}
+          linkOwner={linkOwner}
           onSelectionChange={handleSelectionChange}
         />
       </div>
