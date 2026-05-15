@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Card from "@/components/Card";
 import CreateProjectForm from "@/components/forms/CreateProject";
+import DocumentTypePicker from "@/components/forms/DocumentTypePicker";
+import AgentCreationLoader from "@/components/forms/AgentCreationLoader";
 import StandardPopup from "@/components/ui/StandardPopup";
-import { FolderPlus, WifiOff } from "lucide-react";
+import { Bot, WifiOff } from "lucide-react";
 import { Project } from "@/types";
-import { getProjects } from "@/actions/project-actions";
+import { createProject } from "@/actions/project-actions";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 export default function ProjectsClient({ projects: initialProjects }: { projects: Project[] }) {
@@ -16,8 +18,10 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
   const { user } = useUser();
   const [projectsList, setProjectsList] = useState<Project[]>(initialProjects);
   const [showModal, setShowModal] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"picker" | "custom">("picker");
+  const [creatingAgent, setCreatingAgent] = useState<{ id: string | null; name: string } | null>(null);
+  const [animationDone, setAnimationDone] = useState(false);
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Offline fallback: when the browser is offline AND the server response
   // came back empty (likely because the SSR fetch couldn't reach the API),
@@ -38,28 +42,6 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     loadCached();
   }, [user?.id, projectsList.length, isOnline]);
 
-  // Sync: Update internal state and cache when props change or on manual refresh
-  const refreshProjects = useCallback(async () => {
-    try {
-      const latest = await getProjects();
-      if (latest && Array.isArray(latest)) {
-        setProjectsList(latest);
-        if (user?.id) {
-          const { cacheProjects, syncProjectDeletions } = await import("@/lib/db/indexedDB");
-          await cacheProjects(user.id, latest);
-
-          // Sync deletions: remove projects that no longer exist on server
-          const syncResult = await syncProjectDeletions(user.id, latest);
-          if (syncResult.removed > 0) {
-            console.log(`[ProjectsClient] Cleaned ${syncResult.removed} deleted project(s) from cache`);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("[ProjectsClient] Failed to refresh projects:", err);
-    }
-  }, [user?.id]);
-
   useEffect(() => {
     if (initialProjects && initialProjects.length > 0) {
       setProjectsList(initialProjects);
@@ -72,22 +54,54 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     }
   }, [initialProjects, user?.id]);
 
-  const handleProjectCreated = () => {
+  const handleProjectCreated = (project: { id: string; name?: string }) => {
     setShowModal(false);
-    setIsRefreshing(true);
-    refreshProjects();
-    setTimeout(() => setIsRefreshing(false), 2000)
+    setPickerMode("picker");
+    setAnimationDone(false);
+    setCreatingAgent({ id: project.id, name: project.name ?? "your" });
   };
 
   const handleProjectDeleted = (deletedId: string) => {
     setProjectsList(prev => prev.filter(p => p.id !== deletedId));
   };
 
+  const openCreateModal = () => {
+    setPickerMode("picker");
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setPickerMode("picker");
+  };
+
+  const handlePickType = async (type: string) => {
+    setAnimationDone(false);
+    setCreatingAgent({ id: null, name: type });
+    setShowModal(false);
+    try {
+      const project = await createProject({ name: type });
+      setCreatingAgent((prev) => (prev ? { ...prev, id: project.id } : null));
+    } catch (error) {
+      console.error("[ProjectsClient] Failed to create agent from type:", error);
+      setCreatingAgent(null);
+      alert("Error creating an agent");
+    }
+  };
+
+  // Navigate to the new agent once BOTH the API has returned an id AND the
+  // loader animation has finished. The `void` keeps the no-unused-promise rule happy.
+  useEffect(() => {
+    if (creatingAgent?.id && animationDone) {
+      router.push(`/agents/${creatingAgent.id}`);
+    }
+  }, [creatingAgent?.id, animationDone, router]);
+
   return (
     <div className="min-h-screen p-6 bg-gray-50">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Projects</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Agents</h1>
           {!isOnline && (
             <div
               data-testid="offline-badge"
@@ -104,22 +118,46 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
             ? "bg-blue-600 hover:bg-blue-700 text-white"
             : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
             }`}
-          onClick={() => setShowModal(true)}
+          onClick={openCreateModal}
           data-testid="add-project-button"
         >
-          {isOnline ? "+ Add Project" : "Add Project (Offline)"}
+          {isOnline ? "+ Create Agent" : "Create Agent (Offline)"}
         </button>
       </div>
 
       <StandardPopup
         isOpen={showModal}
-        title="Create New Project"
-        subtitle="Start a new workspace for your documents"
-        icon={<FolderPlus size={24} />}
-        onClose={() => setShowModal(false)}
+        title="Create New Agent"
+        subtitle={
+          pickerMode === "picker"
+            ? "Choose the document type most similar to your use case"
+            : "Start a new workspace for your documents"
+        }
+        icon={<Bot size={24} />}
+        widthClassName={pickerMode === "picker" ? "max-w-lg" : "max-w-md"}
+        onClose={handleCloseModal}
       >
-        <CreateProjectForm onCreated={handleProjectCreated} onCancel={() => setShowModal(false)} />
+        {pickerMode === "picker" ? (
+          <DocumentTypePicker
+            isCreating={false}
+            creatingLabel={null}
+            onPick={handlePickType}
+            onCustom={() => setPickerMode("custom")}
+          />
+        ) : (
+          <CreateProjectForm
+            onCreated={handleProjectCreated}
+            onCancel={() => setPickerMode("picker")}
+          />
+        )}
       </StandardPopup>
+
+      {creatingAgent && (
+        <AgentCreationLoader
+          agentName={creatingAgent.name}
+          onAnimationDone={() => setAnimationDone(true)}
+        />
+      )}
 
       <div className="mt-8">
         {projectsList?.length >= 1 ? (
@@ -144,12 +182,12 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
               )}
             </div>
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">
-              {isOnline ? "No Projects Yet" : "You are Offline"}
+              {isOnline ? "No Agents Yet" : "You are Offline"}
             </h2>
             <p className="text-gray-500 mb-6 text-center max-w-sm px-6">
               {isOnline
-                ? "You haven't created any projects. Click the button above to get started!"
-                : "We couldn't find any cached projects on this device. Please connect to the internet to sync your workspace."}
+                ? "You haven't created any agents. Click the button above to get started!"
+                : "We couldn't find any cached agents on this device. Please connect to the internet to sync your workspace."}
             </p>
             <button
               disabled={!isOnline}
@@ -157,20 +195,15 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
                 ? "bg-blue-600 hover:bg-blue-700 text-white"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                 }`}
-              onClick={() => setShowModal(true)}
+              onClick={openCreateModal}
               data-testid="add-first-project-button"
             >
-              {isOnline ? "+ Add Your First Project" : "Connect to create projects"}
+              {isOnline ? "+ Create Your First Agent" : "Connect to create agents"}
             </button>
           </div>
         )}
       </div>
 
-      {isRefreshing && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
-          <div className="bg-white p-6 rounded shadow text-lg">Creating...</div>
-        </div>
-      )}
     </div>
   );
 }

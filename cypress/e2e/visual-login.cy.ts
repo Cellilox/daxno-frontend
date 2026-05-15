@@ -16,8 +16,8 @@ describe('Visual Login Flow Demo', () => {
         // as a "Plan B" to force the Clerk redirect
         cy.url().then((url) => {
             if (url === Cypress.config().baseUrl || url === Cypress.config().baseUrl + '/') {
-                cy.log('Plan B: Button click did not redirect immediately, visiting /projects to force auth');
-                cy.visit('/projects', { failOnStatusCode: false });
+                cy.log('Plan B: Button click did not redirect immediately, visiting /agents to force auth');
+                cy.visit('/agents', { failOnStatusCode: false });
             }
         });
 
@@ -47,10 +47,10 @@ describe('Visual Login Flow Demo', () => {
             cy.log('Waiting for redirect back to app...');
         });
 
-        // Step 3: Verify landing on projects back on localhost
+        // Step 3: Verify landing on agents back on localhost
         cy.log('Step 3: Verification on localhost');
-        cy.url({ timeout: 30000 }).should('include', '/projects');
-        cy.contains('Projects', { timeout: 15000 }).should('be.visible');
+        cy.url({ timeout: 30000 }).should('include', '/agents');
+        cy.contains('Agents', { timeout: 15000 }).should('be.visible');
     });
 
 });

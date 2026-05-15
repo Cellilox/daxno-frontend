@@ -5,8 +5,8 @@ import { Metadata } from "next";
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Cellilox | Projects',
-  description: 'View and manage all your projects in one place. Create, edit, and organize your work efficiently with Cellilox.'
+  title: 'Cellilox | Agents',
+  description: 'View and manage all your agents in one place. Create, edit, and organize your work efficiently with Cellilox.'
 };
 
 export default async function ProjectsPage() {

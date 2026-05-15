@@ -23,7 +23,7 @@ export default function Error({
 
             <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
             <p className="text-gray-500 text-center mb-8 max-w-md">
-                We encountered an issue loading the project data. This might be due to a temporary connection issue.
+                We encountered an issue loading the agent data. This might be due to a temporary connection issue.
             </p>
 
             <div className="flex gap-4">

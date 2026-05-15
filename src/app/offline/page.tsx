@@ -27,7 +27,7 @@ export default function OfflinePage() {
                     </button>
 
                     <Link
-                        href="/projects"
+                        href="/agents"
                         className="block w-full text-blue-600 hover:text-blue-700 font-semibold py-2"
                     >
                         Go to Dashboard

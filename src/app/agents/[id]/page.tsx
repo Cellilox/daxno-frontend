@@ -8,8 +8,8 @@ import LayoutFix from "@/components/LayoutFix"
 import ProjectPageClient from "@/components/ProjectPageClient"
 
 export const metadata: Metadata = {
-  title: 'Cellilox | Project Details',
-  description: 'Detailed view and management for your selected project. Review, update, and collaborate on your project with Cellilox.'
+  title: 'Cellilox | Agent Details',
+  description: 'Detailed view and management for your selected agent. Review, update, and collaborate on your agent with Cellilox.'
 };
 
 export default async function ProjectView({ params }: { params: Promise<{ id: string }> }) {
@@ -33,10 +33,10 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
     console.error(`[ProjectView] Project ${id} not found or inaccessible:`, project);
     return (
       <div data-testid="project-not-found" className="h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
-        <div className="text-xl font-bold font-sans text-gray-800">Project not found</div>
-        <p className="text-gray-500">The project you are looking for might have been deleted or moved.</p>
+        <div className="text-xl font-bold font-sans text-gray-800">Agent not found</div>
+        <p className="text-gray-500">The agent you are looking for might have been deleted or moved.</p>
         <a
-          href="/projects"
+          href="/agents"
           className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-all font-sans"
         >
           Return to Dashboard

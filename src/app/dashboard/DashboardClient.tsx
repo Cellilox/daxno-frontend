@@ -63,8 +63,8 @@ export default function DashboardClient() {
 
                 <h1 className="text-3xl font-bold text-gray-800 mb-8">Overview</h1>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Link href="/projects" className="bg-yellow-50 p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Projects</h2>
+                    <Link href="/agents" className="bg-yellow-50 p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Agents</h2>
                         <p className="text-4xl font-bold text-blue-600">{stats.projects}</p>
                         <p className="text-gray-500">Cached Locally</p>
                     </Link>
@@ -90,10 +90,10 @@ export default function DashboardClient() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Link href="/projects" className="bg-yellow-50 p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Projects</h2>
+                    <Link href="/agents" className="bg-yellow-50 p-6 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">Agents</h2>
                         <p className="text-4xl font-bold text-blue-600">{stats.projects}</p>
-                        <p className="text-gray-500">Total Projects</p>
+                        <p className="text-gray-500">Total Agents</p>
                     </Link>
 
                     <div className="bg-blue-50 p-6 rounded-lg shadow-lg">

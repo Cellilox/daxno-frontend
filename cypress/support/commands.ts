@@ -28,8 +28,8 @@ Cypress.Commands.add('login', () => {
         // This handles cases where the button click doesn't immediately trigger navigation
         cy.location('pathname').then((pathname) => {
             if (pathname === '/' || pathname === '') {
-                cy.log('Plan B: Button click stuck on localhost. Forcing redirect via /projects...');
-                cy.visit('/projects', { failOnStatusCode: false });
+                cy.log('Plan B: Button click stuck on localhost. Forcing redirect via /agents...');
+                cy.visit('/agents', { failOnStatusCode: false });
             }
         });
 
@@ -49,30 +49,30 @@ Cypress.Commands.add('login', () => {
         });
 
         // 3. MUST land back on our domain and WAIT for session cookie to settle
-        cy.visit('/projects');
+        cy.visit('/agents');
 
         // STRICT CHECK: Ensure we are back on localhost and on the right path
         cy.location('hostname', { timeout: 20000 }).should('eq', 'localhost');
-        cy.location('pathname').should('eq', '/projects');
+        cy.location('pathname').should('eq', '/agents');
 
         // Wait for the Clerk session cookie and UI to be definitive
         cy.getCookie('__session', { timeout: 20000 }).should('exist');
-        cy.contains('Projects', { timeout: 20000 }).should('be.visible');
+        cy.contains('Agents', { timeout: 20000 }).should('be.visible');
     }, {
         cacheAcrossSpecs: true,
         validate() {
             // THE CHECK: Perform a light server-side check.
             cy.request({
-                url: '/projects',
+                url: '/agents',
                 followRedirect: false,
                 failOnStatusCode: false
             }).its('status').should('eq', 200);
 
             // Also ensure the UI is in place and we haven't been pushed out
-            cy.visit('/projects');
+            cy.visit('/agents');
             cy.location('hostname').should('eq', 'localhost');
-            cy.location('pathname', { timeout: 15000 }).should('eq', '/projects');
-            cy.get('h1').contains('Projects', { timeout: 15000 }).should('be.visible');
+            cy.location('pathname', { timeout: 15000 }).should('eq', '/agents');
+            cy.get('h1').contains('Agents', { timeout: 15000 }).should('be.visible');
             cy.getCookie('__session').should('exist');
         }
     });
@@ -80,8 +80,8 @@ Cypress.Commands.add('login', () => {
 
 // Custom command to select an existing project by name or create one if not found
 Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
-    cy.visit('/projects');
-    cy.get('h1').contains('Projects', { timeout: 20000 }).should('be.visible');
+    cy.visit('/agents');
+    cy.get('h1').contains('Agents', { timeout: 20000 }).should('be.visible');
 
     // Robustly clear IndexedDB to prevent "Internal error opening backing store"
     cy.clearDatabase();
@@ -101,16 +101,16 @@ Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
         } else {
             cy.log(`➕ Creating new project: ${projectName}`);
             cy.get('[data-testid="add-project-button"]').click();
+            // Switch from document-type picker to custom name-entry form
+            cy.contains('button', 'Custom', { timeout: 5000 }).click();
             cy.get('[data-testid="project-name-input"]').type(projectName);
             cy.get('[data-testid="create-project-submit"]').click();
-
-            // Should redirect or at least show project in list
-            cy.contains('h3', projectName, { timeout: 15000 }).scrollIntoView().click({ force: true });
+            // The agent-creation loader plays ~5s before auto-navigating to /agents/{id}
         }
     });
 
-    // Final verification that we reached the details page
-    cy.location('pathname', { timeout: 20000 }).should('include', '/projects/');
+    // Final verification that we reached the details page (allow extra time for the loader)
+    cy.location('pathname', { timeout: 25000 }).should('include', '/agents/');
 
     // Strictly wait for the LIVE indicator as requested
     cy.log('⌛ Waiting for LIVE status...');
@@ -157,14 +157,14 @@ Cypress.Commands.add('deleteAllProjects', () => {
     });
 
     // 2. Just visit and verify we are clean, or delete if visible
-    cy.visit('/projects');
+    cy.visit('/agents');
     cy.get('body').then(($body) => {
         const cards = $body.find('[data-testid^="project-card-"]');
         if (cards.length > 0) {
             cy.log(`⚠️ Cleaning up ${cards.length} cards via UI...`);
             cy.wrap(cards).each(() => {
                 cy.get('[data-testid^="project-card-"]').first().within(() => {
-                    cy.get('button[title="Delete project"]').click({ force: true });
+                    cy.get('button[title="Delete agent"]').click({ force: true });
                 });
                 cy.get('[data-testid="alert-dialog-confirm"]').click();
                 cy.wait(300);

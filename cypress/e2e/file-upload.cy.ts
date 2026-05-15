@@ -7,12 +7,15 @@ describe('File Upload Tests', () => {
         cy.clearDatabase();
 
         // Manual project creation since custom command doesn't exist
-        cy.visit('/projects');
+        cy.visit('/agents');
         cy.get('[data-testid="add-project-button"]', { timeout: 15000 }).should('be.visible').click();
+        cy.contains('button', 'Custom').click();
         cy.get('[data-testid="project-name-input"]').should('be.visible').type(projectName);
         cy.get('[data-testid="create-project-submit"]').should('be.visible').click();
 
-        cy.contains(projectName, { timeout: 15000 }).should('be.visible').click();
+        // Loader plays ~5s, then auto-navigates to /agents/{id} (already on detail page)
+        cy.location('pathname', { timeout: 25000 }).should('include', '/agents/');
+        cy.contains(projectName, { timeout: 15000 }).should('be.visible');
         cy.get('body').then(($body) => {
             if ($body.find('[data-testid="close-tutorial"]').length > 0) {
                 cy.get('[data-testid="close-tutorial"]').click();

@@ -13,17 +13,21 @@ import { deleteBatchRecords, deleteRecord, getRecords, updateRecord } from '@/ac
 import { deleteColumn, getColumns, updateColumn } from '@/actions/column-actions';
 import SmartAuthGuard from '@/components/auth/SmartAuthGuard';
 import ColumnRecommendationBanner from '@/components/ColumnRecommendationBanner';
+import FirstRunSourcePicker from '@/components/forms/FirstRunSourcePicker';
 
 type RecordsProps = {
     projectId: string;
     initialFields: Field[];
     initialRecords: DocumentRecord[];
     project: any;
+    plan: string;
     subscriptionType?: string;
+    is_project_owner: boolean;
+    linkOwner: string;
     onSelectionChange?: (count: number, onDelete: () => void, onClear: () => void, isDeleting: boolean) => void;
 };
 
-export default function Records({ projectId, initialFields, initialRecords, project, subscriptionType, onSelectionChange }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project, plan, subscriptionType, is_project_owner, linkOwner, onSelectionChange }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     // Abort flag: set to true when a provider error is detected mid-backfill.
     // Prevents race condition where already-dispatched Celery tasks fire backfill_record_start
@@ -43,6 +47,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const [isRecordBackfillModalOpen, setIsRecordBackfillModalOpen] = useState(false);
     const [selectedRecordForBackfill, setSelectedRecordForBackfill] = useState<{ id: string, filename: string } | null>(null);
     const [pendingAnalysis, setPendingAnalysis] = useState(false);
+    const [dismissedFirstRun, setDismissedFirstRun] = useState(false);
     const [recommendationMeta, setRecommendationMeta] = useState<{
         documentType: string | null;
         totalDocuments: number;
@@ -696,10 +701,18 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         }
     }, [processingCount]);
 
+    const showFirstRunPicker =
+        columns.length === 0 &&
+        onlineRecords.length === 0 &&
+        offlineRecords.length === 0 &&
+        !pendingAnalysis &&
+        !dismissedFirstRun;
+
     return (
         <SmartAuthGuard>
             <div className="flex flex-col h-full relative">
                 <SyncBanner />
+                {!showFirstRunPicker && (
                 <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2" data-testid="connection-status">
@@ -760,6 +773,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         </div>
                     )}
                 </div>
+                )}
                 {pendingAnalysis && (
                     <ColumnRecommendationBanner
                         projectId={projectId}
@@ -774,25 +788,36 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     />
                 )}
                 <div className="flex-1 min-h-0">
-                    <SpreadSheet
-                        isOnline={isOnline}
-                        records={rowData}
-                        columns={columns}
-                        projectId={projectId}
-                        project={project}
-                        onDeleteRecord={handleDeleteRecord}
-                        onDeleteBatch={handleDeleteBatch}
-                        onUpdateRecord={handleUpdateRecord}
-                        onUpdateColumn={handleUpdateColumn}
-                        onDeleteColumn={handleDeleteColumn}
-                        onSelectionChange={onSelectionChange}
-                        backfillingFieldId={backfillingFieldId}
-                        backfillingRecordId={backfillingRecordId}
-                        onBackfillRecord={(id: string, filename: string) => {
-                            setSelectedRecordForBackfill({ id, filename });
-                            setIsRecordBackfillModalOpen(true);
-                        }}
-                    />
+                    {showFirstRunPicker ? (
+                        <FirstRunSourcePicker
+                            project={project}
+                            plan={plan}
+                            subscriptionType={subscriptionType}
+                            is_project_owner={is_project_owner}
+                            linkOwner={linkOwner}
+                            onManualSetup={() => setDismissedFirstRun(true)}
+                        />
+                    ) : (
+                        <SpreadSheet
+                            isOnline={isOnline}
+                            records={rowData}
+                            columns={columns}
+                            projectId={projectId}
+                            project={project}
+                            onDeleteRecord={handleDeleteRecord}
+                            onDeleteBatch={handleDeleteBatch}
+                            onUpdateRecord={handleUpdateRecord}
+                            onUpdateColumn={handleUpdateColumn}
+                            onDeleteColumn={handleDeleteColumn}
+                            onSelectionChange={onSelectionChange}
+                            backfillingFieldId={backfillingFieldId}
+                            backfillingRecordId={backfillingRecordId}
+                            onBackfillRecord={(id: string, filename: string) => {
+                                setSelectedRecordForBackfill({ id, filename });
+                                setIsRecordBackfillModalOpen(true);
+                            }}
+                        />
+                    )}
                 </div>
                 <ColumnReorderPopup
                     columns={columns}

@@ -20,7 +20,7 @@ export async function backfillColumn(project_id: string, field_id: string, field
         }
 
         const result = await response.json();
-        revalidatePath(`/projects/${project_id}`);
+        revalidatePath(`/agents/${project_id}`);
         return result;
     } catch (error) {
         console.error('[Frontend] backfillColumn error:', error);

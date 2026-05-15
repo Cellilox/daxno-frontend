@@ -324,7 +324,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     if (!file) {
       setIsLoading(false);
       setIsVisible(false);
-      router.push(`/projects/${projectId}`);
+      router.push(`/agents/${projectId}`);
       return;
     }
 
@@ -385,7 +385,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
 
     if (!projectId || projectId === 'undefined') {
-      updateStatus('Project ID is missing. Please refresh the page.', messageTypeEnum.ERROR);
+      updateStatus('Agent ID is missing. Please refresh the page.', messageTypeEnum.ERROR);
       setIsLoading(false);
       return;
     }

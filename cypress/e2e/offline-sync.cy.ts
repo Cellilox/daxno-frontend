@@ -27,8 +27,8 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
     });
 
     it('should show offline status when network is disconnected', () => {
-        cy.visit('/projects');
-        cy.contains('Projects', { timeout: 15000 }).should('be.visible');
+        cy.visit('/agents');
+        cy.contains('Agents', { timeout: 15000 }).should('be.visible');
 
         cy.goOffline();
 

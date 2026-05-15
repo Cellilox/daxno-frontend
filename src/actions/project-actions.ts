@@ -28,7 +28,7 @@ export async function createProject(formData: projectCreateData) {
       throw new Error(errorText || 'Failed to create project');
     }
 
-    revalidatePath('/projects');
+    revalidatePath('/agents');
     return await response.json();
   } catch (error) {
     console.error('Error in createProject action:', error);
@@ -83,7 +83,7 @@ export async function updateProject(projectId: string | undefined, formData: pro
       body: JSON.stringify(formData),
     });
 
-    revalidatePath('/projects');
+    revalidatePath('/agents');
     return await response.json()
   } catch (error) {
     console.log(error)
@@ -97,7 +97,7 @@ export async function updateProjectById(id: string, formData: projectCreateData)
     method: 'PUT',
     body: JSON.stringify(formData),
   });
-  revalidatePath('/projects');
+  revalidatePath('/agents');
   return await response.json();
 }
 
@@ -109,7 +109,7 @@ export async function regenerateProjectLink(projectId: string | undefined, formD
       body: JSON.stringify(formData),
     });
 
-    revalidatePath('/projects');
+    revalidatePath('/agents');
     return await response.json()
   } catch (error) {
     console.log(error)
@@ -123,7 +123,7 @@ export async function regenerateLink(id: string, formData: projectCreateData) {
     method: 'PUT',
     body: JSON.stringify(formData),
   });
-  revalidatePath('/projects');
+  revalidatePath('/agents');
   return await response.json();
 }
 
@@ -136,7 +136,7 @@ export async function deleteProject(projectId: string) {
   if (!response.ok) {
     throw new Error('Failed to delete a project');
   }
-  revalidatePath('/projects');
+  revalidatePath('/agents');
 }
 
 

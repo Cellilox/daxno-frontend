@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, Bot } from 'lucide-react';
 import AlertDialog from './ui/AlertDialog';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -114,7 +114,7 @@ export default function Card({ project, onDeleted }: CardProps) {
 
 
   const handleNavigateToProjectPage = () => {
-    router.push(`/projects/${project.id}`)
+    router.push(`/agents/${project.id}`)
   }
 
 
@@ -131,7 +131,7 @@ export default function Card({ project, onDeleted }: CardProps) {
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" /></svg>
+                <Bot size={20} />
               </div>
               <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
                 {project.name}
@@ -143,7 +143,7 @@ export default function Card({ project, onDeleted }: CardProps) {
               <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                  title="Edit project"
+                  title="Edit agent"
                   data-testid={`edit-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -154,7 +154,7 @@ export default function Card({ project, onDeleted }: CardProps) {
                 </button>
                 <button
                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                  title="Delete project"
+                  title="Delete agent"
                   data-testid={`delete-project-${project.id}`}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -199,8 +199,8 @@ export default function Card({ project, onDeleted }: CardProps) {
       {isAlertVisible && selectedProjectToDelete && (
         <AlertDialog
           visible={isAlertVisible}
-          title="Delete Project"
-          message="This project and all data associated will be deleted permanently, and there is no going back."
+          title="Delete Agent"
+          message="This agent and all data associated will be deleted permanently, and there is no going back."
           confirmText="Delete"
           cancelText="Cancel"
           onConfirm={() => handleDeleteProject(selectedProjectToDelete.id)}
@@ -214,14 +214,14 @@ export default function Card({ project, onDeleted }: CardProps) {
       {isPopupVisible && selectedProjectToUpdate && (
         <StandardPopup
           isOpen={isPopupVisible}
-          title="Edit Project"
-          subtitle="Update your project details"
+          title="Edit Agent"
+          subtitle="Update your agent details"
           icon={<Pencil size={24} />}
           onClose={handleCloseUpdatePopup}
         >
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project Name
+              Agent Name
             </label>
             <input
               type="text"
@@ -237,7 +237,7 @@ export default function Card({ project, onDeleted }: CardProps) {
           </div>
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Project Description
+              Agent Description
             </label>
             <textarea
               value={selectedProjectToUpdate.description || ''}

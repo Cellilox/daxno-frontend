@@ -33,7 +33,7 @@ export const saveGoogleExportHistory = async (projectId: string, fileLink: strin
     } else if (error.status === 403) {
       throw new Error('You do not have permission to save this file.');
     } else if (error.status === 404) {
-      throw new Error('Project not found.');
+      throw new Error('Agent not found.');
     } else if (error.status === 429) {
       throw new Error('Too many requests. Please try again later.');
     } else if (error.status === 500) {
