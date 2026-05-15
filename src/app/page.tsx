@@ -63,7 +63,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/60 text-blue-700 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] mb-6 shadow-sm"
             >
               <Sparkles size={13} className="animate-spin-slow" />
-              Document intelligence platform
+              AI agents for every document
             </motion.div>
 
             {/* Headline */}
@@ -71,11 +71,11 @@ export default function Home() {
               variants={itemVariants}
               className="text-[2.25rem] leading-[1.05] sm:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 mb-5"
             >
-              Every document.{" "}
+              An AI agent for{" "}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
-                Understood.
+                every document
               </span>{" "}
-              Instantly.
+              you handle.
             </motion.h1>
 
             {/* Concrete subhead */}
@@ -83,9 +83,9 @@ export default function Home() {
               variants={itemVariants}
               className="max-w-xl text-base sm:text-lg text-gray-500 mb-8 leading-relaxed"
             >
-              Upload invoices, contracts, purchase orders, bank statements, or budgets. Cellilox
-              scans, classifies, and extracts every field — then makes it all queryable in plain
-              language.
+              Pick a document type — invoices, contracts, purchase orders, bank statements, and
+              more — and spin up an AI agent that reads every file you drop in. Upload, email it
+              in, or share a link. Then ask anything in plain language.
             </motion.p>
 
             {/* CTAs */}
@@ -97,7 +97,7 @@ export default function Home() {
                 href="/dashboard"
                 className="group relative inline-flex items-center justify-center gap-2.5 bg-gray-900 text-white font-semibold py-3.5 px-7 rounded-xl shadow-xl shadow-gray-900/15 hover:bg-blue-600 transition-all hover:scale-[1.02] active:scale-95 text-sm sm:text-base"
               >
-                Start for free
+                Create your first agent
                 <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <div>

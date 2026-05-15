@@ -45,14 +45,14 @@ export default function CTABanner() {
                 Get started today
               </div>
               <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
-                Stop managing <br className="hidden sm:block" />
+                Stop processing <br className="hidden sm:block" />
                 <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
                   documents manually.
                 </span>
               </h2>
               <p className="mt-5 max-w-lg text-base leading-relaxed text-white/55">
-                Join 500+ businesses across East Africa that turned document chaos into structured,
-                queryable, actionable data. Free to start — no setup, no credit card.
+                Let an AI agent extract every field, answer every question, and keep up while you
+                sleep. Free to start — no setup, no credit card.
               </p>
             </div>
 
@@ -61,7 +61,7 @@ export default function CTABanner() {
                 href="/dashboard"
                 className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40"
               >
-                Create your free account
+                Build your first agent
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <button
