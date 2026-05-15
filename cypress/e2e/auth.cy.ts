@@ -3,7 +3,7 @@ describe('Phase 1: Authentication & Page Protection', () => {
     const password = Cypress.env('CLERK_TEST_PASSWORD');
 
     describe('1. Protected Routes (Unauthenticated)', () => {
-        const protectedRoutes = ['/projects', '/admin', '/billing'];
+        const protectedRoutes = ['/agents', '/admin', '/billing'];
 
         protectedRoutes.forEach((route) => {
             it(`should redirect from ${route} to Clerk sign-in domain`, () => {
@@ -22,10 +22,10 @@ describe('Phase 1: Authentication & Page Protection', () => {
             cy.login();
 
             // Explicitly visit projects after login/restore
-            cy.visit('/projects');
+            cy.visit('/agents');
             cy.location('hostname').should('eq', 'localhost');
-            cy.location('pathname').should('eq', '/projects');
-            cy.contains('Projects', { timeout: 10000 }).should('be.visible');
+            cy.location('pathname').should('eq', '/agents');
+            cy.contains('Agents', { timeout: 10000 }).should('be.visible');
         });
     });
 
@@ -35,11 +35,11 @@ describe('Phase 1: Authentication & Page Protection', () => {
             cy.login();
         });
 
-        it('should allow access to /projects and show project list', () => {
-            cy.visit('/projects');
+        it('should allow access to /agents and show agent list', () => {
+            cy.visit('/agents');
             cy.location('hostname').should('eq', 'localhost');
-            cy.location('pathname').should('eq', '/projects');
-            cy.contains('Projects', { timeout: 10000 }).should('be.visible');
+            cy.location('pathname').should('eq', '/agents');
+            cy.contains('Agents', { timeout: 10000 }).should('be.visible');
             cy.get('[data-testid="add-project-button"]', { timeout: 10000 }).should('exist');
         });
 
@@ -59,7 +59,7 @@ describe('Phase 1: Authentication & Page Protection', () => {
     describe('4. Logout Flow', () => {
         it('should redirect to sign-in after manual logout', () => {
             cy.login();
-            cy.visit('/projects');
+            cy.visit('/agents');
 
             // Trigger Clerk UserButton/Sign out
             // User provided selector: .cl-avatarImage

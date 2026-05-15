@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Card from "@/components/Card";
 import CreateProjectForm from "@/components/forms/CreateProject";
 import DocumentTypePicker from "@/components/forms/DocumentTypePicker";
+import AgentCreationLoader from "@/components/forms/AgentCreationLoader";
 import StandardPopup from "@/components/ui/StandardPopup";
 import { Bot, WifiOff } from "lucide-react";
 import { Project } from "@/types";
-import { getProjects, createProject } from "@/actions/project-actions";
+import { createProject } from "@/actions/project-actions";
 import { useSyncStatus } from "@/hooks/useSyncStatus";
 
 export default function ProjectsClient({ projects: initialProjects }: { projects: Project[] }) {
@@ -18,9 +19,9 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
   const [projectsList, setProjectsList] = useState<Project[]>(initialProjects);
   const [showModal, setShowModal] = useState(false);
   const [pickerMode, setPickerMode] = useState<"picker" | "custom">("picker");
-  const [creatingType, setCreatingType] = useState<string | null>(null);
+  const [creatingAgent, setCreatingAgent] = useState<{ id: string | null; name: string } | null>(null);
+  const [animationDone, setAnimationDone] = useState(false);
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Offline fallback: when the browser is offline AND the server response
   // came back empty (likely because the SSR fetch couldn't reach the API),
@@ -41,28 +42,6 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     loadCached();
   }, [user?.id, projectsList.length, isOnline]);
 
-  // Sync: Update internal state and cache when props change or on manual refresh
-  const refreshProjects = useCallback(async () => {
-    try {
-      const latest = await getProjects();
-      if (latest && Array.isArray(latest)) {
-        setProjectsList(latest);
-        if (user?.id) {
-          const { cacheProjects, syncProjectDeletions } = await import("@/lib/db/indexedDB");
-          await cacheProjects(user.id, latest);
-
-          // Sync deletions: remove projects that no longer exist on server
-          const syncResult = await syncProjectDeletions(user.id, latest);
-          if (syncResult.removed > 0) {
-            console.log(`[ProjectsClient] Cleaned ${syncResult.removed} deleted project(s) from cache`);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("[ProjectsClient] Failed to refresh projects:", err);
-    }
-  }, [user?.id]);
-
   useEffect(() => {
     if (initialProjects && initialProjects.length > 0) {
       setProjectsList(initialProjects);
@@ -75,12 +54,11 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
     }
   }, [initialProjects, user?.id]);
 
-  const handleProjectCreated = () => {
+  const handleProjectCreated = (project: { id: string; name?: string }) => {
     setShowModal(false);
     setPickerMode("picker");
-    setIsRefreshing(true);
-    refreshProjects();
-    setTimeout(() => setIsRefreshing(false), 2000)
+    setAnimationDone(false);
+    setCreatingAgent({ id: project.id, name: project.name ?? "your" });
   };
 
   const handleProjectDeleted = (deletedId: string) => {
@@ -98,17 +76,26 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
   };
 
   const handlePickType = async (type: string) => {
-    setCreatingType(type);
+    setAnimationDone(false);
+    setCreatingAgent({ id: null, name: type });
+    setShowModal(false);
     try {
-      await createProject({ name: type });
-      handleProjectCreated();
+      const project = await createProject({ name: type });
+      setCreatingAgent((prev) => (prev ? { ...prev, id: project.id } : null));
     } catch (error) {
       console.error("[ProjectsClient] Failed to create agent from type:", error);
+      setCreatingAgent(null);
       alert("Error creating an agent");
-    } finally {
-      setCreatingType(null);
     }
   };
+
+  // Navigate to the new agent once BOTH the API has returned an id AND the
+  // loader animation has finished. The `void` keeps the no-unused-promise rule happy.
+  useEffect(() => {
+    if (creatingAgent?.id && animationDone) {
+      router.push(`/agents/${creatingAgent.id}`);
+    }
+  }, [creatingAgent?.id, animationDone, router]);
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
@@ -152,8 +139,8 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
       >
         {pickerMode === "picker" ? (
           <DocumentTypePicker
-            isCreating={creatingType !== null}
-            creatingLabel={creatingType}
+            isCreating={false}
+            creatingLabel={null}
             onPick={handlePickType}
             onCustom={() => setPickerMode("custom")}
           />
@@ -164,6 +151,13 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
           />
         )}
       </StandardPopup>
+
+      {creatingAgent && (
+        <AgentCreationLoader
+          agentName={creatingAgent.name}
+          onAnimationDone={() => setAnimationDone(true)}
+        />
+      )}
 
       <div className="mt-8">
         {projectsList?.length >= 1 ? (
@@ -210,11 +204,6 @@ export default function ProjectsClient({ projects: initialProjects }: { projects
         )}
       </div>
 
-      {isRefreshing && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
-          <div className="bg-white p-6 rounded shadow text-lg">Creating...</div>
-        </div>
-      )}
     </div>
   );
 }

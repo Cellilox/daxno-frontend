@@ -11,7 +11,7 @@ type ProjectData = {
 }
 
 interface CreateProjectFormProps {
-    onCreated?: () => void;
+    onCreated?: (project: { id: string; name?: string }) => void;
     onCancel?: () => void;
 }
 
@@ -22,10 +22,10 @@ export default function CreateProjectForm({ onCreated, onCancel }: CreateProject
     const addProject = async (data: ProjectData) => {
         try {
             setIsLoading(true)
-            await createProject(data);
+            const project = await createProject(data);
             setIsLoading(false)
             resetField('name')
-            if (onCreated) onCreated();
+            if (onCreated) onCreated(project);
         } catch (error) {
             alert('Error creating an agent')
             setIsLoading(false)
