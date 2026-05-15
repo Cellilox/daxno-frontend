@@ -66,9 +66,10 @@ export default function FirstRunSourcePicker({
   return (
     <div
       data-testid="first-run-source-picker"
-      className="flex flex-col items-center justify-center h-full px-4 py-10"
+      className="h-full w-full overflow-y-auto"
     >
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-100 p-8 sm:p-10">
+      <div className="min-h-full flex items-center justify-center px-4 py-6 sm:py-10">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-10">
         <div className="flex items-center justify-center gap-2 mb-6">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -127,6 +128,7 @@ export default function FirstRunSourcePicker({
             or set up columns manually →
           </button>
         </div>
+      </div>
       </div>
 
       {openModal === 'upload' && (
