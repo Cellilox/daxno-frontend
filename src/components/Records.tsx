@@ -25,9 +25,11 @@ type RecordsProps = {
     is_project_owner: boolean;
     linkOwner: string;
     onSelectionChange?: (count: number, onDelete: () => void, onClear: () => void, isDeleting: boolean) => void;
+    onFirstRunStateChange?: (firstRunActive: boolean) => void;
+    onColumnsChange?: (columns: Field[]) => void;
 };
 
-export default function Records({ projectId, initialFields, initialRecords, project, plan, subscriptionType, is_project_owner, linkOwner, onSelectionChange }: RecordsProps) {
+export default function Records({ projectId, initialFields, initialRecords, project, plan, subscriptionType, is_project_owner, linkOwner, onSelectionChange, onFirstRunStateChange, onColumnsChange }: RecordsProps) {
     const socketRef = useRef<Socket | null>(null);
     // Abort flag: set to true when a provider error is detected mid-backfill.
     // Prevents race condition where already-dispatched Celery tasks fire backfill_record_start
@@ -707,6 +709,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         offlineRecords.length === 0 &&
         !pendingAnalysis &&
         !dismissedFirstRun;
+
+    useEffect(() => {
+        onFirstRunStateChange?.(showFirstRunPicker);
+    }, [showFirstRunPicker, onFirstRunStateChange]);
+
+    useEffect(() => {
+        onColumnsChange?.(columns);
+    }, [columns, onColumnsChange]);
 
     return (
         <SmartAuthGuard>
