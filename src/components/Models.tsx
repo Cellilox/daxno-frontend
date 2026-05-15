@@ -226,7 +226,7 @@ export default function ModelSelector({ models, tenantModal, disabled = false, p
                           Upgrade to add more models
                         </p>
                         <p className="mt-1 text-xs text-amber-800">
-                          Free standard users stay on the Free Models Router. Upgrade to Managed to unlock additional model choices.
+                          Free standard users are locked to Gemini 2.5 Flash Lite. Upgrade to Managed to unlock additional model choices.
                         </p>
                         <button
                           type="button"

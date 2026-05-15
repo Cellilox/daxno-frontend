@@ -7,6 +7,8 @@ import { getBillingConfigForUser } from "@/actions/settings-actions"
 import LayoutFix from "@/components/LayoutFix"
 import ProjectPageClient from "@/components/ProjectPageClient"
 
+const FREE_TIER_MODEL_ID = 'google/gemini-2.5-flash-lite';
+
 export const metadata: Metadata = {
   title: 'Cellilox | Agent Details',
   description: 'Detailed view and management for your selected agent. Review, update, and collaborate on your agent with Cellilox.'
@@ -58,9 +60,9 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   const is_project_owner = project.is_owner;
   const linkOwner = ""
 
-  // Free-standard users are pinned to the OpenRouter Free Models Router —
-  // there is nothing to pick, so short-circuit the model list to a single entry
-  // and signal "locked" to downstream components.
+  // Free-standard users are pinned server-side to a single model. Surface that
+  // exact model — never a fabricated alias — so the picker label and the picker
+  // list stay in sync with the backend's stored value.
   const userPlan = plan?.plan_name || 'Free';
   const subType = plan?.subscription_type;
   const isFreePlan = subType === 'standard' && userPlan === 'Free';
@@ -68,9 +70,10 @@ export default async function ProjectView({ params }: { params: Promise<{ id: st
   let displayedModels = aiModels;
 
   if (isFreePlan) {
-    displayedModels = [
-      { id: 'openrouter/free', name: 'Free Models Router' } as Model,
-    ];
+    const pinned = aiModels.find((m: Model) => m.id === FREE_TIER_MODEL_ID);
+    displayedModels = pinned
+      ? [pinned]
+      : [{ id: FREE_TIER_MODEL_ID, name: 'Gemini 2.5 Flash Lite' } as Model];
   } else if (ownerBillingConfig?.preferred_models && (
     (Array.isArray(ownerBillingConfig.preferred_models) && ownerBillingConfig.preferred_models.length > 0) ||
     (typeof ownerBillingConfig.preferred_models === 'object' && ownerBillingConfig.preferred_models.visible && ownerBillingConfig.preferred_models.visible.length > 0)
