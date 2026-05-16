@@ -5,6 +5,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { usePathname, useParams } from 'next/navigation'
 import UsageLimitModal from './UsageLimitModal'
 import { io, Socket } from 'socket.io-client'
+import { extractIso, formatRemainingDuration } from '@/lib/format-time'
 
 export default function GlobalUsageLimitHandler() {
     const [isOpen, setIsOpen] = useState(false)
@@ -38,7 +39,18 @@ export default function GlobalUsageLimitHandler() {
             setIsOpen(true)
         } else if (cleanMsg === 'QUOTA_DAILY_LIMIT' || cleanMsg.includes('Daily extraction limit')) {
             setType('DAILY_LIMIT')
-            setMessage('Daily document limit reached. Your Free plan allows 3 documents every 24 hours. Upgrade for unlimited access.')
+            // Daxno: backend now embeds an ISO-8601 reset_at in the message.
+            // When present, surface it as a user-local countdown ("come back in
+            // 23h, 40min, 30sec") so the modal communicates the actual wait.
+            const iso = extractIso(cleanMsg)
+            const tail = iso
+                ? ` Come back in ${formatRemainingDuration(iso)}.`
+                : ''
+            setMessage(
+                'Daily document limit reached. Your Free plan allows 3 documents every 24 hours.' +
+                tail +
+                ' Upgrade for unlimited access.'
+            )
             setCurrentTier('standard')
             setIsOpen(true)
         } else if (cleanMsg === 'QUOTA_PAGE_LIMIT' || cleanMsg.includes('Monthly page quota') || cleanMsg.includes('exceeds your remaining limit')) {
