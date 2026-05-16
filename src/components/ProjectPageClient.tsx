@@ -38,6 +38,10 @@ export default function ProjectPageClient({
 }: ProjectPageClientProps) {
   const [selectedCount, setSelectedCount] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [firstRunActive, setFirstRunActive] = useState(
+    fields.length === 0 && records.length === 0
+  );
+  const [liveColumns, setLiveColumns] = useState<Field[]>(fields);
   const deleteCallbackRef = useRef<(() => void) | null>(null);
   const clearCallbackRef = useRef<(() => void) | null>(null);
 
@@ -59,7 +63,7 @@ export default function ProjectPageClient({
     address: project.address_domain ?? '',
     is_project_owner,
     linkOwner,
-    fields,
+    fields: liveColumns,
     records,
     plan,
     subscriptionType,
@@ -105,15 +109,19 @@ export default function ProjectPageClient({
             </div>
 
             {/* Mobile: 3-dot menu */}
-            <div className="flex-shrink-0 md:hidden">
-              <CollapsibleActions {...collapsibleActionsProps} />
-            </div>
+            {!firstRunActive && (
+              <div className="flex-shrink-0 md:hidden">
+                <CollapsibleActions {...collapsibleActionsProps} />
+              </div>
+            )}
           </div>
 
           {/* Desktop: full action buttons row */}
-          <div className="hidden md:block">
-            <CollapsibleActions {...collapsibleActionsProps} />
-          </div>
+          {!firstRunActive && (
+            <div className="hidden md:block">
+              <CollapsibleActions {...collapsibleActionsProps} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -129,6 +137,8 @@ export default function ProjectPageClient({
           is_project_owner={is_project_owner}
           linkOwner={linkOwner}
           onSelectionChange={handleSelectionChange}
+          onFirstRunStateChange={setFirstRunActive}
+          onColumnsChange={setLiveColumns}
         />
       </div>
     </>
