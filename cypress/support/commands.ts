@@ -121,53 +121,50 @@ Cypress.Commands.add('selectOrCreateProject', (projectName: string) => {
 
 
 Cypress.Commands.add('deleteAllProjects', () => {
-    cy.log('🗑️ Resetting backend database and deleting all projects...');
+    cy.log('🗑️  Resetting projects (API-first, no docker dependency)...');
 
-    // 1. Reset backend DB to clear usage limits and business data
-    // This runs the maintenance script inside the backend container
-    cy.exec('docker exec daxno-backend python3 src/scripts/maintenance/truncate_all_tables.py --force', { failOnNonZeroExit: false })
-        .then((result: any) => {
-            if (result.code === 0) {
-                cy.log('✅ Backend database truncated successfully');
-            } else {
-                cy.log('⚠️ Backend truncation failed or timed out: ' + result.stderr);
-            }
-        });
-
-    // 2. Clear IndexedDB and local state
+    // 1. Clear IndexedDB and local state.
     cy.clearDatabase();
 
-    const apiUrl = 'http://localhost:8000';
+    const apiUrl = Cypress.env('API_URL') || 'http://localhost:8000';
 
-    // 3. Try API first (fast)
+    // 2. API path — fast and decoupled from docker. Each test owns its
+    //    own project namespace via unique names; we delete whatever the
+    //    API reports for the current authenticated user.
     cy.request({
         url: `${apiUrl}/projects/`,
         failOnStatusCode: false,
-        timeout: 5000
+        timeout: 10000,
     }).then((response) => {
         if (response.status === 200 && Array.isArray(response.body)) {
             response.body.forEach((project: any) => {
                 cy.request({
                     method: 'DELETE',
                     url: `${apiUrl}/projects/${project.id}`,
-                    failOnStatusCode: false
+                    failOnStatusCode: false,
                 });
             });
+        } else {
+            cy.log(`ℹ️  Project list endpoint returned ${response.status}; skipping API cleanup`);
         }
     });
 
-    // 2. Just visit and verify we are clean, or delete if visible
+    // 3. UI fallback — only runs if the API path missed something
+    //    (e.g. an orphaned card visible in the UI). No more cy.wait —
+    //    let the not.exist assertion below drive the polling.
     cy.visit('/agents');
     cy.get('body').then(($body) => {
         const cards = $body.find('[data-testid^="project-card-"]');
         if (cards.length > 0) {
-            cy.log(`⚠️ Cleaning up ${cards.length} cards via UI...`);
+            cy.log(`⚠️  Cleaning up ${cards.length} card(s) via UI fallback...`);
             cy.wrap(cards).each(() => {
                 cy.get('[data-testid^="project-card-"]').first().within(() => {
                     cy.get('button[title="Delete agent"]').click({ force: true });
                 });
                 cy.get('[data-testid="alert-dialog-confirm"]').click();
-                cy.wait(300);
+                // Retry-driven: the card just clicked must vanish before
+                // we loop to the next one. Replaces cy.wait(300).
+                cy.get('[data-testid^="project-card-"]').should('have.length.lessThan', cards.length);
             });
         }
     });
