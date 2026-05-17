@@ -9,15 +9,15 @@ const STEPS = [
   {
     num: "01",
     icon: Upload,
-    title: "Upload any document",
-    desc: "Drag and drop PDFs, scans, images, or spreadsheets. Forward by email, or connect Google Drive, Dropbox, or your ERP.",
-    details: ["PDF, JPEG, PNG, XLSX, DOCX", "Any language, any currency", "Bulk upload supported"],
+    title: "Pick a document type, get an agent",
+    desc: "Choose Invoices, Receipts, Bank Statements, Contracts — or describe a custom one. Your agent is ready in seconds.",
+    details: ["12+ document types out of the box", "Custom agents for niche workflows", "Files arrive via upload, email, or shared link"],
   },
   {
     num: "02",
     icon: Brain,
-    title: "AI extracts and structures",
-    desc: "Our extraction engine reads every field, identifies document type, validates data, and stores it in a clean queryable database.",
+    title: "Agent extracts and structures",
+    desc: "The agent reads every page, identifies fields, validates data, and stores it in a clean queryable spreadsheet — automatically.",
     details: ["99.4% extraction accuracy", "Under 2 seconds per document", "Automatic duplicate detection"],
   },
   {
