@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
-import withPWA from 'next-pwa';
+// Switched from `next-pwa` (unmaintained, depends on vulnerable
+// serialize-javascript) to `@ducanh2912/next-pwa` (actively-maintained
+// fork with the same options surface).
+import withPWA from '@ducanh2912/next-pwa';
 
 const nextConfig: any = {
   output: 'standalone',
