@@ -60,6 +60,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             reason: string;
         }>;
     } | null>(null);
+    // Surfaces failures from optimistic operations (delete/update) when the
+    // backend rejects them. Auto-clears after 5s so it doesn't accrete.
+    const [actionError, setActionError] = useState<string | null>(null);
+    useEffect(() => {
+        if (!actionError) return;
+        const t = setTimeout(() => setActionError(null), 5000);
+        return () => clearTimeout(t);
+    }, [actionError]);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -153,9 +161,19 @@ export default function Records({ projectId, initialFields, initialRecords, proj
     const handleDeleteRecord = useCallback(async (recordId: string) => {
         if (!isOnline) return; // Disable offline deletion
 
-        // Optimistic UI update
-        setOnlineRecords(prev => prev.filter(r => r.id !== recordId));
-        setCachedRecords(prev => prev.filter(r => r.id !== recordId));
+        // Snapshot before optimistic removal so we can roll back precisely on
+        // failure (instead of a full refetch, which clobbers any in-flight
+        // edits the user might have on other rows).
+        let onlineSnap: DocumentRecord | undefined;
+        let cachedSnap: DocumentRecord | undefined;
+        setOnlineRecords(prev => {
+            onlineSnap = prev.find(r => r.id === recordId);
+            return prev.filter(r => r.id !== recordId);
+        });
+        setCachedRecords(prev => {
+            cachedSnap = prev.find(r => r.id === recordId);
+            return prev.filter(r => r.id !== recordId);
+        });
 
         try {
             const { removeRecordFromCache } = await import('@/lib/db/indexedDB');
@@ -163,16 +181,39 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             await deleteRecord(recordId);
         } catch (err) {
             console.error('[Records] Delete failed:', err);
-            loadOnlineData();
+            // Restore the exact row that was removed.
+            if (onlineSnap) {
+                const snap = onlineSnap;
+                setOnlineRecords(prev => prev.some(r => r.id === snap.id) ? prev : [snap, ...prev]);
+            }
+            if (cachedSnap) {
+                const snap = cachedSnap;
+                setCachedRecords(prev => prev.some(r => r.id === snap.id) ? prev : [snap, ...prev]);
+            }
+            setActionError('Could not delete record. The row has been restored.');
         }
-    }, [isOnline, projectId, loadOnlineData]);
+    }, [isOnline, projectId]);
 
     const handleDeleteBatch = useCallback(async (ids: string[]) => {
         const idSet = new Set(ids);
-        // 1. Optimistic UI update
-        setOnlineRecords(prev => prev.filter(r => !idSet.has(r.id)));
-        setOfflineRecords(prev => prev.filter(r => !idSet.has(r.id)));
-        setCachedRecords(prev => prev.filter(r => !idSet.has(r.id)));
+        // Snapshot the rows we're about to optimistically remove so we can
+        // restore them precisely if the batch fails. We snapshot inside each
+        // setter to avoid races with concurrent socket-driven updates.
+        let onlineSnap: DocumentRecord[] = [];
+        let offlineSnap: DocumentRecord[] = [];
+        let cachedSnap: DocumentRecord[] = [];
+        setOnlineRecords(prev => {
+            onlineSnap = prev.filter(r => idSet.has(r.id));
+            return prev.filter(r => !idSet.has(r.id));
+        });
+        setOfflineRecords(prev => {
+            offlineSnap = prev.filter(r => idSet.has(r.id));
+            return prev.filter(r => !idSet.has(r.id));
+        });
+        setCachedRecords(prev => {
+            cachedSnap = prev.filter(r => idSet.has(r.id));
+            return prev.filter(r => !idSet.has(r.id));
+        });
 
         try {
             const { removeRecordFromCache, queueDeletion, removeOfflineFile } = await import('@/lib/db/indexedDB');
@@ -198,20 +239,56 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             window.dispatchEvent(new CustomEvent('daxno:offline-files-updated'));
         } catch (err) {
             console.error('[Records] Batch delete failed:', err);
-            if (isOnline) {
-                loadOnlineData();
+            // Restore the precise rows we removed. Skip any id that has since
+            // arrived via socket (avoids double-insert under live updates).
+            if (onlineSnap.length) {
+                setOnlineRecords(prev => {
+                    const existing = new Set(prev.map(r => r.id));
+                    return [...onlineSnap.filter(r => !existing.has(r.id)), ...prev];
+                });
             }
-            loadOfflineData();
+            if (offlineSnap.length) {
+                setOfflineRecords(prev => {
+                    const existing = new Set(prev.map(r => r.id));
+                    return [...offlineSnap.filter(r => !existing.has(r.id)), ...prev];
+                });
+            }
+            if (cachedSnap.length) {
+                setCachedRecords(prev => {
+                    const existing = new Set(prev.map(r => r.id));
+                    return [...cachedSnap.filter(r => !existing.has(r.id)), ...prev];
+                });
+            }
+            setActionError(`Could not delete ${ids.length} record${ids.length === 1 ? '' : 's'}. They have been restored.`);
         }
-    }, [offlineRecords, isOnline, projectId, loadOnlineData, loadOfflineData]);
+    }, [offlineRecords, isOnline, projectId]);
 
     const handleUpdateRecord = useCallback(async (recordId: string, updatedRecord: any) => {
         if (!isOnline) return; // Disable offline update
 
-        // Optimistic UI update
-        const applyUpdate = (prev: any[]) => prev.map(r => r.id === recordId ? { ...r, ...updatedRecord } : r);
-        setOnlineRecords(applyUpdate);
-        setCachedRecords(applyUpdate);
+        // Snapshot the prior values for the fields we're about to overwrite
+        // so we can roll back precisely on failure.
+        const changedKeys = Object.keys(updatedRecord);
+        let onlinePrior: Record<string, any> | undefined;
+        let cachedPrior: Record<string, any> | undefined;
+        const applyUpdate = (prev: DocumentRecord[]) =>
+            prev.map(r => r.id === recordId ? { ...r, ...updatedRecord } : r);
+        setOnlineRecords(prev => {
+            const row = prev.find(r => r.id === recordId);
+            if (row) {
+                onlinePrior = {};
+                for (const k of changedKeys) onlinePrior[k] = (row as any)[k];
+            }
+            return applyUpdate(prev);
+        });
+        setCachedRecords(prev => {
+            const row = prev.find(r => r.id === recordId);
+            if (row) {
+                cachedPrior = {};
+                for (const k of changedKeys) cachedPrior[k] = (row as any)[k];
+            }
+            return applyUpdate(prev);
+        });
 
         try {
             const { updateRecordInCache } = await import('@/lib/db/indexedDB');
@@ -219,9 +296,21 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             await updateRecord(recordId, updatedRecord);
         } catch (err) {
             console.error('[Records] Update record failed:', err);
-            loadOnlineData();
+            // Restore only the fields we changed, leaving any concurrent
+            // socket-driven updates to other fields intact.
+            if (onlinePrior) {
+                setOnlineRecords(prev => prev.map(r =>
+                    r.id === recordId ? { ...r, ...onlinePrior } : r
+                ));
+            }
+            if (cachedPrior) {
+                setCachedRecords(prev => prev.map(r =>
+                    r.id === recordId ? { ...r, ...cachedPrior } : r
+                ));
+            }
+            setActionError('Could not save changes. The cell has been reverted.');
         }
-    }, [projectId, isOnline, loadOnlineData]);
+    }, [projectId, isOnline]);
 
     const handleUpdateColumn = useCallback(async (columnId: string, update: { name: string; description?: string }) => {
         if (!isOnline) return; // Disable offline column update
@@ -722,6 +811,23 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         <SmartAuthGuard>
             <div className="flex flex-col h-full relative">
                 <SyncBanner />
+                {actionError && (
+                    <div
+                        data-testid="records-action-error"
+                        role="alert"
+                        className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                    >
+                        <span>{actionError}</span>
+                        <button
+                            type="button"
+                            onClick={() => setActionError(null)}
+                            className="text-red-500 hover:text-red-700 font-semibold"
+                            aria-label="Dismiss error"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
                 {!showFirstRunPicker && (
                 <div className="flex flex-col gap-3 mb-4 flex-shrink-0">
                     <div className="flex justify-between items-center">
