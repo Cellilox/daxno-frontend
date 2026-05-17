@@ -51,5 +51,8 @@ jobs:
             NEXT_PUBLIC_BYOK_YEARLY_PRICE=${{ vars.NEXT_PUBLIC_BYOK_YEARLY_PRICE || '2' }}
             NEXT_PUBLIC_BYOK_PRORATION_INTERVAL_DAYS=${{ vars.NEXT_PUBLIC_BYOK_PRORATION_INTERVAL_DAYS || '30' }}
             NEXT_PUBLIC_FEE_TIERS=${{ vars.NEXT_PUBLIC_FEE_TIERS || '5-20:35,21-50:30,51-100:25,101+:20' }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_SENTRY_ENVIRONMENT=${{ vars.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'production' }}
+            NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${{ vars.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || '0.0' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

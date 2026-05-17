@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/header/header";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
 import GlobalUsageLimitHandler from "@/components/modals/GlobalUsageLimitHandler";
+import SentryClientInit from "@/components/SentryClientInit";
 
 
 const geistSans = localFont({
@@ -41,6 +42,7 @@ export default function RootLayout({
                     suppressHydrationWarning
                     className={`${geistSans.variable} ${geistMono.variable} antialiased`}
                 >
+                    <SentryClientInit />
                     <Header />
                     <OfflineSyncManager />
                     <GlobalUsageLimitHandler />
