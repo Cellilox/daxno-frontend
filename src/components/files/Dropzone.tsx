@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@clerk/nextjs';
@@ -435,6 +435,15 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       const { filename: uploadedFilename, original_filename: originalName, key: finalKey } = uploadResult;
       activeFilename.current = uploadedFilename;
       await handlequeryDocument(uploadedFilename, originalName, finalKey);
+      // Immediate success — independent of the socket `record_created` event,
+      // which can be delayed or dropped on the submissions page. The modal's
+      // auto-close still waits for the socket, but at least the user sees
+      // confirmation right after the HTTP submission resolves.
+      updateStatus(
+        'File submitted successfully — we\'ll process it shortly.',
+        messageTypeEnum.SUCCESS,
+        'Success!',
+      );
     } catch (error: any) {
       console.error('[ERROR] Upload failed:', error);
       setIsLoading(false);
@@ -693,11 +702,22 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         // ONLY auto-close if EVERYTHING succeeded
         if (allSuccessful) {
           console.log('[Bulk Upload] All successful, closing popup...');
+          // Surface a SUCCESS toast before the modal auto-closes. Without this
+          // the modal just disappears with no confirmation — users on the
+          // submissions page can't tell if their files went through.
+          const count = files.length;
+          updateStatus(
+            count > 1
+              ? `${count} files submitted successfully — we'll process them shortly.`
+              : 'File submitted successfully — we\'ll process it shortly.',
+            messageTypeEnum.SUCCESS,
+            'Success!',
+          );
           setTimeout(() => {
             setFiles([]);
             setIsVisible(false);
             onMessageChange({ type: messageTypeEnum.NONE, text: '', });
-          }, 1500);
+          }, 2500);
         } else {
           console.log('[Bulk Upload] Completed with errors. Staying open for review.');
         }
@@ -717,22 +737,52 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
     }
   };
 
+  // Keep accept config in sync with `DAXNO_PROCESSABLE_EXTENSIONS` /
+  // `DAXNO_PROCESSABLE_MIME_TYPES` in daxno-backend/src/documents/
+  // onyx_supported_types.py. The backend rejects anything outside this set
+  // with a 400, so the dropzone should refuse the same files upfront.
+  const ALLOWED_FILE_TYPES_HINT = 'PDF, DOCX, CSV, TXT, PNG, JPG, JPEG, WEBP';
+  const acceptedMimeTypes = {
+    'application/pdf': ['.pdf'],
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/webp': ['.webp'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'text/csv': ['.csv'],
+    'text/plain': ['.txt'],
+  };
+
+  const handleDropRejected = (rejections: FileRejection[]) => {
+    if (!rejections.length) return;
+    const typeRejected = rejections.filter((r) =>
+      r.errors.some((e) => e.code === 'file-invalid-type'),
+    );
+    if (typeRejected.length) {
+      const firstName = typeRejected[0]?.file?.name ?? 'file';
+      const message =
+        typeRejected.length > 1
+          ? `${typeRejected.length} files were not added (unsupported type, e.g. "${firstName}"). Allowed: ${ALLOWED_FILE_TYPES_HINT}.`
+          : `Can't add "${firstName}" — this file type isn't supported. Allowed: ${ALLOWED_FILE_TYPES_HINT}.`;
+      updateStatus(message, messageTypeEnum.ERROR);
+      return;
+    }
+    // Other rejection reasons (max files, size) — surface the first error message.
+    const firstErr = rejections[0]?.errors?.[0]?.message || 'File could not be added';
+    updateStatus(firstErr, messageTypeEnum.ERROR);
+  };
+
   const { getRootProps: getSingleRootProps, getInputProps: getSingleInputProps, isDragActive: isSingleDragActive } = useDropzone({
     onDrop: handleSingleFileDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg']
-    },
+    onDropRejected: handleDropRejected,
+    accept: acceptedMimeTypes,
     maxFiles: 1,
     multiple: false
   });
 
   const { getRootProps: getBulkRootProps, getInputProps: getBulkInputProps, isDragActive: isBulkDragActive } = useDropzone({
     onDrop: handleBulkDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/*': ['.png', '.jpg', '.jpeg']
-    },
+    onDropRejected: handleDropRejected,
+    accept: acceptedMimeTypes,
     maxFiles: 10,
     multiple: true
   });
@@ -842,14 +892,14 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
             <div className="h-64 border-dashed border-2 border-blue-500 flex justify-center items-center rounded-md bg-blue-50 transition-colors">
               <div className="flex flex-col items-center justify-center gap-3">
                 <p className="text-blue-500 text-center font-medium">Drop the file here!</p>
-                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+                <p className="text-sm text-gray-500">{ALLOWED_FILE_TYPES_HINT}</p>
               </div>
             </div>
           ) : (
             <div className="h-64 border-dashed border-2 border-gray-400 hover:border-blue-500 hover:bg-blue-50 transition-colors flex justify-center items-center rounded-md">
               <div className="flex flex-col items-center justify-center gap-3">
                 <p className="text-center font-medium">Drag and Drop a file, or click to select</p>
-                <p className="text-sm text-gray-500">PDF, PNG, JPG/JPEG</p>
+                <p className="text-sm text-gray-500">{ALLOWED_FILE_TYPES_HINT}</p>
               </div>
             </div>
           )}
@@ -914,7 +964,7 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
             </p>
             <div className="flex flex-col items-center mt-1">
               <p className="text-sm text-gray-500">
-                PDF, PNG, JPG/JPEG (Max 10 files at once)
+                {ALLOWED_FILE_TYPES_HINT} (Max 10 files at once)
               </p>
               <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
                 <span className="flex items-center">
