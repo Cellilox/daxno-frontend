@@ -91,6 +91,33 @@ export async function getAdminMetrics(): Promise<AdminMetrics | null> {
   }
 }
 
+// Onyx sync health — backend route GET /admin/onyx-sync/health.
+// Shape kept narrow to the dashboard's needs.
+export type OnyxSyncHealth = {
+  failures_last_24h: number;
+  failures_by_day_last_7d: Record<string, number>;
+  stuck_records_count: number;
+  stuck_projects_count: number;
+  stuck_projects_by_state: Record<string, number>;
+};
+
+export async function getOnyxSyncHealth(): Promise<OnyxSyncHealth | null> {
+  try {
+    const res = await fetchAuthed(buildApiUrl("/admin/onyx-sync/health"));
+    if (!res.ok) {
+      console.error(
+        `[admin-actions] onyx-sync/health failed: ${res.status} ${res.statusText}`
+      );
+      return null;
+    }
+    return (await res.json()) as OnyxSyncHealth;
+  } catch (err) {
+    console.error("[admin-actions] onyx-sync/health error:", err);
+    return null;
+  }
+}
+
+
 export type DeleteAdminTenantResult =
   | { ok: true; user_id: string }
   | { ok: false; error: string };
