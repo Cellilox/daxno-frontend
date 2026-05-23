@@ -3,6 +3,15 @@ import { ModelInfo } from '../Models';
 import { verifyProviderKey } from '@/actions/settings-actions';
 import { CheckCircleIcon, XCircleIcon, KeyIcon } from 'lucide-react';
 
+// Strings the backend treats as "user did NOT re-type the key, keep
+// the existing stored value". Must mirror `MASKED_SENTINEL` in
+// daxno-backend/src/tenants/byok_validation.py — typing into a masked
+// input was the May-23 regression: the form ended up submitting
+// e.g. "••••••••X" which the backend then encrypted verbatim, and
+// OpenRouter rejected with 401 Missing Authentication header.
+const MASKED_VALUES = ['••••••••', '********'];
+const MASK_CHARS_REGEX = /[*•●·∙]/;
+
 interface BYOKConfigProps {
     apiKey: string;
     setApiKey: (key: string) => void;
@@ -49,8 +58,45 @@ export default function BYOKConfig({
 
 
 
+    // Clear the masked placeholder the instant the input gets focus so
+    // the user can't accidentally type ON TOP of it. Without this the
+    // browser keeps "••••••••" in the field, appends typed chars, and
+    // we end up submitting "••••••••sk-or-v1-...". The backend now
+    // rejects that with 400, but invalidating it at the source removes
+    // the round-trip and the confused-user experience.
+    const handleApiKeyFocus = () => {
+        if (MASKED_VALUES.includes(apiKey)) {
+            setApiKey('');
+            setIsVerified(false);
+            setSuccessMessage(null);
+        }
+    };
+
+    // Any edit to the input invalidates a stale `Verified` badge. The
+    // user must press Verify again before saving, and the backend now
+    // re-verifies on save anyway. Both layers guard the same invariant.
+    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const next = e.target.value;
+        setApiKey(next);
+        if (isVerified) {
+            setIsVerified(false);
+        }
+    };
+
     const handleVerify = async () => {
         if (!apiKey || !provider) return;
+
+        // Catch the masked-mix case client-side so the user gets a clear
+        // error instead of an opaque 400 from the backend. The backend
+        // enforces the same rule as defence in depth.
+        if (MASK_CHARS_REGEX.test(apiKey)) {
+            setError(
+                "API key contains masking characters (* or •). Open your provider " +
+                "dashboard, copy the full key in plain text, then re-paste it."
+            );
+            setIsVerified(false);
+            return;
+        }
 
         setIsVerifying(true);
         setError(null);
@@ -132,8 +178,9 @@ export default function BYOKConfig({
                         <input
                             type="password"
                             value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={apiKey === '••••••••' ? '••••••••' : `sk-...`}
+                            onChange={handleApiKeyChange}
+                            onFocus={handleApiKeyFocus}
+                            placeholder={MASKED_VALUES.includes(apiKey) ? '••••••••' : `sk-...`}
                             className="flex-1 border border-gray-300 rounded-lg p-2 text-sm focus:ring-customBlue focus:border-customBlue"
                         />
                         <button
