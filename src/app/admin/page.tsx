@@ -154,12 +154,20 @@ export default async function Admin() {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Admin</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Users, plans, and AI consumption. Numbers cover the rolling 30-day
-          window unless noted.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Admin</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Users, plans, and AI consumption. Numbers cover the rolling 30-day
+            window unless noted.
+          </p>
+        </div>
+        <a
+          href="/admin/onyx-sync"
+          className="inline-flex items-center gap-2 rounded-md bg-white ring-1 ring-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Onyx sync health →
+        </a>
       </div>
 
       {/* KPI cards */}
