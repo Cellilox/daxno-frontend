@@ -501,6 +501,15 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
             setRecommendationError(null); // a successful run replaces any stale failure
+            // Defensive: if recommendation arrived via a sparkle-click retry,
+            // any optimistic _isRowBackfilling state set by BackfillRecordModal
+            // is stale (the backfill task never ran — we re-routed to
+            // recommendation). Clear it so cells render empty in the banner
+            // state instead of stuck "Analyzing…".
+            setBackfillingRecordId(null);
+            setOnlineRecords(prev => prev.map(rec =>
+                rec._isRowBackfilling ? { ...rec, _isRowBackfilling: false } : rec
+            ));
             setRecommendationMeta({
                 documentType: data.document_type ?? null,
                 totalDocuments: data.total_documents ?? 0,
@@ -520,6 +529,13 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setProcessingStatus(null);
             setPendingAnalysis(false);
             setRecommendationMeta(null);
+            // Symmetric cleanup to handleColumnsRecommended — clear any
+            // optimistic _isRowBackfilling from a sparkle-click retry so a
+            // failed retry doesn't leave rows stuck spinning.
+            setBackfillingRecordId(null);
+            setOnlineRecords(prev => prev.map(rec =>
+                rec._isRowBackfilling ? { ...rec, _isRowBackfilling: false } : rec
+            ));
             setRecommendationError({
                 message: data.message,
                 reasonCode: data.reason_code,
@@ -1000,6 +1016,16 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     recordId={selectedRecordForBackfill?.id || null}
                     filename={selectedRecordForBackfill?.filename || null}
                     onStart={(id: string) => {
+                        // If the project has no columns yet, the backend will
+                        // re-route the sparkle click to column recommendation
+                        // (records/routes.py:backfill-record). Skip the
+                        // optimistic _isRowBackfilling state in that case —
+                        // applying it would leave the row stuck in "Analyzing…"
+                        // because backfill_record_all_fields_complete never
+                        // fires (the backfill task never ran). The user should
+                        // see the recommendation banner appear and start
+                        // analysis manually via "Analyze Now".
+                        if (!columns || columns.length === 0) return;
                         setBackfillingRecordId(id);
                         setOnlineRecords(prev => prev.map(rec => {
                             if (rec.id === id) {
