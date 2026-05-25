@@ -68,6 +68,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         const t = setTimeout(() => setActionError(null), 5000);
         return () => clearTimeout(t);
     }, [actionError]);
+    // Surfaces column-recommendation failures (invalid key, exhausted
+    // credits, etc.). Persistent — user dismisses manually — because the
+    // message carries an actionable instruction the user needs time to read.
+    const [recommendationError, setRecommendationError] = useState<{
+        message: string;
+        reasonCode: string;
+        retryable: boolean;
+    } | null>(null);
 
     const loadOfflineData = useCallback(async () => {
         try {
@@ -492,6 +500,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             }>;
         }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
+            setRecommendationError(null); // a successful run replaces any stale failure
             setRecommendationMeta({
                 documentType: data.document_type ?? null,
                 totalDocuments: data.total_documents ?? 0,
@@ -511,7 +520,11 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setProcessingStatus(null);
             setPendingAnalysis(false);
             setRecommendationMeta(null);
-            setActionError(data.message);
+            setRecommendationError({
+                message: data.message,
+                reasonCode: data.reason_code,
+                retryable: data.retryable,
+            });
         };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
@@ -839,6 +852,29 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                             onClick={() => setActionError(null)}
                             className="text-red-500 hover:text-red-700 font-semibold"
                             aria-label="Dismiss error"
+                        >
+                            ×
+                        </button>
+                    </div>
+                )}
+                {recommendationError && (
+                    <div
+                        data-testid="records-recommendation-error"
+                        role="alert"
+                        className="mb-3 flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                    >
+                        <div className="flex-1">
+                            <p className="font-medium">Column recommendation failed</p>
+                            <p className="mt-0.5">{recommendationError.message}</p>
+                            <p className="mt-1 text-xs text-red-600/80">
+                                Once resolved, click the sparkle icon on any row below to re-run column recommendation.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setRecommendationError(null)}
+                            className="text-red-500 hover:text-red-700 font-semibold"
+                            aria-label="Dismiss"
                         >
                             ×
                         </button>
