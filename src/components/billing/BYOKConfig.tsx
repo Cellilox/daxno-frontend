@@ -42,15 +42,18 @@ export default function BYOKConfig({
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
-        const isMasked = apiKey === '••••••••' || apiKey === '********';
+        // A masked sentinel means a key is saved server-side but we have no
+        // proof it still works. Show the neutral "Verify" state — never
+        // auto-flip to green. If the stored key is bad, the next real AI
+        // call surfaces a clear error (see AI_INVALID_KEY handler).
+        const isMasked = MASKED_VALUES.includes(apiKey);
         if (isMasked) {
-            setIsVerified(true);
+            if (isVerified) setIsVerified(false);
         } else if (!apiKey) {
             setIsVerified(false);
             setSuccessMessage(null);
             setError(null);
         } else if (!isVerified) {
-            // Reset messages only when starting to type a new, unverified key
             setSuccessMessage(null);
             setError(null);
         }
@@ -185,7 +188,7 @@ export default function BYOKConfig({
                         />
                         <button
                             onClick={handleVerify}
-                            disabled={!apiKey || apiKey === '••••••••' || isVerifying || (isVerified && apiKey === '••••••••')}
+                            disabled={!apiKey || isVerifying || MASKED_VALUES.includes(apiKey)}
                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto
                                 ${isVerified
                                     ? 'bg-green-100 text-green-700 border border-green-200 cursor-default'
@@ -222,7 +225,9 @@ export default function BYOKConfig({
             )}
 
             <p className="text-xs text-gray-500">
-                Verify your API key to unlock model selection. We'll verify it by fetching the latest model list from {getProviderLabel(provider)}.
+                {MASKED_VALUES.includes(apiKey)
+                    ? "Your saved key is hidden. Re-paste it to verify, or just use it — failures will be reported when AI runs."
+                    : `Verify your API key to unlock model selection. We'll verify it by fetching the latest model list from ${getProviderLabel(provider)}.`}
             </p>
         </div>
     );
