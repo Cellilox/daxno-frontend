@@ -499,6 +499,20 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             });
             setPendingAnalysis(true);
         };
+        const handleColumnsRecommendationFailed = (data: {
+            project_id: string;
+            record_id: string;
+            reason_code: string;
+            message: string;
+            retryable: boolean;
+            subscription_type: string;
+        }) => {
+            console.warn('[SOCKET] columns_recommendation_failed:', data);
+            setProcessingStatus(null);
+            setPendingAnalysis(false);
+            setRecommendationMeta(null);
+            setActionError(data.message);
+        };
         const handleColumnUpdated = (data: { field: Field }) => {
             setColumns(prev => Array.isArray(prev) ? prev.map(x => x.hidden_id === data.field.hidden_id ? data.field : x) : []);
         };
@@ -575,6 +589,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         socket.on('field_updated', handleColumnUpdated);
         socket.on('field_deleted', handleColumnDeleted);
         socket.on('columns_recommended', handleColumnsRecommended);
+        socket.on('columns_recommendation_failed', handleColumnsRecommendationFailed);
         socket.on('ocr_start', handleOcrStart);
         socket.on('ocr_progress', handleOcrProgress);
         socket.on('ai_start', handleAiStart);
@@ -729,6 +744,7 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             socket.off('field_updated', handleColumnUpdated);
             socket.off('field_deleted', handleColumnDeleted);
             socket.off('columns_recommended', handleColumnsRecommended);
+            socket.off('columns_recommendation_failed', handleColumnsRecommendationFailed);
             socket.off('ocr_start', handleOcrStart);
             socket.off('ocr_progress', handleOcrProgress);
             socket.off('ai_start', handleAiStart);

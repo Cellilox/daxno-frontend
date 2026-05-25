@@ -65,6 +65,19 @@ export default function GlobalUsageLimitHandler() {
             setMessage('The AI model is currently busy. Daxno is automatically retrying your document — no action needed. If this persists, try switching to a different model.')
             setCurrentTier('standard')
             setIsOpen(true)
+        } else if (cleanMsg.includes('AI_INVALID_KEY')) {
+            // Backend detail format: "AI_INVALID_KEY|<human readable message>".
+            // The message is already tier-aware (BYOK vs Managed vs Standard)
+            // so render it verbatim and let the user click through to Billing
+            // to re-verify.
+            setType('AI_EXHAUSTED')
+            const parts = cleanMsg.split('AI_INVALID_KEY|')
+            const humanMsg = (parts.length > 1 ? parts.pop() : null) ||
+                'Your AI provider key was rejected. Re-verify it under Billing → Provider Configuration.'
+            setMessage(humanMsg)
+            const tier = subType === 'managed' ? 'managed' : (subType === 'byok' ? 'byok' : 'standard')
+            setCurrentTier(tier)
+            setIsOpen(true)
         } else if (cleanMsg.includes('AI_MODEL_UNAVAILABLE') || cleanMsg.includes('503')) {
             setType('AI_EXHAUSTED')
             setMessage('The selected AI model is currently unavailable. Please select another model from your project settings.')

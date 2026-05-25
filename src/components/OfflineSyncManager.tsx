@@ -267,6 +267,7 @@ export default function OfflineSyncManager() {
                             const isLimitError = errorMsg.includes('On your Free plan') ||
                                 errorMsg.includes('DAILY_LIMIT_REACHED') ||
                                 errorMsg.includes('AI_CREDITS_EXHAUSTED') ||
+                                errorMsg.includes('AI_INVALID_KEY') ||
                                 errorMsg.includes('exceed the limit');
 
                             if (isLimitError) {

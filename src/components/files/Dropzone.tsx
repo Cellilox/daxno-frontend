@@ -89,6 +89,19 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
       return true;
     }
 
+    if (cleanMsg.includes('AI_INVALID_KEY')) {
+      // Backend detail format: "AI_INVALID_KEY|<human readable message>".
+      // Pass the full string through so GlobalUsageLimitHandler can render
+      // the tier-aware copy the backend already prepared.
+      window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
+        detail: { error: cleanMsg }
+      }));
+      setIsLoading(false);
+      setIsVisible(false);
+      onMessageChange({ type: messageTypeEnum.NONE, text: '' });
+      return true;
+    }
+
     if (cleanMsg.includes('AI_MODEL_UNAVAILABLE') || cleanMsg.includes('503')) {
       window.dispatchEvent(new CustomEvent('daxno:usage-limit-reached', {
         detail: { error: 'AI_MODEL_UNAVAILABLE' }
