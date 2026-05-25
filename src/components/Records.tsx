@@ -505,10 +505,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             // any optimistic _isRowBackfilling state set by BackfillRecordModal
             // is stale (the backfill task never ran — we re-routed to
             // recommendation). Clear it so cells render empty in the banner
-            // state instead of stuck "Analyzing…".
+            // state instead of stuck "Analyzing…". Same for the
+            // _isRowRecommending pill — recommendation is done, the banner
+            // takes over from here.
             setBackfillingRecordId(null);
             setOnlineRecords(prev => prev.map(rec =>
-                rec._isRowBackfilling ? { ...rec, _isRowBackfilling: false } : rec
+                (rec._isRowBackfilling || rec._isRowRecommending)
+                    ? { ...rec, _isRowBackfilling: false, _isRowRecommending: false }
+                    : rec
             ));
             setRecommendationMeta({
                 documentType: data.document_type ?? null,
@@ -530,11 +534,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setPendingAnalysis(false);
             setRecommendationMeta(null);
             // Symmetric cleanup to handleColumnsRecommended — clear any
-            // optimistic _isRowBackfilling from a sparkle-click retry so a
-            // failed retry doesn't leave rows stuck spinning.
+            // optimistic _isRowBackfilling and _isRowRecommending from a
+            // sparkle-click retry so a failed retry doesn't leave rows
+            // stuck spinning (or showing the purple "Recommending" pill).
             setBackfillingRecordId(null);
             setOnlineRecords(prev => prev.map(rec =>
-                rec._isRowBackfilling ? { ...rec, _isRowBackfilling: false } : rec
+                (rec._isRowBackfilling || rec._isRowRecommending)
+                    ? { ...rec, _isRowBackfilling: false, _isRowRecommending: false }
+                    : rec
             ));
             setRecommendationError({
                 message: data.message,
@@ -1016,16 +1023,26 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     recordId={selectedRecordForBackfill?.id || null}
                     filename={selectedRecordForBackfill?.filename || null}
                     onStart={(id: string) => {
-                        // If the project has no columns yet, the backend will
-                        // re-route the sparkle click to column recommendation
-                        // (records/routes.py:backfill-record). Skip the
-                        // optimistic _isRowBackfilling state in that case —
-                        // applying it would leave the row stuck in "Analyzing…"
-                        // because backfill_record_all_fields_complete never
-                        // fires (the backfill task never ran). The user should
-                        // see the recommendation banner appear and start
-                        // analysis manually via "Analyze Now".
-                        if (!columns || columns.length === 0) return;
+                        // If the project has no columns yet, the backend
+                        // re-routes the sparkle click to column recommendation
+                        // (records/routes.py:backfill-record). Use a distinct
+                        // _isRowRecommending flag — it shows a purple
+                        // "Recommending" pill in the row header so the user
+                        // gets feedback that something is happening, without
+                        // triggering the per-cell "Analyzing…" rendering
+                        // (which is what _isRowBackfilling does). Cells stay
+                        // empty until the user manually clicks "Analyze Now"
+                        // in the banner that appears once recommendation
+                        // resolves.
+                        if (!columns || columns.length === 0) {
+                            setOnlineRecords(prev => prev.map(rec => {
+                                if (rec.id === id) {
+                                    return { ...rec, _isRowRecommending: true };
+                                }
+                                return rec;
+                            }));
+                            return;
+                        }
                         setBackfillingRecordId(id);
                         setOnlineRecords(prev => prev.map(rec => {
                             if (rec.id === id) {

@@ -446,6 +446,7 @@ export default function SpreadSheet({
               onSelect={(checked) => handleSelectRecord(row.id, checked)}
               backfillingFieldId={backfillingFieldId}
               isRowBackfilling={backfillingRecordId === row.id || (row as any)._isRowBackfilling}
+              isRowRecommending={(row as any)._isRowRecommending}
               onBackfillRecord={() => onBackfillRecord && onBackfillRecord(row.id, row.original_filename)}
               isOnline={isOnline}
             />
