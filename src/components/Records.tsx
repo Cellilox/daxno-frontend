@@ -1041,6 +1041,19 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                                 }
                                 return rec;
                             }));
+                            // Safety net: clear the pill after 60s if no
+                            // socket event arrives (orphaned Redis lock from
+                            // a crashed Celery worker, dropped WS frame, etc.).
+                            // The backend now emits a terminal event for every
+                            // no-op branch, so under normal conditions the pill
+                            // clears in 3-5s and this timeout is a no-op.
+                            setTimeout(() => {
+                                setOnlineRecords(prev => prev.map(rec =>
+                                    rec.id === id && rec._isRowRecommending
+                                        ? { ...rec, _isRowRecommending: false }
+                                        : rec
+                                ));
+                            }, 60000);
                             return;
                         }
                         setBackfillingRecordId(id);
