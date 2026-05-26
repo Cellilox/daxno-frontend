@@ -889,9 +889,11 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         <div className="flex-1">
                             <p className="font-medium">Column recommendation failed</p>
                             <p className="mt-0.5">{recommendationError.message}</p>
-                            <p className="mt-1 text-xs text-red-600/80">
-                                Once resolved, click the sparkle icon on any row below to re-run column recommendation.
-                            </p>
+                            {recommendationError.reasonCode !== 'nothing_to_recommend' && (
+                                <p className="mt-1 text-xs text-red-600/80">
+                                    Once resolved, click the sparkle icon on any row below to re-run column recommendation.
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
