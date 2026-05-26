@@ -21,7 +21,6 @@ type TableRowProps = {
   onSelect?: (checked: boolean) => void;
   backfillingFieldId?: string | null;
   isRowBackfilling?: boolean;
-  isRowRecommending?: boolean;
   onBackfillRecord?: () => void;
   isOnline?: boolean;
   columnWidths: { [key: string]: number };
@@ -46,7 +45,6 @@ const TableRow = memo(({
   onSelect,
   backfillingFieldId,
   isRowBackfilling,
-  isRowRecommending,
   onBackfillRecord,
   isOnline = true
 }: TableRowProps) => {
@@ -108,12 +106,6 @@ const TableRow = memo(({
             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded-full flex-shrink-0 animate-pulse" data-testid={`record-status-processing-${rowIndex}`}>
               <div className="w-2 h-2 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tight">Analyzing</span>
-            </div>
-          )}
-          {!isRowBackfilling && isRowRecommending && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-purple-50 border border-purple-100 rounded-full flex-shrink-0 animate-pulse" data-testid={`record-status-recommending-${rowIndex}`}>
-              <div className="w-2 h-2 border border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[10px] font-bold text-purple-600 uppercase tracking-tight">Recommending</span>
             </div>
           )}
           {!isRowBackfilling && row.answers?.__status__ === 'error' && (

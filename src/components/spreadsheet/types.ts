@@ -33,7 +33,6 @@ export type DocumentRecord = {
   updated_at: string;
   pages: number;
   _isRowBackfilling?: boolean;
-  _isRowRecommending?: boolean;
 };
 
 export type SpreadSheetProps = {

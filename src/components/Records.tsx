@@ -504,14 +504,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             // Defensive: if recommendation arrived via a sparkle-click retry,
             // any optimistic _isRowBackfilling state set by BackfillRecordModal
             // is stale (the backfill task never ran — we re-routed to
-            // recommendation). Clear it so cells render empty in the banner
-            // state instead of stuck "Analyzing…". Same for the
-            // _isRowRecommending pill — recommendation is done, the banner
-            // takes over from here.
+            // recommendation). Clear it so the pill drops and cells render
+            // empty in the banner state.
             setBackfillingRecordId(null);
             setOnlineRecords(prev => prev.map(rec =>
-                (rec._isRowBackfilling || rec._isRowRecommending)
-                    ? { ...rec, _isRowBackfilling: false, _isRowRecommending: false }
+                rec._isRowBackfilling
+                    ? { ...rec, _isRowBackfilling: false }
                     : rec
             ));
             setRecommendationMeta({
@@ -534,13 +532,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setPendingAnalysis(false);
             setRecommendationMeta(null);
             // Symmetric cleanup to handleColumnsRecommended — clear any
-            // optimistic _isRowBackfilling and _isRowRecommending from a
-            // sparkle-click retry so a failed retry doesn't leave rows
-            // stuck spinning (or showing the purple "Recommending" pill).
+            // optimistic _isRowBackfilling from a sparkle-click retry so
+            // a failed retry doesn't leave rows stuck on the ANALYZING pill.
             setBackfillingRecordId(null);
             setOnlineRecords(prev => prev.map(rec =>
-                (rec._isRowBackfilling || rec._isRowRecommending)
-                    ? { ...rec, _isRowBackfilling: false, _isRowRecommending: false }
+                rec._isRowBackfilling
+                    ? { ...rec, _isRowBackfilling: false }
                     : rec
             ));
             setRecommendationError({
@@ -1029,39 +1026,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     recordId={selectedRecordForBackfill?.id || null}
                     filename={selectedRecordForBackfill?.filename || null}
                     onStart={(id: string) => {
-                        // If the project has no columns yet, the backend
-                        // re-routes the sparkle click to column recommendation
-                        // (records/routes.py:backfill-record). Use a distinct
-                        // _isRowRecommending flag — it shows a purple
-                        // "Recommending" pill in the row header so the user
-                        // gets feedback that something is happening, without
-                        // triggering the per-cell "Analyzing…" rendering
-                        // (which is what _isRowBackfilling does). Cells stay
-                        // empty until the user manually clicks "Analyze Now"
-                        // in the banner that appears once recommendation
-                        // resolves.
-                        if (!columns || columns.length === 0) {
-                            setOnlineRecords(prev => prev.map(rec => {
-                                if (rec.id === id) {
-                                    return { ...rec, _isRowRecommending: true };
-                                }
-                                return rec;
-                            }));
-                            // Safety net: clear the pill after 60s if no
-                            // socket event arrives (orphaned Redis lock from
-                            // a crashed Celery worker, dropped WS frame, etc.).
-                            // The backend now emits a terminal event for every
-                            // no-op branch, so under normal conditions the pill
-                            // clears in 3-5s and this timeout is a no-op.
-                            setTimeout(() => {
-                                setOnlineRecords(prev => prev.map(rec =>
-                                    rec.id === id && rec._isRowRecommending
-                                        ? { ...rec, _isRowRecommending: false }
-                                        : rec
-                                ));
-                            }, 60000);
-                            return;
-                        }
+                        // Always show the existing "ANALYZING" pill via
+                        // _isRowBackfilling. When the project has no columns
+                        // the backend will re-route to recommendation; cells
+                        // don't render (no columns) so the pill is the only
+                        // visible indicator. When recommendation completes
+                        // (success or failure), the existing field_created
+                        // snapshot replace + the cleanup in
+                        // handleColumnsRecommended/Failed clears the flag.
                         setBackfillingRecordId(id);
                         setOnlineRecords(prev => prev.map(rec => {
                             if (rec.id === id) {
