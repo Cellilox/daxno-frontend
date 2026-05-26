@@ -501,6 +501,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
         }) => {
             setProcessingStatus(null); // Clear OCR/analysis banner — recommendation banner takes over
             setRecommendationError(null); // a successful run replaces any stale failure
+            // Defensive: if recommendation arrived via a sparkle-click retry,
+            // any optimistic _isRowBackfilling state set by BackfillRecordModal
+            // is stale (the backfill task never ran — we re-routed to
+            // recommendation). Clear it so the pill drops and cells render
+            // empty in the banner state.
+            setBackfillingRecordId(null);
+            setOnlineRecords(prev => prev.map(rec =>
+                rec._isRowBackfilling
+                    ? { ...rec, _isRowBackfilling: false }
+                    : rec
+            ));
             setRecommendationMeta({
                 documentType: data.document_type ?? null,
                 totalDocuments: data.total_documents ?? 0,
@@ -520,6 +531,15 @@ export default function Records({ projectId, initialFields, initialRecords, proj
             setProcessingStatus(null);
             setPendingAnalysis(false);
             setRecommendationMeta(null);
+            // Symmetric cleanup to handleColumnsRecommended — clear any
+            // optimistic _isRowBackfilling from a sparkle-click retry so
+            // a failed retry doesn't leave rows stuck on the ANALYZING pill.
+            setBackfillingRecordId(null);
+            setOnlineRecords(prev => prev.map(rec =>
+                rec._isRowBackfilling
+                    ? { ...rec, _isRowBackfilling: false }
+                    : rec
+            ));
             setRecommendationError({
                 message: data.message,
                 reasonCode: data.reason_code,
@@ -864,11 +884,17 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         className="mb-3 flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                     >
                         <div className="flex-1">
-                            <p className="font-medium">Column recommendation failed</p>
-                            <p className="mt-0.5">{recommendationError.message}</p>
-                            <p className="mt-1 text-xs text-red-600/80">
-                                Once resolved, click the sparkle icon on any row below to re-run column recommendation.
+                            {recommendationError.reasonCode !== 'nothing_to_recommend' && (
+                                <p className="font-medium">Column recommendation failed</p>
+                            )}
+                            <p className={recommendationError.reasonCode === 'nothing_to_recommend' ? 'font-medium' : 'mt-0.5'}>
+                                {recommendationError.message}
                             </p>
+                            {recommendationError.reasonCode !== 'nothing_to_recommend' && (
+                                <p className="mt-1 text-xs text-red-600/80">
+                                    Once resolved, click the sparkle icon on any row below to re-run column recommendation.
+                                </p>
+                            )}
                         </div>
                         <button
                             type="button"
@@ -1000,6 +1026,14 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                     recordId={selectedRecordForBackfill?.id || null}
                     filename={selectedRecordForBackfill?.filename || null}
                     onStart={(id: string) => {
+                        // Always show the existing "ANALYZING" pill via
+                        // _isRowBackfilling. When the project has no columns
+                        // the backend will re-route to recommendation; cells
+                        // don't render (no columns) so the pill is the only
+                        // visible indicator. When recommendation completes
+                        // (success or failure), the existing field_created
+                        // snapshot replace + the cleanup in
+                        // handleColumnsRecommended/Failed clears the flag.
                         setBackfillingRecordId(id);
                         setOnlineRecords(prev => prev.map(rec => {
                             if (rec.id === id) {
