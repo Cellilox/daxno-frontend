@@ -887,8 +887,12 @@ export default function Records({ projectId, initialFields, initialRecords, proj
                         className="mb-3 flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                     >
                         <div className="flex-1">
-                            <p className="font-medium">Column recommendation failed</p>
-                            <p className="mt-0.5">{recommendationError.message}</p>
+                            {recommendationError.reasonCode !== 'nothing_to_recommend' && (
+                                <p className="font-medium">Column recommendation failed</p>
+                            )}
+                            <p className={recommendationError.reasonCode === 'nothing_to_recommend' ? 'font-medium' : 'mt-0.5'}>
+                                {recommendationError.message}
+                            </p>
                             {recommendationError.reasonCode !== 'nothing_to_recommend' && (
                                 <p className="mt-1 text-xs text-red-600/80">
                                     Once resolved, click the sparkle icon on any row below to re-run column recommendation.
