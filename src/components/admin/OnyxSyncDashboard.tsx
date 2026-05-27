@@ -10,10 +10,15 @@ import {
   Hourglass,
   RefreshCw,
   ChevronLeft,
+  Trash2,
+  RotateCw,
 } from "lucide-react";
 import {
   getOnyxSyncHealth,
+  getCleanupFailures,
+  retryCleanupFailure,
   type OnyxSyncHealth,
+  type CleanupFailureRow,
 } from "@/actions/admin-actions";
 
 
@@ -61,21 +66,52 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // E.3 — pending cleanup failures list. Loaded alongside the health
+  // metrics on every refresh so the table stays in sync with the KPI
+  // counter and the per-row retries can be observed near-immediately.
+  const [cleanupRows, setCleanupRows] = useState<CleanupFailureRow[]>([]);
+  const [retryingIds, setRetryingIds] = useState<Set<number>>(new Set());
+
   async function refresh() {
     setRefreshing(true);
     setError(null);
     try {
-      const fresh = await getOnyxSyncHealth();
+      const [fresh, cleanup] = await Promise.all([
+        getOnyxSyncHealth(),
+        getCleanupFailures(50, 0),
+      ]);
       if (fresh) {
         setData(fresh);
         setLoadedAt(new Date());
       } else {
         setError("Backend returned no data — check admin auth or backend logs.");
       }
+      setCleanupRows(cleanup?.items ?? []);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load health data");
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  async function handleRetry(id: number) {
+    setRetryingIds((prev) => new Set(prev).add(id));
+    try {
+      const result = await retryCleanupFailure(id);
+      if (!result.ok) {
+        setError(result.error);
+      } else {
+        // Optimistically drop the row from view; the next refresh
+        // confirms via the live list. If the retry itself fails the
+        // task_failure handler will re-add the row on its next tick.
+        setCleanupRows((rows) => rows.filter((r) => r.id !== id));
+      }
+    } finally {
+      setRetryingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -84,6 +120,12 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
   useEffect(() => {
     const id = setInterval(refresh, 30_000);
     return () => clearInterval(id);
+  }, []);
+
+  // First-mount fetch of the cleanup-failures list (the initial health
+  // payload comes from the server component but the list does not).
+  useEffect(() => {
+    getCleanupFailures(50, 0).then((c) => setCleanupRows(c?.items ?? []));
   }, []);
 
   if (!data) {
@@ -106,6 +148,7 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
   const stuckRecords = data.stuck_records_count ?? 0;
   const stuckProjects = data.stuck_projects_count ?? 0;
   const awaitingAnalysis = data.awaiting_analysis_count ?? 0;
+  const pendingCleanup = data.pending_cleanup_count ?? 0;
 
   const failuresTone = tone(failures24h, 5, 50);
   const recordsTone = tone(stuckRecords, 1, 20);
@@ -113,6 +156,10 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
   // Awaiting-analysis is informational, not a failure. A small backlog
   // is normal during column setup; a large one signals a stalled flow.
   const awaitingTone = tone(awaitingAnalysis, 5, 50);
+  // Pending cleanup is always actionable — every row is a delete that
+  // didn't fully complete on the Onyx side. Even one row is worth
+  // noticing, so the warn threshold is 1.
+  const cleanupTone = tone(pendingCleanup, 1, 20);
 
   // 7-day data: sort by date ASC for the sparkline
   const dayEntries = Object.entries(data.failures_by_day_last_7d ?? {}).sort();
@@ -163,7 +210,7 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <KpiCard
             label="Failures · last 24h"
             value={failures24h.toString()}
@@ -195,6 +242,14 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
             Icon={Hourglass}
             tone={awaitingTone}
             testid="card-awaiting-analysis"
+          />
+          <KpiCard
+            label="Pending Onyx cleanup"
+            value={pendingCleanup.toString()}
+            sub="delete tasks past Celery retries · sweeper retries on backoff"
+            Icon={Trash2}
+            tone={cleanupTone}
+            testid="card-pending-cleanup"
           />
         </section>
 
@@ -305,6 +360,102 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
               <code className="px-1 bg-gray-100 rounded">sync_attempts &lt; 20</code>
               {" "}every 15 minutes.
             </p>
+          </div>
+        </section>
+
+        {/* E.3 — Pending Onyx cleanup failures (per-row table) */}
+        <section className="mt-6">
+          <div className="bg-white rounded-xl ring-1 ring-gray-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-medium text-gray-700">
+                Pending Onyx cleanup
+              </h2>
+              <span className="text-xs text-gray-400">
+                {cleanupRows.length} shown
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-3">
+              These are delete tasks that exhausted Celery&apos;s autoretry
+              budget. The sweeper retries them on a{" "}
+              <code className="px-1 bg-gray-100 rounded">15m → 1h → 4h → 24h</code>
+              {" "}backoff. Use{" "}
+              <strong>Retry now</strong> when you&apos;ve confirmed the underlying
+              Onyx outage is resolved and want immediate cleanup.
+            </p>
+
+            <table className="w-full text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="text-left font-medium py-1.5">Filename</th>
+                  <th className="text-left font-medium py-1.5">Project</th>
+                  <th className="text-left font-medium py-1.5">Last error</th>
+                  <th className="text-right font-medium py-1.5">Attempts</th>
+                  <th className="text-right font-medium py-1.5">Next retry</th>
+                  <th className="text-right font-medium py-1.5">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {cleanupRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-gray-400 italic py-3">
+                      No pending cleanup rows — every delete made it through.
+                    </td>
+                  </tr>
+                ) : (
+                  cleanupRows.map((row) => {
+                    const isRetrying = retryingIds.has(row.id);
+                    const nextRetry = row.next_retry_at
+                      ? new Date(row.next_retry_at).toLocaleString()
+                      : "—";
+                    return (
+                      <tr key={row.id} data-testid={`cleanup-row-${row.id}`}>
+                        <td
+                          className="py-2 text-gray-800 max-w-[260px] truncate"
+                          title={row.filename}
+                        >
+                          {row.filename}
+                        </td>
+                        <td
+                          className="py-2 text-gray-500 font-mono text-xs max-w-[140px] truncate"
+                          title={row.project_id}
+                        >
+                          {row.project_id}
+                        </td>
+                        <td
+                          className="py-2 text-red-700 max-w-[360px] truncate"
+                          title={row.error ?? ""}
+                        >
+                          {row.error ?? "—"}
+                        </td>
+                        <td className="py-2 text-right text-gray-700">
+                          {row.attempts}
+                        </td>
+                        <td className="py-2 text-right text-gray-500 text-xs">
+                          {nextRetry}
+                        </td>
+                        <td className="py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleRetry(row.id)}
+                            disabled={isRetrying}
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                            data-testid={`retry-button-${row.id}`}
+                          >
+                            <RotateCw
+                              className={`w-3.5 h-3.5 ${
+                                isRetrying ? "animate-spin" : ""
+                              }`}
+                            />
+                            {isRetrying ? "Retrying…" : "Retry now"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
