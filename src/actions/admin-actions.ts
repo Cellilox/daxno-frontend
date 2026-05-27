@@ -99,6 +99,33 @@ export type OnyxSyncHealth = {
   stuck_records_count: number;
   stuck_projects_count: number;
   stuck_projects_by_state: Record<string, number>;
+  // Records uploaded but stranded in `__status__ == "awaiting_analysis"`
+  // for more than the sweeper's grace window. Image rows in this state
+  // defer their Onyx file upload until backfill runs; a non-zero value
+  // here usually means a column-add or backfill never completed.
+  awaiting_analysis_count?: number;
+  // E.3 — open audit rows for delete tasks that exhausted Celery
+  // retries. Non-zero means a record was deleted in daxno but the
+  // corresponding Onyx file still survives. Sweeper retries on a
+  // 15min→1h→4h→24h backoff; admin can also force a retry per row.
+  pending_cleanup_count?: number;
+};
+
+export type CleanupFailureRow = {
+  id: number;
+  record_id: string;
+  project_id: string;
+  filename: string;
+  error: string | null;
+  attempts: number;
+  next_retry_at: string | null;
+  created_at: string | null;
+};
+
+export type CleanupFailuresResponse = {
+  items: CleanupFailureRow[];
+  limit: number;
+  offset: number;
 };
 
 export async function getOnyxSyncHealth(): Promise<OnyxSyncHealth | null> {
@@ -114,6 +141,57 @@ export async function getOnyxSyncHealth(): Promise<OnyxSyncHealth | null> {
   } catch (err) {
     console.error("[admin-actions] onyx-sync/health error:", err);
     return null;
+  }
+}
+
+
+export async function getCleanupFailures(
+  limit = 50,
+  offset = 0,
+): Promise<CleanupFailuresResponse | null> {
+  try {
+    const res = await fetchAuthed(
+      buildApiUrl(
+        `/admin/onyx-sync/cleanup-failures?limit=${limit}&offset=${offset}`,
+      ),
+    );
+    if (!res.ok) {
+      console.error(
+        `[admin-actions] cleanup-failures list failed: ${res.status} ${res.statusText}`,
+      );
+      return null;
+    }
+    return (await res.json()) as CleanupFailuresResponse;
+  } catch (err) {
+    console.error("[admin-actions] cleanup-failures list error:", err);
+    return null;
+  }
+}
+
+
+export type RetryCleanupResult =
+  | { ok: true; id: number; record_id: string }
+  | { ok: false; error: string };
+
+export async function retryCleanupFailure(
+  rowId: number,
+): Promise<RetryCleanupResult> {
+  try {
+    const res = await fetchAuthed(
+      buildApiUrl(`/admin/onyx-sync/cleanup-failures/${rowId}/retry`),
+      { method: "POST" },
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `Retry failed (${res.status}): ${body || res.statusText}`,
+      };
+    }
+    const data = (await res.json()) as { id: number; record_id: string };
+    return { ok: true, id: data.id, record_id: data.record_id };
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? "Network error" };
   }
 }
 
