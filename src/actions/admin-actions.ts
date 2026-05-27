@@ -99,6 +99,11 @@ export type OnyxSyncHealth = {
   stuck_records_count: number;
   stuck_projects_count: number;
   stuck_projects_by_state: Record<string, number>;
+  // Records uploaded but stranded in `__status__ == "awaiting_analysis"`
+  // for more than the sweeper's grace window. Image rows in this state
+  // defer their Onyx file upload until backfill runs; a non-zero value
+  // here usually means a column-add or backfill never completed.
+  awaiting_analysis_count?: number;
 };
 
 export async function getOnyxSyncHealth(): Promise<OnyxSyncHealth | null> {

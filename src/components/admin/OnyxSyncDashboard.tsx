@@ -7,6 +7,7 @@ import {
   Activity,
   FileWarning,
   FolderX,
+  Hourglass,
   RefreshCw,
   ChevronLeft,
 } from "lucide-react";
@@ -104,10 +105,14 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
   const failures24h = data.failures_last_24h ?? 0;
   const stuckRecords = data.stuck_records_count ?? 0;
   const stuckProjects = data.stuck_projects_count ?? 0;
+  const awaitingAnalysis = data.awaiting_analysis_count ?? 0;
 
   const failuresTone = tone(failures24h, 5, 50);
   const recordsTone = tone(stuckRecords, 1, 20);
   const projectsTone = tone(stuckProjects, 1, 5);
+  // Awaiting-analysis is informational, not a failure. A small backlog
+  // is normal during column setup; a large one signals a stalled flow.
+  const awaitingTone = tone(awaitingAnalysis, 5, 50);
 
   // 7-day data: sort by date ASC for the sparkline
   const dayEntries = Object.entries(data.failures_by_day_last_7d ?? {}).sort();
@@ -158,7 +163,7 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <KpiCard
             label="Failures · last 24h"
             value={failures24h.toString()}
@@ -182,6 +187,14 @@ export default function OnyxSyncDashboard({ initial }: OnyxSyncDashboardProps) {
             Icon={FolderX}
             tone={projectsTone}
             testid="card-stuck-projects"
+          />
+          <KpiCard
+            label="Awaiting analysis"
+            value={awaitingAnalysis.toString()}
+            sub="uploaded but no columns yet · image rows defer Onyx upload"
+            Icon={Hourglass}
+            tone={awaitingTone}
+            testid="card-awaiting-analysis"
           />
         </section>
 
