@@ -1,0 +1,73 @@
+# Minimal stack to run Cypress E2E in CI.
+#
+# Brings up Postgres + Redis + daxno-backend, just enough for the frontend
+# to authenticate, hit the API, and exercise socket.io. Onyx is NOT included:
+# tests that touch Onyx use cy.intercept to stub the proxy responses.
+#
+# Image source: ${DOCKERHUB_USERNAME}/daxno-backend:latest (already published
+# by daxno-backend/.github/workflows/publish-backend.yml).
+#
+# Usage in CI:
+#   DOCKERHUB_USERNAME=foo docker compose -f compose.ci.yml up -d
+#   docker compose -f compose.ci.yml ps
+#   curl http://localhost:8000/health   # wait for ready
+
+services:
+  relational_db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-daxno}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5432:5432"
+
+  cache:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "6379:6379"
+
+  daxno-backend:
+    image: ${DOCKERHUB_USERNAME}/daxno-backend:latest
+    pull_policy: always
+    environment:
+      POSTGRES_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@relational_db:5432/${POSTGRES_DB:-daxno}
+      REDIS_URL: redis://cache:6379/0
+      # Onyx URLs point to a non-existent host on purpose — Cypress specs
+      # that touch Onyx must stub via cy.intercept. Backend startup must not
+      # depend on Onyx being reachable.
+      ONYX_INTERNAL_URL: http://onyx-stub:8080
+      ONYX_API_URL: http://onyx-stub:8080
+      ONYX_PUBLIC_URL: http://onyx-stub:8080
+      FRONTEND_ROOT_URL: http://localhost:3001
+      BACKEND_ROOT_URL: http://localhost:8000
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      AUTO_INIT_DB: "false"
+      DB_POOL_ENABLE: "true"
+    command: >
+      /bin/sh -c "
+      alembic upgrade head &&
+      uvicorn src:app --host 0.0.0.0 --port 8000 --loop asyncio"
+    depends_on:
+      relational_db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s

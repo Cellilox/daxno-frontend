@@ -59,5 +59,46 @@ declare namespace Cypress {
          * @example cy.deleteAllProjects()
          */
         deleteAllProjects(): Chainable<void>;
+
+        /**
+         * Login as a specific Clerk test role: 'owner' (default), 'invitee', or 'admin'.
+         * Each role keeps its own cy.session() cache, so switching mid-test is cheap.
+         * Credentials are read from cypress.env.json
+         * (CLERK_TEST_EMAIL/PASSWORD, CLERK_INVITEE_EMAIL/PASSWORD, CLERK_ADMIN_EMAIL/PASSWORD).
+         */
+        loginAs(role?: 'owner' | 'invitee' | 'admin'): Chainable<void>;
+
+        /**
+         * Create a project via the backend API (skips UI). Returns the created project id.
+         * @example cy.apiCreateProject('Spec Setup').then(id => ...)
+         */
+        apiCreateProject(name: string): Chainable<string>;
+
+        /**
+         * Upload a fixture file directly via the backend API. Returns the record id.
+         * @example cy.apiUploadRecord(projectId, 'sample-1.pdf').then(recordId => ...)
+         */
+        apiUploadRecord(projectId: string, fixture: string): Chainable<string>;
+
+        /**
+         * Create an invite for a project and return the invite token.
+         * @example cy.apiCreateInvite(projectId, 'invitee@example.com').then(token => ...)
+         */
+        apiCreateInvite(projectId: string, email: string): Chainable<string>;
+
+        /**
+         * Create a field/column on a project via the backend API. Returns the field id.
+         * Needed to un-blur the secondary actions (Share/Invite/Onyx/Model picker),
+         * which are pointer-events-none until the agent has >= 1 column.
+         * @example cy.apiCreateField(projectId, 'Amount')
+         */
+        apiCreateField(projectId: string, name: string): Chainable<string>;
+
+        /**
+         * Poll the backend for record extraction completion (status === 'complete').
+         * Throws if the timeout is exceeded.
+         * @example cy.waitForExtractionComplete(recordId, 60000)
+         */
+        waitForExtractionComplete(recordId: string, timeout?: number): Chainable<void>;
     }
 }
