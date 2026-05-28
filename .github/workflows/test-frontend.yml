@@ -1,0 +1,130 @@
+name: Test Daxno Frontend (Cypress E2E)
+
+# Reusable: can be called from publish-frontend.yml via `uses:` to gate
+# the Docker Hub push on a green Cypress run. Also triggers directly on
+# PRs and pushes to main so test failures surface before publish.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: daxno
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install npm dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: cypress-${{ runner.os }}-
+
+      - name: Ensure Cypress binary
+        run: npx cypress install
+
+      - name: Login to Docker Hub (to pull private daxno-backend image)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Start backend stack (Postgres + Redis + daxno-backend)
+        run: docker compose -f compose.ci.yml up -d
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/health >/dev/null 2>&1; then
+              echo "Backend ready"
+              exit 0
+            fi
+            echo "  ...waiting for backend ($i/60)"
+            sleep 5
+          done
+          echo "Backend never became healthy. Dumping compose state and logs:"
+          docker compose -f compose.ci.yml ps
+          docker compose -f compose.ci.yml logs --tail=200
+          exit 1
+
+      - name: Build frontend (production)
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_ONYX_URL: http://localhost:8080
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /agents
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /agents
+          NEXT_PUBLIC_CLIENT_URL: http://localhost:3001
+          NEXT_PUBLIC_PAYMENT_CURRENCY: USD
+          NEXT_PUBLIC_CREDIT_DEFAULT_AMOUNT: "10"
+          NEXT_PUBLIC_CREDIT_MIN_AMOUNT: "1"
+          NEXT_PUBLIC_BYOK_MONTHLY_PRICE: "1"
+          NEXT_PUBLIC_BYOK_YEARLY_PRICE: "2"
+          NEXT_PUBLIC_BYOK_PRORATION_INTERVAL_DAYS: "30"
+          NEXT_PUBLIC_FEE_TIERS: "5-20:35,21-50:30,51-100:25,101+:20"
+        run: npm run build
+
+      - name: Run Cypress against production build
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run start
+          wait-on: "http://localhost:3001"
+          wait-on-timeout: 120
+          browser: chrome
+          install: false
+        env:
+          CYPRESS_CLERK_TEST_EMAIL: ${{ secrets.CYPRESS_CLERK_TEST_EMAIL }}
+          CYPRESS_CLERK_TEST_PASSWORD: ${{ secrets.CYPRESS_CLERK_TEST_PASSWORD }}
+          CYPRESS_CLERK_INVITEE_EMAIL: ${{ secrets.CYPRESS_CLERK_INVITEE_EMAIL }}
+          CYPRESS_CLERK_INVITEE_PASSWORD: ${{ secrets.CYPRESS_CLERK_INVITEE_PASSWORD }}
+          CYPRESS_CLERK_ADMIN_EMAIL: ${{ secrets.CYPRESS_CLERK_ADMIN_EMAIL }}
+          CYPRESS_CLERK_ADMIN_PASSWORD: ${{ secrets.CYPRESS_CLERK_ADMIN_PASSWORD }}
+          CYPRESS_API_URL: http://localhost:8000
+
+      - name: Upload Cypress screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload Cypress videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+          if-no-files-found: ignore
+
+      - name: Dump backend logs on failure
+        if: failure()
+        run: docker compose -f compose.ci.yml logs --tail=500
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f compose.ci.yml down -v

@@ -13,7 +13,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    # Gate Docker Hub publish on a green Cypress E2E run. If any test fails,
+    # build-and-push is skipped and nothing reaches Docker Hub.
+    uses: ./.github/workflows/test-frontend.yml
+    secrets: inherit
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

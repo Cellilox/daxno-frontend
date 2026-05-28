@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+# Pre-push gate for daxno-frontend.
+# Policy: no code leaves this machine unless lint AND the full Cypress E2E
+# suite pass. No smoke-subset shortcut.
+#
+# Escape hatch: `git push --no-verify` (git built-in) for emergencies only.
+
+set -e
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo "${GREEN}» pre-push: lint (typecheck)${NC}"
+npm run lint
+
+API_URL="${CYPRESS_API_URL:-http://localhost:8000}"
+
+echo "${GREEN}» pre-push: checking backend is up...${NC}"
+if ! curl -fsS --max-time 3 "$API_URL/health" >/dev/null 2>&1; then
+    printf "${RED}✗ Backend not reachable at %s/health${NC}\n" "$API_URL"
+    printf "${YELLOW}  Start the dev stack before pushing, or use 'git push --no-verify' if you accept the risk.${NC}\n"
+    exit 1
+fi
+# Note: we intentionally do NOT gate on Onyx. The Cypress suite doesn't
+# hard-depend on a live Onyx instance (Onyx-touching tests assert UI/observable
+# outcomes), and this Onyx fork's /api/version returns 404.
+
+echo "${GREEN}» pre-push: full Cypress E2E against a production build (this takes a while)${NC}"
+npm run test:e2e:full
