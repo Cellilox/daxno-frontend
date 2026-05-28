@@ -21,13 +21,56 @@ const geistMono = localFont({
     weight: "100 900",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
+
 export const metadata: Metadata = {
+    metadataBase: new URL(siteUrl),
     title: "Cellilox | Home",
-    description: "Welcome to Cellilox, your smart system for document processing and data entry!",
+    description:
+        "Cellilox spins up an AI agent for every document you handle — invoices, contracts, purchase orders, bank statements and more. Upload, email, or share a link, then ask anything in plain language.",
+    keywords: [
+        "document processing",
+        "AI document agent",
+        "data entry automation",
+        "invoice extraction",
+        "contract analysis",
+        "document AI",
+        "Cellilox",
+    ],
+    alternates: {
+        canonical: "/",
+    },
     icons: {
         icon: "/favicon.ico",
     },
     manifest: "/manifest.json",
+    openGraph: {
+        type: "website",
+        url: siteUrl,
+        siteName: "Cellilox",
+        title: "Cellilox | An AI agent for every document",
+        description:
+            "Pick a document type and spin up an AI agent that reads every file you drop in. Upload, email it in, or share a link — then ask anything in plain language.",
+        images: [
+            {
+                url: "/icons/icon-512.png",
+                width: 512,
+                height: 512,
+                alt: "Cellilox",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Cellilox | An AI agent for every document",
+        description:
+            "Pick a document type and spin up an AI agent that reads every file you drop in. Upload, email it in, or share a link — then ask anything in plain language.",
+        images: ["/icons/icon-512.png"],
+    },
+    robots: {
+        index: true,
+        follow: true,
+    },
 };
 
 export default function RootLayout({
