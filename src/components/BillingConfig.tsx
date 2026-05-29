@@ -35,11 +35,12 @@ export interface BillingConfigProps {
     currentInterval?: string;
     currentAmount?: number;
     currentEndDate?: string | Date;
+    entitledTiers?: string[];
 }
 
 const TRUSTED_OPENROUTER_PREFIXES = ['openai/', 'anthropic/', 'google/', 'deepseek/'];
 
-export default function BillingConfig({ initialConfig, allModels, currentPlan, currentInterval, currentAmount, currentEndDate }: BillingConfigProps) {
+export default function BillingConfig({ initialConfig, allModels, currentPlan, currentInterval, currentAmount, currentEndDate, entitledTiers }: BillingConfigProps) {
     // 3 Modes: 'standard', 'byok' (Own Key), 'managed' (GYOMK)
     // Map initialConfig.subscription_type (standard/byok) to one of these.
     // Ideally backend should support 'managed', but for now we might infer or keep 'byok' for both backend-side but separating UI.
@@ -93,6 +94,17 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
 
     const isByokSubscribed = currentSubscriptionTier === 'byok';
     const isViewingCurrentTier = billingType === currentSubscriptionTier;
+    // Tiers the user has paid for. Falls back to the single effective tier
+    // when the prop isn't supplied. Save Changes is hidden on any tab not in
+    // this set — saving on an unpaid tier was flipping subscription_type
+    // without payment via POST /tenants/billing-config.
+    const effectiveEntitledTiers = useMemo<string[]>(
+        () => entitledTiers && entitledTiers.length > 0
+            ? entitledTiers
+            : [currentSubscriptionTier, 'standard'],
+        [entitledTiers, currentSubscriptionTier]
+    );
+    const isEntitledToCurrentTab = effectiveEntitledTiers.includes(billingType);
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
 
@@ -1218,10 +1230,12 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                     </>
                 )}
 
-                {/* Save Changes footer — shown for any non-standard tab
-                    (BYOK or Managed) regardless of the user's actual
-                    subscription. Standard has nothing to configure here. */}
-                {billingType !== 'standard' && (
+                {/* Save Changes footer — only shown on tabs the user has
+                    actually paid for. The Subscribe (BYOK) / Buy Credits
+                    (Managed) CTAs above are the correct paths for an
+                    unpaid tier; saving here would have flipped
+                    subscription_type without payment. */}
+                {billingType !== 'standard' && isEntitledToCurrentTab && (
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         {message && (
                             <span className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
