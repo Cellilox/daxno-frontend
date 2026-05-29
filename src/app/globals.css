@@ -144,3 +144,18 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Trim looping decorative animations on small screens and for users who prefer
+   reduced motion. Scoped to the landing page so app loading skeletons are unaffected.
+   These infinite loops dominate mobile Speed Index; the desktop experience is unchanged. */
+@media (max-width: 639px), (prefers-reduced-motion: reduce) {
+  .home-landing .animate-marquee,
+  .home-landing .animate-mesh-drift,
+  .home-landing .animate-spin-slow,
+  .home-landing .animate-pulse,
+  .home-landing .animate-bounce,
+  .home-landing .animate-float,
+  .home-landing .animate-shimmer {
+    animation: none !important;
+  }
+}

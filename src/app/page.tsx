@@ -1,24 +1,30 @@
 'use client'
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import Demo from "@/components/Demo";
 import { motion, Variants } from "framer-motion";
 import { Sparkles, ArrowRight, Check } from "lucide-react";
 import HeroLiveDemo from "@/components/landing/HeroLiveDemo";
-import DocMarquee from "@/components/landing/DocMarquee";
-import StatsStrip from "@/components/landing/StatsStrip";
-import DocumentTypesGrid from "@/components/landing/DocumentTypesGrid";
-import AIChatShowcase from "@/components/landing/AIChatShowcase";
-import HowItWorks from "@/components/landing/HowItWorks";
-import DocumentShowcase from "@/components/landing/DocumentShowcase";
-import FeaturesDeepDive from "@/components/landing/FeaturesDeepDive";
-import Testimonials from "@/components/landing/Testimonials";
-import PricingSection from "@/components/landing/PricingSection";
-import CTABanner from "@/components/landing/CTABanner";
+
+// Below-the-fold sections: still server-rendered for SEO, but their client JS is
+// code-split into separate chunks and hydrated after the hero, shrinking the initial bundle.
+const DocMarquee = dynamic(() => import("@/components/landing/DocMarquee"));
+const StatsStrip = dynamic(() => import("@/components/landing/StatsStrip"));
+const DocumentTypesGrid = dynamic(() => import("@/components/landing/DocumentTypesGrid"));
+const AIChatShowcase = dynamic(() => import("@/components/landing/AIChatShowcase"));
+const HowItWorks = dynamic(() => import("@/components/landing/HowItWorks"));
+const FeaturesDeepDive = dynamic(() => import("@/components/landing/FeaturesDeepDive"));
+const Testimonials = dynamic(() => import("@/components/landing/Testimonials"));
+const PricingSection = dynamic(() => import("@/components/landing/PricingSection"));
+const CTABanner = dynamic(() => import("@/components/landing/CTABanner"));
 
 export default function Home() {
+  // Hero entrance keeps content painted at opacity:1 at all times (only a small
+  // upward slide), so the LCP text renders on first paint instead of waiting for
+  // JS hydration — critical for mobile LCP.
   const containerVariants: Variants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 1 },
     visible: {
       opacity: 1,
       transition: {
@@ -29,7 +35,7 @@ export default function Home() {
   };
 
   const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 20, opacity: 1 },
     visible: {
       y: 0,
       opacity: 1,
@@ -42,7 +48,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+    <div className="home-landing relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
       {/* Dynamic Background Elements - Optimized for PWA/Mobile Fancy */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-5%] left-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-blue-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" />
@@ -71,7 +77,7 @@ export default function Home() {
               variants={itemVariants}
               className="text-[2.25rem] leading-[1.05] sm:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 mb-5"
             >
-              An AI agent for{" "}
+              AI agent for{" "}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
                 every document
               </span>{" "}
@@ -128,7 +134,7 @@ export default function Home() {
 
           {/* Right column: live product demo */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 1, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
@@ -142,7 +148,6 @@ export default function Home() {
       <DocumentTypesGrid />
       <AIChatShowcase />
       <HowItWorks />
-      {/* <DocumentShowcase /> */}
       <FeaturesDeepDive />
       <Testimonials />
       <PricingSection />
