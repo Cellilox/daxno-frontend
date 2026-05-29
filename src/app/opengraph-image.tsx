@@ -85,7 +85,8 @@ export default async function OpengraphImage() {
               marginBottom: 36,
             }}
           >
-            Upload, email, or share a link, then ask anything in plain language.
+            Pick a document type and spin up an agent that reads every file you
+            drop in.
           </div>
           <div
             style={{
@@ -100,7 +101,7 @@ export default async function OpengraphImage() {
               borderRadius: 999,
             }}
           >
-            Get started free — cellilox.com
+            Create your first Agent (free)
           </div>
         </div>
 
