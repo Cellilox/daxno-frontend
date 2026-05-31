@@ -187,6 +187,16 @@ export default function HeroLiveDemo() {
   useEffect(() => {
     if (reducedMotion) return;
     if (!inView) return;
+
+    // On mobile, skip the scan→classify→done cinematic. It unmounts/remounts the
+    // chat bubble (the largest above-the-fold element on a phone) ~4s into the
+    // cycle, which becomes a late LCP candidate on slow devices. We still rotate
+    // docs so the multi-doc demo is preserved.
+    if (window.matchMedia("(max-width: 640px)").matches) {
+      const advance = setTimeout(() => setDocIdx((i) => (i + 1) % DOCS.length), CYCLE_MS);
+      return () => clearTimeout(advance);
+    }
+
     setBeat(0);
     const timeouts = BEAT_TIMES.map((t, i) => setTimeout(() => setBeat(i), t));
     const advance = setTimeout(() => setDocIdx((i) => (i + 1) % DOCS.length), CYCLE_MS);
@@ -283,7 +293,8 @@ export default function HeroLiveDemo() {
 
       {/* Spreadsheet row slot — height reserved so the demo doesn't jump between beats */}
       <div className="mt-4 min-h-[66px]">
-        <AnimatePresence mode="wait">
+        {/* initial={false}: the SSR-rendered child must not run an opacity:0 enter on hydration (mobile LCP). */}
+        <AnimatePresence mode="wait" initial={false}>
           {beat >= 2 && (
             <motion.div
               key={`row-${docIdx}`}
@@ -325,7 +336,7 @@ export default function HeroLiveDemo() {
 
       {/* AI chat bubble slot — height reserved */}
       <div className="mt-4 min-h-[148px]">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {beat >= 3 && (
             <motion.div
               key={`chat-${docIdx}`}
