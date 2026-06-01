@@ -597,11 +597,12 @@ export default function Dropzone({ projectId, linkOwner, setIsVisible, onMessage
         updateStatus('', messageTypeEnum.NONE); // Clear status if valid
       }
     } catch (e: any) {
-      // Trigger Limit Popup
+      // Local drop-time validation failure: keep it inline so the modal stays
+      // open and the user can adjust their selection. Do NOT route through
+      // checkLimitError here — that closes the whole modal and is meant for
+      // server-side usage-limit errors raised during processing.
       const errMsg = e.message || 'Limit exceeded';
-      if (checkLimitError(errMsg)) {
-        return; // Exit if popup triggered (modal closed)
-      }
+      updateStatus('', messageTypeEnum.NONE);
       setBatchError(errMsg);
       // Do NOT add files
       return;

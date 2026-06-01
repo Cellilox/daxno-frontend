@@ -80,6 +80,15 @@ const TableRow = memo(({
               >
                 <Pencil className="w-4 h-4 text-blue-600" />
               </button>
+              {isOnline && (
+                <button
+                  onClick={() => onBackfillRecord && onBackfillRecord()}
+                  className="p-1.5 hover:bg-purple-50 rounded-full transition-colors"
+                  title="Re-analyze Document"
+                >
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                </button>
+              )}
               <button
                 onClick={() => handleReviewRecord(row)}
                 className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
