@@ -31,7 +31,13 @@ export default function FormModal({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      // Ignore targets no longer in the document (e.g. focus-restoration /
+      // file-dialog artifacts) which would otherwise close the modal.
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node) &&
+        document.body.contains(event.target as Node)
+      ) {
         onCancel();
       }
     }
