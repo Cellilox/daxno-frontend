@@ -69,13 +69,13 @@ const TableRow = memo(({
         />
       </td>
 
-      <td className={`z-10 px-3 md:px-4 py-2 md:py-3 lg:py-4 sticky left-[40px] shadow-r md:hidden border-r ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
-        <div className="flex items-center justify-center gap-3">
+      <td className={`z-10 px-2 py-2 md:py-3 lg:py-4 sticky left-[40px] shadow-r md:hidden border-r ${isSelected ? 'bg-blue-50 group-hover:bg-blue-50' : 'bg-white group-hover:bg-gray-50'}`}>
+        <div className="flex items-center justify-center gap-1">
           {!isRowEditing && (
             <>
               <button
                 onClick={() => onEditCell(rowIndex, columns[0]?.hidden_id)}
-                className="p-1.5 hover:bg-blue-50 rounded-full transition-colors"
+                className="p-1 hover:bg-blue-50 rounded-full transition-colors"
                 title="Edit"
               >
                 <Pencil className="w-4 h-4 text-blue-600" />
@@ -83,7 +83,7 @@ const TableRow = memo(({
               {isOnline && (
                 <button
                   onClick={() => onBackfillRecord && onBackfillRecord()}
-                  className="p-1.5 hover:bg-purple-50 rounded-full transition-colors"
+                  className="p-1 hover:bg-purple-50 rounded-full transition-colors"
                   title="Re-analyze Document"
                 >
                   <Sparkles className="w-4 h-4 text-purple-600" />
@@ -91,7 +91,7 @@ const TableRow = memo(({
               )}
               <button
                 onClick={() => handleReviewRecord(row)}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 title="Review"
               >
                 <Eye className="w-4 h-4 text-gray-600" />
@@ -99,7 +99,7 @@ const TableRow = memo(({
               <button
                 onClick={() => onDeleteRow(row)}
                 data-testid={`delete-row-${rowIndex}`}
-                className="p-1.5 hover:bg-red-50 rounded-full transition-colors"
+                className="p-1 hover:bg-red-50 rounded-full transition-colors"
                 title="Delete"
               >
                 <Trash className="w-4 h-4 text-red-600" />

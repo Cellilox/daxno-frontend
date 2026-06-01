@@ -69,7 +69,7 @@ export default function SpreadSheet({
   useEffect(() => {
     setColumnWidths(prev => {
       const newWidths: { [key: string]: number } = {
-        '__actions__': 100,
+        '__actions__': 140,
         '__filename__': 200,
         ...prev
       };
@@ -394,7 +394,7 @@ export default function SpreadSheet({
             <>
               {/* Checkbox Column */}
               <col style={{ width: '40px' }} />
-              <col style={{ width: `${columnWidths['__actions__'] || 100}px` }} className="md:hidden" />
+              <col style={{ width: `${columnWidths['__actions__'] || 140}px` }} className="md:hidden" />
               <col style={{ width: `${columnWidths['__filename__'] || 200}px` }} />
             </>
           )}
