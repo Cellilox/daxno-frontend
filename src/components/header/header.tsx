@@ -36,7 +36,8 @@ const Header = async () => {
         <div className="hidden md:block">
           {userId && <Link href='/dashboard' className='ml-7 p-4'>Dashboard</Link>}
           {userId && <Link href='/agents' className='ml-7 p-4'>Agents</Link>}
-          <Link href='/blogs' className='ml-7 p-4'>Blog</Link>
+          <Link href='/#pricing' className='ml-7 p-4'>Pricing</Link>
+          <Link href='/blogs' className='ml-7 p-4'>Blogs</Link>
         </div>
       </div>
 
@@ -44,25 +45,26 @@ const Header = async () => {
       <div className='md:flex md:items-center'>
         <div className='md:mr-3'>
           <SignedIn>
-            <div className='flex justify-between'>
-              <CurrentPlan transactions={transactions} billingConfig={billingConfig} />
-              <div className="md:hidden -mt-2 ml-3">
-                <MobileMenu userId={userId!} />
-              </div>
-            </div>
+            <CurrentPlan transactions={transactions} billingConfig={billingConfig} />
           </SignedIn>
         </div>
-        <div className='text-right'>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button data-testid="signin-button" className="text-sm font-medium text-gray-700 hover:text-blue-600">
-                Sign in
-              </button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/auth/logout" />
-          </SignedIn>
+        <div className='flex items-center gap-3'>
+          <div className='text-right'>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button data-testid="signin-button" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+                  Sign in
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/auth/logout" />
+            </SignedIn>
+          </div>
+          {/* Mobile nav — available to everyone (visitors get Home/Pricing/Blogs). */}
+          <div className="md:hidden">
+            <MobileMenu userId={userId} />
+          </div>
         </div>
       </div>
     </div>

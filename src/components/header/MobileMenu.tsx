@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, LayoutDashboard, Bot, X, MoreVertical } from 'lucide-react'
+import { Home, LayoutDashboard, Bot, X, MoreVertical, Newspaper, Tag } from 'lucide-react'
 
 interface MobileMenuProps {
   userId: string | null
@@ -35,7 +35,9 @@ const MobileMenu = ({ userId }: MobileMenuProps) => {
     }
   }, [isOpen])
 
-  const menuItems = [
+  // Public items everyone sees (visitors included). Auth items are appended
+  // only when signed in — protected routes are also guarded by middleware.
+  const publicItems = [
     {
       title: 'Home',
       subtitle: 'Return to landing page',
@@ -43,6 +45,23 @@ const MobileMenu = ({ userId }: MobileMenuProps) => {
       icon: <Home size={16} className="text-blue-600" />,
       bgColor: 'bg-blue-100'
     },
+    {
+      title: 'Pricing',
+      subtitle: 'Plans, credits & BYOK',
+      href: '/#pricing',
+      icon: <Tag size={16} className="text-emerald-600" />,
+      bgColor: 'bg-emerald-100'
+    },
+    {
+      title: 'Blogs',
+      subtitle: 'Guides & playbooks',
+      href: '/blogs',
+      icon: <Newspaper size={16} className="text-amber-600" />,
+      bgColor: 'bg-amber-100'
+    }
+  ]
+
+  const authItems = [
     {
       title: 'Dashboard',
       subtitle: 'Manage your account',
@@ -58,6 +77,8 @@ const MobileMenu = ({ userId }: MobileMenuProps) => {
       bgColor: 'bg-purple-100'
     }
   ]
+
+  const menuItems = userId ? [...publicItems, ...authItems] : publicItems
 
   return (
     <div className="md:hidden">
@@ -103,7 +124,7 @@ const MobileMenu = ({ userId }: MobileMenuProps) => {
 
               {/* Navigation Items */}
               <div className="p-3 space-y-1 bg-white">
-                {userId && menuItems.map((item) => (
+                {menuItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

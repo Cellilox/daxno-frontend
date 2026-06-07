@@ -84,7 +84,7 @@ export default function AIChatShowcase() {
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-16 px-6 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
@@ -121,7 +121,7 @@ export default function AIChatShowcase() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 1, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, delay: 0.1 }}
