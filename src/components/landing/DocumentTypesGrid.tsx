@@ -85,7 +85,7 @@ export default function DocumentTypesGrid() {
         >
           <SectionEyebrow>Ready-made agents</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            One agent for <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">every business document</span>
+            One agent for <span className="text-indigo-700">every business document</span>
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
             Finance, logistics, supply chain, procurement — pick a document type and your agent

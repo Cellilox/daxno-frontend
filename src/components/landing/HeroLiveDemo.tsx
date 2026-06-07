@@ -341,7 +341,7 @@ export default function HeroLiveDemo() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 p-4 text-white shadow-xl shadow-indigo-900/20"
+              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 p-4 text-white shadow-xl shadow-gray-900/20"
             >
               <div className="relative">
                 <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">

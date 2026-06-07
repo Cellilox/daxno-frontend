@@ -73,7 +73,7 @@ export default function Home() {
               className="text-[2.25rem] leading-[1.05] sm:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 mb-5"
             >
               AI agent for{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+              <span className="text-indigo-700">
                 every document
               </span>{" "}
               you handle.

@@ -57,7 +57,7 @@ export default function FeaturesDeepDive() {
           >
             <SectionEyebrow>Platform capabilities</SectionEyebrow>
             <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-              Built for how <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">finance and operations</span> teams actually work
+              Built for how <span className="text-indigo-700">finance and operations</span> teams actually work
             </h2>
             <p className="mt-4 max-w-md text-base leading-relaxed text-gray-500">
               Every feature is designed for real document workflows — from receipt to reconciliation,

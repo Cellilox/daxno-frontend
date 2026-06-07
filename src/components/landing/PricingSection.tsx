@@ -80,7 +80,7 @@ export default function PricingSection() {
         >
           <SectionEyebrow>Pricing</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Simple, <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">transparent</span> pricing
+            Simple, <span className="text-indigo-700">transparent</span> pricing
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
             Start free. Top up credits when you need more, or bring your own key.
@@ -98,7 +98,7 @@ export default function PricingSection() {
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className={`relative overflow-hidden rounded-3xl p-8 ${
                 plan.featured
-                  ? "bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 text-white shadow-2xl shadow-blue-500/20"
+                  ? "bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 text-white shadow-2xl shadow-gray-900/20"
                   : "border border-gray-100 bg-gray-50/60 text-gray-900"
               }`}
             >

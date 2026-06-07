@@ -33,7 +33,7 @@ export default function CTABanner() {
               </div>
               <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
                 Stop processing <br className="hidden sm:block" />
-                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                <span className="text-indigo-300">
                   documents manually.
                 </span>
               </h2>
@@ -46,7 +46,7 @@ export default function CTABanner() {
             <div className="flex flex-col items-start gap-3 lg:items-end">
               <Link
                 href="/dashboard"
-                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-gray-900/15 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-gray-900/20"
               >
                 Build your first agent
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

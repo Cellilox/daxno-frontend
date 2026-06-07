@@ -85,15 +85,15 @@ export default function AIChatShowcase() {
           <SectionEyebrow tone="light">AI-powered queries</SectionEyebrow>
           <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
             Ask anything.<br />
-            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            <span className="text-indigo-300">
               Get instant answers
             </span>
             <br />
             across all your documents.
           </h2>
           <p className="mt-6 max-w-md text-base leading-relaxed text-white/55">
-            No spreadsheets, no manual search. Type what you need in plain language and Cellilox
-            finds, summarises, and acts on it across your entire document library.
+            Cellilox reads every file and lays the data out in a clean, structured spreadsheet —
+            then lets you ask questions across your whole library in plain language.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-2.5">
@@ -145,7 +145,7 @@ export default function AIChatShowcase() {
                 className="flex flex-col gap-4"
               >
                 <div className="flex items-end gap-2.5 self-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-gradient-to-br from-blue-600 to-indigo-600 px-4 py-2.5 text-sm text-white shadow-lg shadow-blue-500/20">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-gradient-to-br from-blue-600 to-indigo-600 px-4 py-2.5 text-sm text-white shadow-lg shadow-gray-900/20">
                     {active.q}
                   </div>
                   <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-white/10 text-[10px] font-bold text-white/60">
