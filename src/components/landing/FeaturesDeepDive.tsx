@@ -46,7 +46,7 @@ const BARS = [
 
 export default function FeaturesDeepDive() {
   return (
-    <section id="features" className="bg-gray-50 py-24">
+    <section id="features" className="bg-[#fefce8] py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
           <motion.div
@@ -57,7 +57,7 @@ export default function FeaturesDeepDive() {
           >
             <SectionEyebrow>Platform capabilities</SectionEyebrow>
             <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-              Built for how <span className="text-indigo-700">finance and operations</span> teams actually work
+              Built for how <span className="text-gray-900">finance and operations</span> teams actually work
             </h2>
             <p className="mt-4 max-w-md text-base leading-relaxed text-gray-500">
               Every feature is designed for real document workflows — from receipt to reconciliation,

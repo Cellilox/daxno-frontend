@@ -85,7 +85,7 @@ export default function AIChatShowcase() {
           <SectionEyebrow tone="light">AI-powered queries</SectionEyebrow>
           <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
             Ask anything.<br />
-            <span className="text-indigo-300">
+            <span className="text-white">
               Get instant answers
             </span>
             <br />

@@ -82,7 +82,7 @@ function TiltCard({ item }: { item: (typeof ITEMS)[number] }) {
 
 export default function Testimonials() {
   return (
-    <section className="bg-white py-24">
+    <section className="bg-[#fefce8] py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}
@@ -93,7 +93,7 @@ export default function Testimonials() {
         >
           <SectionEyebrow>From our customers</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Trusted by <span className="text-indigo-700">finance and operations</span> teams
+            Trusted by <span className="text-gray-900">finance and operations</span> teams
           </h2>
         </motion.div>
 

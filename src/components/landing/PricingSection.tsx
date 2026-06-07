@@ -69,7 +69,7 @@ const PLANS: Plan[] = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="border-y border-gray-100 bg-white py-24">
+    <section id="pricing" className="border-y border-gray-100 bg-[#fefce8] py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}
@@ -80,7 +80,7 @@ export default function PricingSection() {
         >
           <SectionEyebrow>Pricing</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Simple, <span className="text-indigo-700">transparent</span> pricing
+            Simple, <span className="text-gray-900">transparent</span> pricing
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
             Start free. Top up credits when you need more, or bring your own key.

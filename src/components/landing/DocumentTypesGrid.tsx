@@ -74,7 +74,7 @@ const DOC_TYPES = [
 
 export default function DocumentTypesGrid() {
   return (
-    <section id="documents" className="bg-white py-24">
+    <section id="documents" className="bg-[#fefce8] py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}
@@ -85,7 +85,7 @@ export default function DocumentTypesGrid() {
         >
           <SectionEyebrow>Ready-made agents</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            One agent for <span className="text-indigo-700">every business document</span>
+            One agent for <span className="text-gray-900">every business document</span>
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
             Finance, logistics, supply chain, procurement — pick a document type and your agent

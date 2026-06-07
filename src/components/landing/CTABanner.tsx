@@ -7,7 +7,7 @@ import { REQUEST_DEMO_EVENT } from "@/components/Demo";
 
 export default function CTABanner() {
   return (
-    <section className="bg-white py-24">
+    <section className="bg-[#fefce8] py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 30 }}
@@ -33,7 +33,7 @@ export default function CTABanner() {
               </div>
               <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
                 Stop processing <br className="hidden sm:block" />
-                <span className="text-indigo-300">
+                <span className="text-white">
                   documents manually.
                 </span>
               </h2>

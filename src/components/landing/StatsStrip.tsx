@@ -45,7 +45,7 @@ function AnimatedNumber({ stat }: { stat: Stat }) {
 
 export default function StatsStrip() {
   return (
-    <section className="border-y border-gray-100 bg-white">
+    <section className="border-y border-gray-100 bg-[#fefce8]">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-y-10 px-6 py-14 sm:px-8 lg:grid-cols-4 lg:gap-0 lg:px-12">
         {STATS.map((stat, i) => (
           <div
