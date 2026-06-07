@@ -185,16 +185,28 @@ export default function BlogEditor({ post }: Props) {
       {/* Cover image */}
       <Field
         label="Cover image"
-        hint="Optional. OG/social image — ideal 1200×630, compressed, under 8 MB (larger is rejected)."
+        hint="Optional. OG/social image — ideal 1200×630, compressed, under 1 MB (larger is rejected)."
       >
         <div className="space-y-3">
           {coverImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverImageUrl}
-              alt={coverImageAlt || "cover preview"}
-              className="h-40 w-full rounded-lg object-cover"
-            />
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverImageUrl}
+                alt={coverImageAlt || "cover preview"}
+                className="h-40 w-full rounded-lg object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverImageUrl("");
+                  setCoverImageAlt("");
+                }}
+                className="absolute right-2 top-2 rounded-md bg-black/60 px-2.5 py-1 text-xs font-medium text-white hover:bg-black/80"
+              >
+                Remove image
+              </button>
+            </div>
           )}
           <input
             type="file"
