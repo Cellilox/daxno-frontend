@@ -102,7 +102,7 @@ export default async function BlogPostPage({ params }: Params) {
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
-      { "@type": "ListItem", position: 2, name: "Blog", item: `${siteUrl}/blogs` },
+      { "@type": "ListItem", position: 2, name: "Blogs", item: `${siteUrl}/blogs` },
       { "@type": "ListItem", position: 3, name: post.title, item: url },
     ],
   };
@@ -129,7 +129,7 @@ export default async function BlogPostPage({ params }: Params) {
           <li aria-hidden>/</li>
           <li>
             <Link href="/blogs" className="hover:text-gray-600">
-              Blog
+              Blogs
             </Link>
           </li>
         </ol>
