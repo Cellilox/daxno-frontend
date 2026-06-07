@@ -6,7 +6,7 @@ import BlogMarkdown from "@/components/blog/BlogMarkdown";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 // Pre-render known published slugs at build for instant, crawlable HTML.
 export async function generateStaticParams() {

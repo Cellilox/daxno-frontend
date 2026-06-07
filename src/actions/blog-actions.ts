@@ -48,7 +48,7 @@ export type BlogPostInput = {
 export async function listPublishedPosts(): Promise<BlogPostListItem[]> {
   try {
     const res = await fetch(buildApiUrl("/blog/posts"), {
-      next: { revalidate: 3600, tags: ["blog"] },
+      next: { revalidate: 300, tags: ["blog"] },
     });
     if (!res.ok) return [];
     return (await res.json()) as BlogPostListItem[];
@@ -61,7 +61,7 @@ export async function listPublishedPosts(): Promise<BlogPostListItem[]> {
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {
   try {
     const res = await fetch(buildApiUrl(`/blog/posts/${encodeURIComponent(slug)}`), {
-      next: { revalidate: 3600, tags: ["blog", `blog:${slug}`] },
+      next: { revalidate: 300, tags: ["blog", `blog:${slug}`] },
     });
     if (!res.ok) return null;
     return (await res.json()) as BlogPost;

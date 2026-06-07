@@ -4,8 +4,9 @@ import { listPublishedPosts } from "@/actions/blog-actions";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
 
-// Re-render the index at most hourly so crawlers and visitors get fast cached HTML.
-export const revalidate = 3600;
+// Re-render the index every few minutes so new posts surface quickly while still
+// serving fast cached HTML to crawlers and visitors.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Cellilox Blog | Document Automation & AI Data Extraction",
