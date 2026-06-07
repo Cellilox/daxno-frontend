@@ -88,7 +88,7 @@ export default async function BlogPostPage({ params }: Params) {
       name: post.author_name || "Cellilox",
       url: siteUrl,
       description:
-        "Cellilox builds AI tools that read business documents — invoices, bank statements, contracts and more — and turn them into structured data for finance and operations teams.",
+        "Cellilox builds AI tools that turn business documents — invoices, bank statements, contracts and more — into clean, structured spreadsheet data for finance and operations teams.",
     },
     publisher: {
       "@type": "Organization",
@@ -178,10 +178,10 @@ export default async function BlogPostPage({ params }: Params) {
               {post.author_name || "Cellilox Team"}
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
-              Cellilox builds AI tools that read business documents — invoices, bank
-              statements, contracts and more — and turn them into structured data finance
-              and operations teams can actually use. We write about the document workflows
-              we work with every day.
+              Cellilox builds AI tools that turn business documents — invoices, bank
+              statements, contracts and more — into clean, structured spreadsheet data that
+              finance and operations teams can actually use. We write about the document
+              workflows we work with every day.
             </p>
           </div>
         </div>
