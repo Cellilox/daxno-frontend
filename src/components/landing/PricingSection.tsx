@@ -104,8 +104,6 @@ export default function PricingSection() {
             >
               {plan.featured && (
                 <>
-                  <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-blue-500/20 blur-3xl" />
-                  <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-purple-500/20 blur-3xl" />
                   <span className="relative mb-3 inline-block rounded-md bg-gradient-to-r from-blue-500 to-indigo-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                     Most popular
                   </span>

@@ -75,13 +75,6 @@ export default function AIChatShowcase() {
 
   return (
     <section className="relative overflow-hidden bg-gray-950 py-24">
-      {/* Static gradient mesh (animation removed for readability) */}
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -left-20 top-10 h-80 w-80 rounded-full bg-blue-600/20 blur-[120px]" />
-        <div className="absolute right-0 top-1/2 h-96 w-96 rounded-full bg-indigo-600/20 blur-[140px]" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-purple-600/20 blur-[120px]" />
-      </div>
-
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-16 px-6 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}
