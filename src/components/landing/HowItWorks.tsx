@@ -34,7 +34,7 @@ export default function HowItWorks() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section className="bg-[#fefce8] py-24">
+    <section className="bg-gray-50 py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}

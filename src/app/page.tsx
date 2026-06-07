@@ -48,7 +48,7 @@ export default function Home() {
   };
 
   return (
-    <div className="home-landing relative min-h-screen bg-[#fefce8] overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+    <div className="home-landing relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-10 sm:pt-20 pb-20 sm:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 lg:items-start">

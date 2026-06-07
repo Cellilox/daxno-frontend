@@ -69,7 +69,7 @@ const PLANS: Plan[] = [
 
 export default function PricingSection() {
   return (
-    <section id="pricing" className="border-y border-gray-100 bg-[#fefce8] py-24">
+    <section id="pricing" className="border-y border-gray-100 bg-white py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}

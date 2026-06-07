@@ -10,30 +10,23 @@ type Conversation = {
   a: string;
 };
 
+// Demo data only — fictional companies and figures, no real businesses.
 const CONVERSATIONS: Conversation[] = [
   {
     q: "What's our total supplier spend in Q1?",
-    a: "Total Q1 supplier spend was RWF 187,450,000 across 43 purchase orders and 61 invoices. Top vendors: Inyange Industries (RWF 34M), Rwanda Energy Group (RWF 28M), and Sonas Ltd. (RWF 19M).",
+    a: "Total Q1 supplier spend was $1.84M across 43 purchase orders and 61 invoices. Top vendors: Acme Supplies ($340K), Metro Energy ($280K), and Northwind Ltd. ($190K).",
   },
   {
-    q: "Show all overdue invoices above RWF 500k",
-    a: "Found 7 overdue invoices totalling RWF 8.2M. Oldest: INV-2025-0214 from MTN Rwanda (62 days overdue, RWF 2.1M). Want me to draft reminder emails for all 7?",
+    q: "Show all overdue invoices above $5,000",
+    a: "Found 7 overdue invoices totalling $82,000. Oldest: INV-2025-0214 from Vertex Telecom (62 days overdue, $21,000). Want me to draft reminder emails for all 7?",
   },
   {
     q: "Which contracts expire in the next 90 days?",
-    a: "4 contracts expiring by July 14: Equity Bank service agreement (Jun 3), MTN Rwanda logistics SLA (Jun 19), BK Rwanda data processing (Jul 1), and Sonas maintenance contract (Jul 12). Would you like renewal reminders?",
-  },
-  {
-    q: "Compare our Q1 vs Q2 logistics costs",
-    a: "Q2 logistics spend is RWF 24.8M — up 12% from Q1 (RWF 22.1M). The jump comes from 3 extra customs-clearance fees on March imports. Fuel and warehousing stayed flat.",
+    a: "4 contracts expiring by July 14: Summit Bank service agreement (Jun 3), Vertex Telecom logistics SLA (Jun 19), Harbor Data processing agreement (Jul 1), and Northwind maintenance contract (Jul 12). Want renewal reminders?",
   },
   {
     q: "Find duplicate purchase orders this month",
-    a: "Flagged 2 likely duplicates: PO-RW-2025-1148 and PO-RW-2025-1161 both for Sonas Energy, same line items, issued 6 days apart. Total exposure: RWF 8.04M. Review recommended.",
-  },
-  {
-    q: "Export March bank reconciliation to CSV",
-    a: "Reconciled 84 transactions across 3 accounts for March. 2 unmatched items flagged. CSV is ready — 12 columns including source document references. Download starting now.",
+    a: "Flagged 2 likely duplicates: PO-2025-1148 and PO-2025-1161, both for Northwind Energy, same line items, issued 6 days apart. Total exposure: $80,400. Review recommended.",
   },
 ];
 
@@ -84,12 +77,7 @@ export default function AIChatShowcase() {
         >
           <SectionEyebrow tone="light">AI-powered queries</SectionEyebrow>
           <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
-            Ask anything.<br />
-            <span className="text-white">
-              Get instant answers
-            </span>
-            <br />
-            across all your documents.
+            Ask anything across all your documents.
           </h2>
           <p className="mt-6 max-w-md text-base leading-relaxed text-white/55">
             Cellilox reads every file and lays the data out in a clean, structured spreadsheet —

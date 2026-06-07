@@ -74,7 +74,7 @@ const DOC_TYPES = [
 
 export default function DocumentTypesGrid() {
   return (
-    <section id="documents" className="bg-[#fefce8] py-24">
+    <section id="documents" className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 1, y: 20 }}
