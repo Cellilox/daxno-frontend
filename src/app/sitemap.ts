@@ -1,16 +1,23 @@
 import type { MetadataRoute } from "next";
+import { listPublishedPosts } from "@/actions/blog-actions";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const lastModified = new Date();
 
-    return [
+    const staticRoutes: MetadataRoute.Sitemap = [
         {
             url: `${siteUrl}/`,
             lastModified,
             changeFrequency: "weekly",
             priority: 1.0,
+        },
+        {
+            url: `${siteUrl}/blogs`,
+            lastModified,
+            changeFrequency: "weekly",
+            priority: 0.7,
         },
         {
             url: `${siteUrl}/privacy-policy`,
@@ -37,4 +44,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.3,
         },
     ];
+
+    // Append each published blog post. Failures must not break the sitemap.
+    let postRoutes: MetadataRoute.Sitemap = [];
+    try {
+        const posts = await listPublishedPosts();
+        postRoutes = posts.map((post) => ({
+            url: `${siteUrl}/blogs/${post.slug}`,
+            lastModified: post.updated_at ? new Date(post.updated_at) : lastModified,
+            changeFrequency: "weekly",
+            priority: 0.6,
+        }));
+    } catch (e) {
+        console.error("[sitemap] failed to load blog posts:", e);
+    }
+
+    return [...staticRoutes, ...postRoutes];
 }

@@ -51,8 +51,8 @@ export default function Home() {
     <div className="home-landing relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
       {/* Dynamic Background Elements - Optimized for PWA/Mobile Fancy */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-5%] left-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-blue-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-5%] right-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-indigo-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[-5%] left-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-blue-50/60 rounded-full blur-[60px] sm:blur-[120px]" />
+        <div className="absolute bottom-[-5%] right-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-indigo-50/60 rounded-full blur-[60px] sm:blur-[120px]" />
       </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-10 sm:pt-20 pb-20 sm:pb-28">

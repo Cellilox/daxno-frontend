@@ -36,6 +36,7 @@ const Header = async () => {
         <div className="hidden md:block">
           {userId && <Link href='/dashboard' className='ml-7 p-4'>Dashboard</Link>}
           {userId && <Link href='/agents' className='ml-7 p-4'>Agents</Link>}
+          <Link href='/blogs' className='ml-7 p-4'>Blog</Link>
         </div>
       </div>
 

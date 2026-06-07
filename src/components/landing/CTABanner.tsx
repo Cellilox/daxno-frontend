@@ -16,17 +16,11 @@ export default function CTABanner() {
           transition={{ duration: 0.7 }}
           className="relative overflow-hidden rounded-[2rem] bg-gray-950 px-8 py-16 sm:px-16 sm:py-20"
         >
-          {/* Animated mesh blobs */}
-          <div className="pointer-events-none absolute inset-0 opacity-70">
-            <div className="absolute -left-16 top-0 h-72 w-72 rounded-full bg-blue-600/30 blur-[100px] animate-mesh-drift" />
-            <div
-              className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-indigo-600/30 blur-[120px] animate-mesh-drift"
-              style={{ animationDelay: "4s" }}
-            />
-            <div
-              className="absolute bottom-0 left-1/2 h-64 w-64 rounded-full bg-purple-600/30 blur-[100px] animate-mesh-drift"
-              style={{ animationDelay: "8s" }}
-            />
+          {/* Static mesh blobs (animation removed for readability) */}
+          <div className="pointer-events-none absolute inset-0 opacity-50">
+            <div className="absolute -left-16 top-0 h-72 w-72 rounded-full bg-blue-600/30 blur-[100px]" />
+            <div className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-indigo-600/30 blur-[120px]" />
+            <div className="absolute bottom-0 left-1/2 h-64 w-64 rounded-full bg-purple-600/30 blur-[100px]" />
           </div>
 
           {/* Grid texture */}
