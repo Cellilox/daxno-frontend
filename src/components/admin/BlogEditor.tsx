@@ -183,7 +183,10 @@ export default function BlogEditor({ post }: Props) {
       </Field>
 
       {/* Cover image */}
-      <Field label="Cover image" hint="Used as the OpenGraph/social image (ideal 1200×630).">
+      <Field
+        label="Cover image"
+        hint="Optional. OG/social image — ideal 1200×630, compressed, under 8 MB (larger is rejected)."
+      >
         <div className="space-y-3">
           {coverImageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
