@@ -87,10 +87,13 @@ export default async function BlogPostPage({ params }: Params) {
       "@type": "Organization",
       name: post.author_name || "Cellilox",
       url: siteUrl,
+      description:
+        "Cellilox builds AI tools that read business documents — invoices, bank statements, contracts and more — and turn them into structured data for finance and operations teams.",
     },
     publisher: {
       "@type": "Organization",
       name: "Cellilox",
+      url: siteUrl,
       logo: { "@type": "ImageObject", url: `${siteUrl}/icon.png` },
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
@@ -164,7 +167,27 @@ export default async function BlogPostPage({ params }: Params) {
         <BlogMarkdown content={post.content} />
       </article>
 
-      <div className="mt-14 border-t border-gray-100 pt-8">
+      {/* Author / publisher block — establishes the entity behind the content (E-E-A-T). */}
+      <aside className="mt-12 rounded-2xl border border-gray-100 bg-gray-50/70 p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gray-900 text-sm font-bold text-white">
+            C
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              {post.author_name || "Cellilox Team"}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
+              Cellilox builds AI tools that read business documents — invoices, bank
+              statements, contracts and more — and turn them into structured data finance
+              and operations teams can actually use. We write about the document workflows
+              we work with every day.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <div className="mt-12 border-t border-gray-100 pt-8">
         <Link
           href="/blogs"
           className="text-sm font-medium text-blue-600 hover:text-blue-700"
