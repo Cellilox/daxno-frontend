@@ -10,30 +10,23 @@ type Conversation = {
   a: string;
 };
 
+// Demo data only — fictional companies and figures, no real businesses.
 const CONVERSATIONS: Conversation[] = [
   {
     q: "What's our total supplier spend in Q1?",
-    a: "Total Q1 supplier spend was RWF 187,450,000 across 43 purchase orders and 61 invoices. Top vendors: Inyange Industries (RWF 34M), Rwanda Energy Group (RWF 28M), and Sonas Ltd. (RWF 19M).",
+    a: "Total Q1 supplier spend was $1.84M across 43 purchase orders and 61 invoices. Top vendors: Acme Supplies ($340K), Metro Energy ($280K), and Northwind Ltd. ($190K).",
   },
   {
-    q: "Show all overdue invoices above RWF 500k",
-    a: "Found 7 overdue invoices totalling RWF 8.2M. Oldest: INV-2025-0214 from MTN Rwanda (62 days overdue, RWF 2.1M). Want me to draft reminder emails for all 7?",
+    q: "Show all overdue invoices above $5,000",
+    a: "Found 7 overdue invoices totalling $82,000. Oldest: INV-2025-0214 from Vertex Telecom (62 days overdue, $21,000). Want me to draft reminder emails for all 7?",
   },
   {
     q: "Which contracts expire in the next 90 days?",
-    a: "4 contracts expiring by July 14: Equity Bank service agreement (Jun 3), MTN Rwanda logistics SLA (Jun 19), BK Rwanda data processing (Jul 1), and Sonas maintenance contract (Jul 12). Would you like renewal reminders?",
-  },
-  {
-    q: "Compare our Q1 vs Q2 logistics costs",
-    a: "Q2 logistics spend is RWF 24.8M — up 12% from Q1 (RWF 22.1M). The jump comes from 3 extra customs-clearance fees on March imports. Fuel and warehousing stayed flat.",
+    a: "4 contracts expiring by July 14: Summit Bank service agreement (Jun 3), Vertex Telecom logistics SLA (Jun 19), Harbor Data processing agreement (Jul 1), and Northwind maintenance contract (Jul 12). Want renewal reminders?",
   },
   {
     q: "Find duplicate purchase orders this month",
-    a: "Flagged 2 likely duplicates: PO-RW-2025-1148 and PO-RW-2025-1161 both for Sonas Energy, same line items, issued 6 days apart. Total exposure: RWF 8.04M. Review recommended.",
-  },
-  {
-    q: "Export March bank reconciliation to CSV",
-    a: "Reconciled 84 transactions across 3 accounts for March. 2 unmatched items flagged. CSV is ready — 12 columns including source document references. Download starting now.",
+    a: "Flagged 2 likely duplicates: PO-2025-1148 and PO-2025-1161, both for Northwind Energy, same line items, issued 6 days apart. Total exposure: $80,400. Review recommended.",
   },
 ];
 
@@ -75,32 +68,20 @@ export default function AIChatShowcase() {
 
   return (
     <section className="relative overflow-hidden bg-gray-950 py-24">
-      {/* Animated gradient mesh */}
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute -left-20 top-10 h-80 w-80 rounded-full bg-blue-600/20 blur-[120px] animate-mesh-drift" />
-        <div className="absolute right-0 top-1/2 h-96 w-96 rounded-full bg-indigo-600/20 blur-[140px] animate-mesh-drift" style={{ animationDelay: "4s" }} />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-purple-600/20 blur-[120px] animate-mesh-drift" style={{ animationDelay: "8s" }} />
-      </div>
-
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-16 px-6 sm:px-8 lg:grid-cols-[1fr_1.15fr] lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
         >
           <SectionEyebrow tone="light">AI-powered queries</SectionEyebrow>
           <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
-            Ask anything.<br />
-            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              Get instant answers
-            </span>
-            <br />
-            across all your documents.
+            Ask anything across all your documents.
           </h2>
           <p className="mt-6 max-w-md text-base leading-relaxed text-white/55">
-            No spreadsheets, no manual search. Type what you need in plain language and Cellilox
-            finds, summarises, and acts on it across your entire document library.
+            Cellilox reads every file and lays the data out in a clean, structured spreadsheet —
+            then lets you ask questions across your whole library in plain language.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-2.5">
@@ -121,7 +102,7 @@ export default function AIChatShowcase() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 1, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7, delay: 0.1 }}
@@ -152,7 +133,7 @@ export default function AIChatShowcase() {
                 className="flex flex-col gap-4"
               >
                 <div className="flex items-end gap-2.5 self-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-gradient-to-br from-blue-600 to-indigo-600 px-4 py-2.5 text-sm text-white shadow-lg shadow-blue-500/20">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-gradient-to-br from-blue-600 to-indigo-600 px-4 py-2.5 text-sm text-white shadow-lg shadow-gray-900/20">
                     {active.q}
                   </div>
                   <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-white/10 text-[10px] font-bold text-white/60">

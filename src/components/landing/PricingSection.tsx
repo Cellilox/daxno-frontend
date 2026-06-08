@@ -72,7 +72,7 @@ export default function PricingSection() {
     <section id="pricing" className="border-y border-gray-100 bg-white py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
@@ -80,7 +80,7 @@ export default function PricingSection() {
         >
           <SectionEyebrow>Pricing</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Simple, <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">transparent</span> pricing
+            Simple, <span className="text-gray-900">transparent</span> pricing
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-500 sm:text-lg">
             Start free. Top up credits when you need more, or bring your own key.
@@ -92,20 +92,18 @@ export default function PricingSection() {
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.name}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 1, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className={`relative overflow-hidden rounded-3xl p-8 ${
                 plan.featured
-                  ? "bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 text-white shadow-2xl shadow-blue-500/20"
+                  ? "bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 text-white shadow-2xl shadow-gray-900/20"
                   : "border border-gray-100 bg-gray-50/60 text-gray-900"
               }`}
             >
               {plan.featured && (
                 <>
-                  <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-blue-500/20 blur-3xl" />
-                  <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-purple-500/20 blur-3xl" />
                   <span className="relative mb-3 inline-block rounded-md bg-gradient-to-r from-blue-500 to-indigo-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                     Most popular
                   </span>

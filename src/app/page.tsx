@@ -49,11 +49,6 @@ export default function Home() {
 
   return (
     <div className="home-landing relative min-h-screen bg-white overflow-hidden selection:bg-blue-100 selection:text-blue-900">
-      {/* Dynamic Background Elements - Optimized for PWA/Mobile Fancy */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-5%] left-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-blue-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-5%] right-[-5%] sm:w-[50%] sm:h-[50%] w-[70%] h-[30%] bg-indigo-50/80 rounded-full blur-[60px] sm:blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
 
       <main className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-10 sm:pt-20 pb-20 sm:pb-28">
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-16 lg:items-start">
@@ -78,7 +73,7 @@ export default function Home() {
               className="text-[2.25rem] leading-[1.05] sm:text-6xl lg:text-7xl font-black tracking-tight text-gray-900 mb-5"
             >
               AI agent for{" "}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+              <span className="text-gray-900">
                 every document
               </span>{" "}
               you handle.

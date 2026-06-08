@@ -10,25 +10,12 @@ export default function CTABanner() {
     <section className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 1, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
           className="relative overflow-hidden rounded-[2rem] bg-gray-950 px-8 py-16 sm:px-16 sm:py-20"
         >
-          {/* Animated mesh blobs */}
-          <div className="pointer-events-none absolute inset-0 opacity-70">
-            <div className="absolute -left-16 top-0 h-72 w-72 rounded-full bg-blue-600/30 blur-[100px] animate-mesh-drift" />
-            <div
-              className="absolute right-0 top-1/3 h-80 w-80 rounded-full bg-indigo-600/30 blur-[120px] animate-mesh-drift"
-              style={{ animationDelay: "4s" }}
-            />
-            <div
-              className="absolute bottom-0 left-1/2 h-64 w-64 rounded-full bg-purple-600/30 blur-[100px] animate-mesh-drift"
-              style={{ animationDelay: "8s" }}
-            />
-          </div>
-
           {/* Grid texture */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -46,7 +33,7 @@ export default function CTABanner() {
               </div>
               <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl">
                 Stop processing <br className="hidden sm:block" />
-                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                <span className="text-white">
                   documents manually.
                 </span>
               </h2>
@@ -59,7 +46,7 @@ export default function CTABanner() {
             <div className="flex flex-col items-start gap-3 lg:items-end">
               <Link
                 href="/dashboard"
-                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/40"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 px-8 py-4 text-sm font-bold text-white shadow-lg shadow-gray-900/15 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-gray-900/20"
               >
                 Build your first agent
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />

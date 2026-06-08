@@ -50,14 +50,14 @@ export default function FeaturesDeepDive() {
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
           >
             <SectionEyebrow>Platform capabilities</SectionEyebrow>
             <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-              Built for how <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">finance and operations</span> teams actually work
+              Built for how <span className="text-gray-900">finance and operations</span> teams actually work
             </h2>
             <p className="mt-4 max-w-md text-base leading-relaxed text-gray-500">
               Every feature is designed for real document workflows — from receipt to reconciliation,
@@ -68,7 +68,7 @@ export default function FeaturesDeepDive() {
               {FEATURES.map((f, i) => (
                 <motion.div
                   key={f.title}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 1, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
                   transition={{ duration: 0.4, delay: i * 0.06 }}
@@ -91,7 +91,7 @@ export default function FeaturesDeepDive() {
           {/* Metrics panel */}
           <div className="flex flex-col gap-5">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5 }}
@@ -128,7 +128,7 @@ export default function FeaturesDeepDive() {
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -145,7 +145,7 @@ export default function FeaturesDeepDive() {
                 </div>
               </motion.div>
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: 0.15 }}
@@ -161,7 +161,7 @@ export default function FeaturesDeepDive() {
                 </div>
               </motion.div>
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: 0.2 }}

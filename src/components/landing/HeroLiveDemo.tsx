@@ -210,9 +210,6 @@ export default function HeroLiveDemo() {
 
   return (
     <div ref={containerRef} className="relative mx-auto w-full max-w-lg">
-      {/* Glow halo */}
-      <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 opacity-60 blur-2xl" />
-
       {/* Doc card */}
       <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl shadow-gray-900/10">
         <div className={`h-1 transition-colors duration-500 ${doc.barClass}`} />
@@ -344,9 +341,8 @@ export default function HeroLiveDemo() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 p-4 text-white shadow-xl shadow-indigo-900/20"
+              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950 p-4 text-white shadow-xl shadow-gray-900/20"
             >
-              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
               <div className="relative">
                 <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">
                   You asked

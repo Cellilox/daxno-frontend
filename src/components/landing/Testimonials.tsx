@@ -59,7 +59,7 @@ function TiltCard({ item }: { item: (typeof ITEMS)[number] }) {
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{ rotateX, rotateY, transformPerspective: 800 }}
-      className="group rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-blue-100/50"
+      className="group rounded-2xl border border-gray-100 bg-white p-7 shadow-sm transition-shadow duration-300 hover:shadow-xl hover:shadow-gray-200/60"
     >
       <div className="mb-4 flex gap-1">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -85,7 +85,7 @@ export default function Testimonials() {
     <section className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6 }}
@@ -93,7 +93,7 @@ export default function Testimonials() {
         >
           <SectionEyebrow>From our customers</SectionEyebrow>
           <h2 className="text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Trusted by <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">finance and operations</span> teams
+            Trusted by <span className="text-gray-900">finance and operations</span> teams
           </h2>
         </motion.div>
 
@@ -101,7 +101,7 @@ export default function Testimonials() {
           {ITEMS.map((item, i) => (
             <motion.div
               key={item.name}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
