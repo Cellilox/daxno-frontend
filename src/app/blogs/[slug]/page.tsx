@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPublishedPost, listPublishedPosts } from "@/actions/blog-actions";
+import { getPublishedPost } from "@/actions/blog-actions";
 import BlogMarkdown from "@/components/blog/BlogMarkdown";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
 
-export const revalidate = 300;
-
-// Pre-render known published slugs at build for instant, crawlable HTML.
-export async function generateStaticParams() {
-  const posts = await listPublishedPosts();
-  return posts.map((p) => ({ slug: p.slug }));
-}
+// Render per request (SSR). The global <Header> calls Clerk auth()/headers(),
+// which is a dynamic API and cannot be statically prerendered — attempting to
+// (via generateStaticParams/revalidate) throws DYNAMIC_SERVER_USAGE in prod.
+// Matches the convention in privacy-policy/page.tsx. Pages are still fully
+// server-rendered HTML for crawlers.
+export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }> };
 
