@@ -48,7 +48,9 @@ export type BlogPostInput = {
 export async function listPublishedPosts(): Promise<BlogPostListItem[]> {
   try {
     const res = await fetch(buildApiUrl("/blog/posts"), {
-      next: { revalidate: 300, tags: ["blog"] },
+      // Pages are force-dynamic; fetch fresh each render. Avoids writing the
+      // prerender/fetch cache (the prod container's .next/cache is read-only).
+      cache: "no-store",
     });
     if (!res.ok) return [];
     return (await res.json()) as BlogPostListItem[];
@@ -61,7 +63,7 @@ export async function listPublishedPosts(): Promise<BlogPostListItem[]> {
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {
   try {
     const res = await fetch(buildApiUrl(`/blog/posts/${encodeURIComponent(slug)}`), {
-      next: { revalidate: 300, tags: ["blog", `blog:${slug}`] },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     return (await res.json()) as BlogPost;

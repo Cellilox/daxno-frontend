@@ -4,9 +4,10 @@ import { listPublishedPosts } from "@/actions/blog-actions";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://cellilox.com";
 
-// Re-render the index every few minutes so new posts surface quickly while still
-// serving fast cached HTML to crawlers and visitors.
-export const revalidate = 300;
+// Render per request (SSR). The global <Header> uses Clerk auth()/headers(),
+// which cannot be statically prerendered — so opt this route into dynamic
+// rendering (matches privacy-policy/page.tsx). New posts surface immediately.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Cellilox Blog | Document Automation & AI Data Extraction",
