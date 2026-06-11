@@ -46,13 +46,17 @@ describe('Phase 1: Authentication & Page Protection', () => {
         it('should allow access to other protected areas (Admin/Billing)', () => {
             cy.visit('/admin');
             cy.location('hostname').should('eq', 'localhost');
+            // Staying on /admin (not bounced to sign-in or /agents) is the real
+            // signal the email-gated admin guard let this user through.
             cy.location('pathname').should('eq', '/admin');
-            cy.contains(/Admin|User Management/i).should('be.visible');
+            // Assert the gated <h1>Admin heading specifically — a non-admin is
+            // redirected and never renders it — rather than any page-wide text.
+            cy.get('h1', { timeout: 15000 }).contains(/Admin/i).should('be.visible');
 
             cy.visit('/billing');
             cy.location('hostname').should('eq', 'localhost');
             cy.location('pathname').should('eq', '/billing');
-            cy.contains(/Billing|Subscription/i).should('be.visible');
+            cy.contains(/Billing|Subscription/i, { timeout: 15000 }).should('be.visible');
         });
     });
 

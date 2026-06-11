@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isAllowedProxyUrl } from '@/lib/pdf-proxy-allowlist';
 
 export async function GET(request: NextRequest) {
   // Get the URL from the query parameters
@@ -7,6 +8,12 @@ export async function GET(request: NextRequest) {
 
   if (!url) {
     return NextResponse.json({ error: 'URL parameter is required' }, { status: 400 });
+  }
+
+  // SSRF guard: only fetch from our allowlisted S3 host. Without this the proxy
+  // would fetch any URL server-side (internal services, cloud metadata, etc.).
+  if (!isAllowedProxyUrl(url)) {
+    return NextResponse.json({ error: 'URL host not allowed' }, { status: 400 });
   }
 
   try {
