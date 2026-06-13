@@ -38,6 +38,7 @@ const Header = async () => {
           {userId && <Link href='/agents' className='ml-7 p-4'>Agents</Link>}
           <Link href='/#pricing' className='ml-7 p-4'>Pricing</Link>
           <Link href='/blogs' className='ml-7 p-4'>Blogs</Link>
+          <Link href='/careers' className='ml-7 p-4'>Careers</Link>
         </div>
       </div>
 

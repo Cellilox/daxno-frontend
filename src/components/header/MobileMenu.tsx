@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, LayoutDashboard, Bot, X, MoreVertical, Newspaper, Tag } from 'lucide-react'
+import { Home, LayoutDashboard, Bot, X, MoreVertical, Newspaper, Tag, Briefcase } from 'lucide-react'
 
 interface MobileMenuProps {
   userId: string | null
@@ -58,6 +58,13 @@ const MobileMenu = ({ userId }: MobileMenuProps) => {
       href: '/blogs',
       icon: <Newspaper size={16} className="text-amber-600" />,
       bgColor: 'bg-amber-100'
+    },
+    {
+      title: 'Careers',
+      subtitle: 'Open roles at Cellilox',
+      href: '/careers',
+      icon: <Briefcase size={16} className="text-blue-600" />,
+      bgColor: 'bg-blue-100'
     }
   ]
 
