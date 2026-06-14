@@ -688,7 +688,7 @@ export default function BillingConfig({ initialConfig, allModels, currentPlan, c
                                                     <div className="flex justify-between items-center group">
                                                         <div className="flex items-center gap-1.5">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-                                                            <span className="text-[11px] text-gray-500 font-medium">Chat AI (Onyx)</span>
+                                                            <span className="text-[11px] text-gray-500 font-medium">Chat AI</span>
                                                         </div>
                                                         <span className="text-[11px] font-mono font-semibold text-gray-700">${(usage.ai_cost_chat || 0).toFixed(4)}</span>
                                                     </div>

@@ -4,20 +4,31 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
         // since CDP state persists across specs!
         cy.goOnline();
 
-        // Ignore expected errors during offline tests
+        // Suppress ONLY the errors that are an inherent, expected consequence of
+        // running offline — never a blanket catch-all (that masks real bugs and
+        // turns a red into a fake green). Two narrow groups:
+        //   - network: chunks/fetches genuinely fail once the network is cut.
+        //   - hydration: the PWA service worker serves a cached shell on offline
+        //     reload, so React's hydration-mismatch codes (#418/#423/#425, or the
+        //     dev-mode "hydration" text) are expected here specifically.
+        // The previously-present bare 'matching' substring was removed — it is
+        // neither a network nor a hydration signature and would swallow real
+        // assertion/selector failures.
         cy.on('uncaught:exception', (err) => {
-            const ignoredErrors = [
+            const expectedOfflineErrors = [
                 'Failed to fetch',
+                'NetworkError',
                 'Load chunk',
                 'Minified React error #418',
                 'Minified React error #423',
                 'Minified React error #425',
-                'hydrat',
-                'matching'
+                'hydration',
             ];
-            if (ignoredErrors.some(msg => err.message.includes(msg))) {
+            if (expectedOfflineErrors.some(msg => err.message.includes(msg))) {
                 return false;
             }
+            // Anything else is a real failure — let Cypress fail the test.
+            return undefined;
         });
 
         cy.login();
@@ -81,7 +92,21 @@ describe('Phase 4: Offline Mode & IndexedDB Sync', () => {
 
         // Wait for records to appear and be cached
         cy.get('[data-testid="records-table"]', { timeout: 30000 }).should('be.visible');
-        cy.wait(3000); // Give IndexedDB time to settle
+
+        // Settle the IndexedDB cache deterministically instead of a blind 3s wait:
+        // poll the `cachedRecords` store and return as soon as it's populated,
+        // with a ~3s ceiling so an empty project still proceeds (matches the
+        // original semantics but usually finishes far faster).
+        const settleCache = (attempts = 0) => {
+            if (attempts >= 15) return; // 15 * 200ms ≈ 3s ceiling
+            cy.inspectIndexedDB('cachedRecords').then((records) => {
+                if (!records || (records as unknown[]).length === 0) {
+                    cy.wait(200);
+                    settleCache(attempts + 1);
+                }
+            });
+        };
+        settleCache();
 
         cy.goOffline();
         cy.reload();

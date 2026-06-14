@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Frontend pre-commit gate: run the fast Vitest unit suite before a commit lands.
+#
+# Installed automatically via the "prepare": "husky" script on `npm install`.
+# The suite is pure-logic and runs in well under a second, so gating every
+# commit on it is cheap. Bypass for a WIP commit with `git commit --no-verify`.
+#
+# Cypress E2E is intentionally NOT run here — it needs a live Next + backend and
+# is too slow for a commit gate. It runs in CI instead.
+
+echo "[pre-commit] Running Vitest unit suite..."
+if ! npm run test --silent; then
+  echo ""
+  echo "[pre-commit] Unit tests failed — commit blocked."
+  echo "[pre-commit] Fix the failures above, or use 'git commit --no-verify' to bypass."
+  exit 1
+fi
+
+echo "[pre-commit] All unit tests passed."
