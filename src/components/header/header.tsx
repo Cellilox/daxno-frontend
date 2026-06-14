@@ -26,10 +26,10 @@ const Header = async () => {
       <div className='md:flex items-center'>
         <Link href="/">
           <Image
-            src="/logo-mark.png"
+            src="/logo-horizontal.png"
             alt="Cellilox"
-            width={80}
-            height={60}
+            width={160}
+            height={44}
             priority
           />
         </Link>
