@@ -31,7 +31,8 @@ export default async function OpengraphImage() {
           position: "relative",
           fontFamily: "Inter",
           backgroundImage:
-            "linear-gradient(125deg, #d6ece7 0%, #cdd9e4 42%, #d29bb0 78%, #c1758f 100%)",
+            // Light tints of the Cellilox logo gradient (cyan-blue #00C2FF -> lime #B4EC38)
+            "linear-gradient(125deg, #cfeefb 0%, #d4ecf3 38%, #d6f1e2 70%, #e2f3c5 100%)",
         }}
       >
         {/* diagonal sheen */}
